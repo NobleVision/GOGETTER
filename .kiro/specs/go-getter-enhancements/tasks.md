@@ -53,7 +53,7 @@ This implementation plan breaks down the GO-GETTER OS enhancements into discrete
     - Implement OAuth redirect flow on client
     - Handle authentication errors with user-friendly messages
     - _Requirements: 2.1, 2.7, 8.1_
-  - [ ] 2.7 Write property test for account linking by email
+  - [-] 2.7 Write property test for account linking by email
 
     - **Property 14: Account Linking by Email**
     - **Validates: Requirements 8.2, 8.3**
