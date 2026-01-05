@@ -3,6 +3,5 @@
   "version": 2,
   "buildCommand": "pnpm run build:vercel",
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "outputDirectory": ".vercel-output",
   "framework": null
 }

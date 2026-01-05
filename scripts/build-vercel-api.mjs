@@ -13,7 +13,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, "..");
 const apiDir = join(rootDir, "api");
 const distDir = join(rootDir, "dist");
-const outputDir = join(rootDir, ".vercel-output");
+const outputDir = join(rootDir, ".vercel", "output");
 
 // Path alias plugin for esbuild to resolve @shared/* and @/* aliases
 const pathAliasPlugin = {
@@ -169,7 +169,7 @@ const __dirname = dirname(__filename);
   }
 
   console.log("✓ All API functions bundled successfully");
-  console.log("✓ Build output ready at .vercel-output/");
+  console.log("✓ Build output ready at .vercel/output/");
 }
 
 build().catch((err) => {
