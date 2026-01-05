@@ -15,6 +15,46 @@ const apiDir = join(rootDir, "api");
 const distDir = join(rootDir, "dist");
 const outputDir = join(rootDir, ".vercel-output");
 
+// Path alias plugin for esbuild to resolve @shared/* and @/* aliases
+const pathAliasPlugin = {
+  name: "path-alias",
+  setup(build) {
+    // Helper to resolve path with extension
+    const resolveWithExtension = (basePath) => {
+      // Try common extensions
+      const extensions = [".ts", ".tsx", ".js", ".jsx", ""];
+      for (const ext of extensions) {
+        const fullPath = basePath + ext;
+        if (existsSync(fullPath)) {
+          return fullPath;
+        }
+      }
+      // Try index files
+      for (const ext of [".ts", ".tsx", ".js", ".jsx"]) {
+        const indexPath = join(basePath, `index${ext}`);
+        if (existsSync(indexPath)) {
+          return indexPath;
+        }
+      }
+      return basePath + ".ts"; // Default to .ts
+    };
+
+    // Resolve @shared/* to ./shared/*
+    build.onResolve({ filter: /^@shared\// }, (args) => {
+      const subPath = args.path.replace(/^@shared\//, "");
+      const resolved = resolveWithExtension(join(rootDir, "shared", subPath));
+      return { path: resolved, external: false };
+    });
+
+    // Resolve @/* to ./client/src/*
+    build.onResolve({ filter: /^@\// }, (args) => {
+      const subPath = args.path.replace(/^@\//, "");
+      const resolved = resolveWithExtension(join(rootDir, "client", "src", subPath));
+      return { path: resolved, external: false };
+    });
+  },
+};
+
 // Find all TypeScript files in api directory recursively
 function findApiFiles(dir, files = []) {
   const entries = readdirSync(dir);
@@ -92,6 +132,9 @@ async function build() {
       format: "esm",
       outfile: join(funcDir, "index.js"),
       external: ["pg-native", "better-sqlite3"],
+      plugins: [pathAliasPlugin],
+      // Ensure all dependencies are bundled (not external)
+      packages: "bundle",
       banner: {
         js: `
 import { createRequire } from 'module';
