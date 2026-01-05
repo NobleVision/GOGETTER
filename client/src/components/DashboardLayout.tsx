@@ -19,7 +19,7 @@ import {
   SidebarTrigger,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { getLoginUrl, getGoogleLoginUrl } from "@/const";
+import { getLoginUrl, getGoogleLoginUrl, isManusOAuthConfigured } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
 import { 
   LayoutDashboard, 
@@ -154,21 +154,28 @@ export default function DashboardLayout({
               Sign in with Google
             </Button>
             
-            <div className="flex items-center gap-3 my-2">
-              <div className="flex-1 h-px bg-slate-700" />
-              <span className="text-xs text-slate-500">or</span>
-              <div className="flex-1 h-px bg-slate-700" />
-            </div>
-            
-            <Button
-              onClick={() => {
-                window.location.href = getLoginUrl();
-              }}
-              size="lg"
-              className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all text-white border-0"
-            >
-              Sign in with Manus
-            </Button>
+            {isManusOAuthConfigured() && (
+              <>
+                <div className="flex items-center gap-3 my-2">
+                  <div className="flex-1 h-px bg-slate-700" />
+                  <span className="text-xs text-slate-500">or</span>
+                  <div className="flex-1 h-px bg-slate-700" />
+                </div>
+                
+                <Button
+                  onClick={() => {
+                    const loginUrl = getLoginUrl();
+                    if (loginUrl) {
+                      window.location.href = loginUrl;
+                    }
+                  }}
+                  size="lg"
+                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 shadow-lg hover:shadow-xl transition-all text-white border-0"
+                >
+                  Sign in with Manus
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>
