@@ -135,6 +135,16 @@ async function build() {
       plugins: [pathAliasPlugin],
       // Ensure all dependencies are bundled (not external)
       packages: "bundle",
+      // Set working directory to root so relative imports resolve correctly
+      absWorkingDir: rootDir,
+      // Ensure TypeScript files are resolved
+      resolveExtensions: [".ts", ".tsx", ".js", ".jsx", ".json"],
+      // Minify for smaller bundle size
+      minify: false,
+      // Source maps for debugging
+      sourcemap: false,
+      // Tree shaking
+      treeShaking: true,
       banner: {
         js: `
 import { createRequire } from 'module';
