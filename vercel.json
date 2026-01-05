@@ -3,8 +3,8 @@
   "version": 2,
   "buildCommand": "pnpm run build",
   "installCommand": "pnpm install",
-  "framework": null,
   "outputDirectory": "dist/public",
+  "framework": null,
   "functions": {
     "api/**/*.ts": {
       "runtime": "@vercel/node@3.2.0"
@@ -13,11 +13,7 @@
   "rewrites": [
     {
       "source": "/api/trpc/:path*",
-      "destination": "/api/trpc"
-    },
-    {
-      "source": "/api/oauth/:path*",
-      "destination": "/api/oauth"
+      "destination": "/api/trpc/[trpc]"
     }
   ],
   "routes": [
