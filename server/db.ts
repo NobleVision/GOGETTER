@@ -97,6 +97,102 @@ export async function getUserById(id: number) {
   return result.length > 0 ? result[0] : undefined;
 }
 
+/**
+ * Get user by Google ID
+ * Requirement 2.4: Handle Google users
+ */
+export async function getUserByGoogleId(googleId: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.googleId, googleId)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+/**
+ * Get user by email
+ * Requirement 8.3: Link accounts by email
+ */
+export async function getUserByEmail(email: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+/**
+ * Upsert user with Google OAuth data
+ * Requirements 2.4, 2.5, 8.2, 8.3: Handle Google users and account linking
+ */
+export async function upsertUserWithGoogle(user: {
+  openId: string;
+  googleId: string;
+  name: string | null;
+  email: string;
+  pictureUrl: string | null;
+  loginMethod: string;
+  lastSignedIn: Date;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    console.warn("[Database] Cannot upsert Google user: database not available");
+    return;
+  }
+
+  try {
+    // First, check if user exists by Google ID
+    const existingByGoogleId = await getUserByGoogleId(user.googleId);
+    
+    if (existingByGoogleId) {
+      // Update existing Google user
+      await db.update(users).set({
+        name: user.name,
+        email: user.email,
+        pictureUrl: user.pictureUrl,
+        lastSignedIn: user.lastSignedIn,
+        updatedAt: new Date(),
+      }).where(eq(users.googleId, user.googleId));
+      return;
+    }
+
+    // Check if user exists by email (for account linking)
+    const existingByEmail = await getUserByEmail(user.email);
+    
+    if (existingByEmail) {
+      // Link Google account to existing user
+      const currentProviders = existingByEmail.authProviders || [];
+      const updatedProviders = currentProviders.includes("google") 
+        ? currentProviders 
+        : [...currentProviders, "google"];
+      
+      await db.update(users).set({
+        googleId: user.googleId,
+        pictureUrl: user.pictureUrl || existingByEmail.pictureUrl,
+        authProviders: updatedProviders,
+        lastSignedIn: user.lastSignedIn,
+        updatedAt: new Date(),
+      }).where(eq(users.id, existingByEmail.id));
+      return;
+    }
+
+    // Create new user with Google data
+    const role = user.openId === ENV.ownerOpenId ? 'admin' : 'user';
+    await db.insert(users).values({
+      openId: user.openId,
+      googleId: user.googleId,
+      name: user.name,
+      email: user.email,
+      pictureUrl: user.pictureUrl,
+      loginMethod: user.loginMethod,
+      authProviders: ["google"],
+      role: role,
+      lastSignedIn: user.lastSignedIn,
+    });
+  } catch (error) {
+    console.error("[Database] Failed to upsert Google user:", error);
+    throw error;
+  }
+}
+
 // ============ USER PROFILE OPERATIONS ============
 
 export async function getUserProfile(userId: number): Promise<UserProfile | undefined> {

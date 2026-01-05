@@ -15,3 +15,8 @@ export const getLoginUrl = () => {
 
   return url.toString();
 };
+
+// Generate Google OAuth login URL
+export const getGoogleLoginUrl = () => {
+  return `${window.location.origin}/api/oauth/google/init`;
+};

@@ -24,6 +24,10 @@ export const users = pgTable("users", {
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("login_method", { length: 64 }),
   role: userRoleEnum("role").default("user").notNull(),
+  // Google OAuth fields
+  googleId: varchar("google_id", { length: 64 }),
+  pictureUrl: varchar("picture_url", { length: 500 }),
+  authProviders: json("auth_providers").$type<string[]>().default([]),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   lastSignedIn: timestamp("last_signed_in").defaultNow().notNull(),

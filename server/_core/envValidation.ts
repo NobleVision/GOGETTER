@@ -4,8 +4,20 @@
  * Requirements: 1.1, 1.2, 1.3, 1.4
  */
 
+import { randomBytes } from "crypto";
+
 const JWT_SECRET_PLACEHOLDER = "your-random-secret-key-here";
 const MIN_JWT_SECRET_LENGTH = 32;
+
+/**
+ * Generates a cryptographically secure random secret
+ * Requirement 1.2: Generate secure JWT_SECRET
+ * @param length - Length of the secret in bytes (default 32, produces 64 hex chars)
+ * @returns A hex-encoded random string
+ */
+export function generateSecureSecret(length: number = 32): string {
+  return randomBytes(length).toString("hex");
+}
 
 export interface ValidationResult {
   valid: boolean;

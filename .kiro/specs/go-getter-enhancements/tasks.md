@@ -6,51 +6,55 @@ This implementation plan breaks down the GO-GETTER OS enhancements into discrete
 
 ## Tasks
 
-- [-] 1. Environment Configuration & Security Setup
-  - [-] 1.1 Implement environment validation module
+- [x] 1. Environment Configuration & Security Setup
+  - [x] 1.1 Implement environment validation module
     - Create `server/_core/envValidation.ts` with validation functions
     - Add JWT_SECRET length validation (minimum 32 characters)
     - Add placeholder detection for "your-random-secret-key-here"
     - Add DATABASE_URL presence validation
     - Integrate validation into server startup in `server/_core/index.ts`
     - _Requirements: 1.1, 1.2, 1.3, 1.4_
-  - [ ]* 1.2 Write property test for JWT secret validation
+  - [x] 1.2 Write property test for JWT secret validation
+
     - **Property 1: JWT Secret Validation**
     - **Validates: Requirements 1.2, 1.3**
-  - [ ] 1.3 Generate and configure secure JWT_SECRET
+  - [x] 1.3 Generate and configure secure JWT_SECRET
     - Create utility function to generate cryptographically secure secrets
     - Update `.env.example` with instructions
     - Generate new JWT_SECRET for local development
     - _Requirements: 1.2_
 
-- [ ] 2. Google OAuth Authentication
-  - [ ] 2.1 Add Google OAuth dependencies and configuration
+- [x] 2. Google OAuth Authentication
+  - [x] 2.1 Add Google OAuth dependencies and configuration
     - Add `google-auth-library` package
     - Add GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to env schema
     - Create `server/_core/googleOAuth.ts` service
     - _Requirements: 2.1, 2.2, 2.3_
-  - [ ] 2.2 Implement Google OAuth routes
+  - [x] 2.2 Implement Google OAuth routes
     - Add `/api/oauth/google/init` route for authorization URL generation
     - Add `/api/oauth/google/callback` route for code exchange
     - Implement user profile retrieval from Google
     - _Requirements: 2.1, 2.2, 2.3_
-  - [ ] 2.3 Update user schema for multi-provider auth
+  - [x] 2.3 Update user schema for multi-provider auth
     - Add `google_id`, `picture_url`, `auth_providers` columns to users table
     - Create Drizzle migration
     - Update `upsertUser` function to handle Google users
     - _Requirements: 2.4, 2.5, 8.2, 8.3_
-  - [ ]* 2.4 Write property test for user record management
+  - [x] 2.4 Write property test for user record management
+
     - **Property 2: User Record Management on OAuth**
     - **Validates: Requirements 2.4, 2.5**
-  - [ ]* 2.5 Write property test for session cookie round-trip
+  - [x] 2.5 Write property test for session cookie round-trip
+
     - **Property 3: Session Cookie Round-Trip**
     - **Validates: Requirements 2.6, 2.8**
-  - [ ] 2.6 Create login page with Google sign-in button
+  - [x] 2.6 Create login page with Google sign-in button
     - Add Google sign-in button to login UI
     - Implement OAuth redirect flow on client
     - Handle authentication errors with user-friendly messages
     - _Requirements: 2.1, 2.7, 8.1_
-  - [ ]* 2.7 Write property test for account linking by email
+  - [ ] 2.7 Write property test for account linking by email
+
     - **Property 14: Account Linking by Email**
     - **Validates: Requirements 8.2, 8.3**
 
