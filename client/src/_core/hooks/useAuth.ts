@@ -1,4 +1,4 @@
-import { getLoginUrl } from "@/const";
+import { getGoogleLoginUrl } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { TRPCClientError } from "@trpc/client";
 import { useCallback, useEffect, useMemo } from "react";
@@ -10,8 +10,8 @@ type UseAuthOptions = {
 
 export function useAuth(options?: UseAuthOptions) {
   const { redirectOnUnauthenticated = false, redirectPath } = options ?? {};
-  // Defer getLoginUrl() call to avoid errors when OAuth is not configured
-  const effectiveRedirectPath = redirectPath ?? getLoginUrl();
+  // Use Google OAuth login URL by default
+  const effectiveRedirectPath = redirectPath ?? getGoogleLoginUrl();
   const utils = trpc.useUtils();
 
   const meQuery = trpc.auth.me.useQuery(undefined, {

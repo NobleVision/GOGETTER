@@ -104,7 +104,8 @@ This implementation plan breaks down the GO-GETTER OS enhancements into discrete
     - Implement model selection by task type and cost
     - Add fallback logic for failed requests
     - _Requirements: 3.3, 3.6_
-  - [ ]* 6.2 Write property test for model router cost optimization
+  - [-] 6.2 Write property test for model router cost optimization
+
     - **Property 5: Model Router Cost Optimization**
     - **Validates: Requirements 3.3**
   - [x] 6.3 Implement Go-Getter agent service
@@ -113,14 +114,15 @@ This implementation plan breaks down the GO-GETTER OS enhancements into discrete
     - Include user preferences in prompts (risk, interests, capital)
     - Implement composite scoring for discovered opportunities
     - _Requirements: 3.1, 3.2, 3.4_
-  - [ ]* 6.4 Write property test for composite score consistency
+  - [ ] 6.4 Write property test for composite score consistency
+
     - **Property 4: Composite Score Calculation Consistency**
     - **Validates: Requirements 3.4**
   - [x] 6.5 Add token usage logging to agent
     - Log all AI interactions with model, tokens, cost
     - Integrate with existing tokenUsage table
     - _Requirements: 3.7_
-  - [ ]* 6.6 Write property test for AI interaction logging
+  - [x]* 6.6 Write property test for AI interaction logging
     - **Property 6: AI Interaction Logging Completeness**
     - **Validates: Requirements 3.7**
   - [x] 6.7 Add agent tRPC endpoint

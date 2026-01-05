@@ -1,11 +1,11 @@
 import { trpc } from "@/lib/trpc";
+import { getGoogleLoginUrl } from "@/const";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
-import { getLoginUrl } from "./const";
 import "./index.css";
 
 const queryClient = new QueryClient();
@@ -18,10 +18,8 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
 
   if (!isUnauthorized) return;
 
-  const loginUrl = getLoginUrl();
-  if (loginUrl) {
-    window.location.href = loginUrl;
-  }
+  // Redirect to Google OAuth login
+  window.location.href = getGoogleLoginUrl();
 };
 
 queryClient.getQueryCache().subscribe(event => {

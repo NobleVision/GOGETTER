@@ -1,9 +1,47 @@
 # GO-GETTER OS - Project TODO
 
+## Recently Completed (January 2026)
+
+### Google OAuth Implementation
+- [x] Implement Google OAuth 2.0 authorization flow
+- [x] Create `/api/oauth/google/init` endpoint for OAuth initiation
+- [x] Create `/api/oauth/google/callback` endpoint for OAuth callback
+- [x] Create `/api/oauth/google/status` endpoint to check configuration
+- [x] Implement secure state token generation and validation
+- [x] Add Google user profile fetching (email, name, picture)
+- [x] Create `upsertUserWithGoogle()` for user creation/linking
+- [x] Add `googleId` column to users table for account linking
+- [x] Implement JWT session token creation and verification
+- [x] Add secure cookie handling with SameSite and HttpOnly flags
+- [x] Create Vercel serverless function versions of all OAuth endpoints
+
+### Manus OAuth Removal
+- [x] Remove `getLoginUrl()` function from client
+- [x] Remove `isManusOAuthConfigured()` function from client
+- [x] Remove Manus OAuth button from login UI
+- [x] Remove `/api/oauth/callback` (Manus callback) endpoint
+- [x] Remove `OAuthService` class from sdk.ts
+- [x] Remove `exchangeCodeForToken()` and `getUserInfo()` methods
+- [x] Remove `getUserInfoWithJwt()` method
+- [x] Remove `server/_core/types/manusTypes.ts`
+- [x] Remove `OAUTH_SERVER_URL` from environment configuration
+- [x] Update `authenticateRequest()` to only handle Google OAuth users
+- [x] Clean up `.env.example` to remove Manus OAuth references
+
+### Vercel Deployment Fixes
+- [x] Fix esbuild bundling for serverless functions
+- [x] Add proper path alias resolution for Vercel builds
+- [x] Fix Express Request/Response type compatibility
+- [x] Implement Vercel-compatible redirects (writeHead + end)
+- [x] Fix query parameter parsing for bundled functions
+
+---
+
 ## Core Infrastructure
 - [x] Database schema for users, businesses, user profiles, active businesses, and token usage
 - [x] tRPC procedures for all CRUD operations
 - [x] Seed data with 20+ business opportunities across verticals
+- [x] Google OAuth 2.0 authentication system
 
 ## Business Discovery Wizard
 - [x] Multi-step onboarding flow UI
@@ -43,7 +81,6 @@
 
 ## Multi-Model API Configuration
 - [x] API settings page
-- [x] Manus API configuration
 - [x] Perplexity API configuration
 - [x] GPT-5/OpenAI configuration
 - [x] Anthropic Claude configuration
@@ -104,3 +141,33 @@
 - [x] Business listing tests
 - [x] Profile management tests
 - [x] Token usage tests
+
+---
+
+## Future Enhancements
+
+### Additional OAuth Providers
+- [ ] GitHub OAuth integration
+- [ ] Microsoft/Azure AD OAuth integration
+- [ ] Apple Sign-In integration
+- [ ] Email/password authentication (optional fallback)
+
+### Account Management
+- [ ] Account linking UI (connect multiple OAuth providers)
+- [ ] Profile picture sync from OAuth providers
+- [ ] Account deletion with data export
+- [ ] Two-factor authentication (2FA)
+
+### Session Management
+- [ ] Session listing and management UI
+- [ ] Force logout from all devices
+- [ ] Session timeout configuration
+- [ ] Refresh token rotation
+- [ ] Remember device functionality
+
+### Security Enhancements
+- [ ] Rate limiting on OAuth endpoints
+- [ ] IP-based session validation
+- [ ] Suspicious login detection and alerts
+- [ ] OAuth state token storage in Redis (production)
+- [ ] CSRF protection improvements
