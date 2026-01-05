@@ -1,0 +1,101 @@
+Notes from our meeting tonight…
+
+High-level summary
+
+The conversation is an informal brainstorming and live-building session between two collaborators planning an agentic “business creation and management” platform. They want to leverage Manus AI (and its ecosystem of “MCP” tools) to identify, generate, launch, and monitor micro-businesses that can run largely autonomously with AI agents. The near-term goal is to build an internal tool (for themselves first) that produces structured business ideas and implementation prompts; longer-term, they want a customer-facing platform that can actually deploy and operate these businesses and take a cut or subscription fee.  A secondary thread includes the presenter showing other automation work: a custom system to tag and organize ~30,000 emails with hundreds of AI-generated tags and thread relationships, plus mention of a personal finance/budget tagging tool.
+
+(There is also a lot of filler audio/testing and tangents.)
+________________________________________
+Main themes & ideas
+1) Building an “agentic business development platform”
+They repeatedly converge on a product concept: a platform that:
+•	Finds viable online business opportunities (especially “ignored niches,” arbitrage, low-maintenance micro-businesses).
+•	Scores and ranks them by profitability, risk, maintenance effort, time-to-revenue, and required agent/model resources.
+•	Produces a detailed, step-by-step implementation prompt/blueprint to build and run the business.
+•	Eventually evolves from “prompt generator” → fully automated business builder/operator (deploy code, connect accounts, run operations).
+They discuss naming ideas such as “Vibe,” “Vibe look,” and positioning it like “Cursor/Windsurf but for agentic profitable businesses.”
+2) Manus AI, MCPs, and “agentic” automation as the core engine
+A large portion is about why Manus AI is attractive:
+•	Manus is described as strong at long-running agentic workflows (hours/days) and broad integrations.
+•	They explain MCPs (Model Context Protocol) as tool descriptors that let an AI call capabilities (like Word actions or external services) directly rather than “writing code to do the thing.”
+•	They plan to piggyback on Manus first (via API keys), rather than building their own agentic runtime initially.
+Notable claim (presented conversationally, not verified): Manus “was bought by Meta” and had rapid revenue growth.
+3) “Token economics” and routing across multiple AI vendors
+They emphasize cost control and dynamic model selection:
+•	The platform should prefer the cheapest model that satisfies the task, switching providers in near real time.
+•	Subscription tiers could map to model quality (cheap “randomized” models vs a fixed premium model).
+They also describe a workflow where they:
+•	Generate a base business prompt,
+•	Then run it through Perplexity + Grok + GPT to refine/triangulate,
+•	Then feed the improved prompt back into Manus/Kiro to build.
+4) Dashboard-driven business operations & real-time monitoring
+They want a dashboard that not only suggests businesses but also monitors them:
+•	Real-time profitability, token usage, runtime, issues/alerts.
+•	Tracking per-business endpoints and metrics.
+•	Potential export/integration for taxes (QuickBooks-like outputs).
+They discuss an additional budgeting layer: allocating the profits from autonomous businesses to expenses (subscriptions, mortgage, etc.).
+5) Integrations needed to “run a business”
+They brainstorm integrations that make the agent-run business practical:
+•	Email (Gmail/Outlook) for professional communication and inbound handling.
+•	Payments: Stripe/PayPal and/or crypto rails (they note Manus supports crypto).
+•	Business setup guidance: potentially help users form an LLC or at least choose “self-contained vs LLC” setup.
+•	Hosting/deployment: future option to deploy to AWS/GCP/etc. and estimate infrastructure costs.
+6) Compliance / safety checks via “AI lawyer/CPA agents”
+As they consider operating across countries, they propose:
+•	An agent that performs legal review (“AI lawyer”) to reduce gotchas.
+•	CPA/tax-related support (export statements, compliance checks).
+7) Monetization strategy for their platform
+They float multiple monetization angles:
+•	Platform subscription (e.g., low monthly fee).
+•	Revenue share (“get a cut of their earnings,” compared to YouTube taking a cut).
+•	Using the platform internally first to generate cash flow that funds other ventures.
+________________________________________
+Supporting details (what they actually did / demonstrated)
+Email-scale automation tool (early segment)
+One speaker describes a custom program that:
+•	Ingests PST files / Outlook emails.
+•	Handles ~30,000 emails with hundreds of tags per email.
+•	Builds relationships and threads (sender/time plus AI-enriched tags from the body).
+•	Stores tags in a separate database referencing the emails.
+“You can organize 30,000 emails… it puts hundreds of tags on each email… I made relationships.”
+Live prompt iteration across models
+They demonstrate asking multiple AIs the same question and comparing outputs, then combining them into one improved prompt before sending to Manus. They react to outputs that include:
+•	Business lists with risk levels, setup time, monitoring needs, and revenue estimates.
+Tool-building and deployment
+Toward the end they are actively building the app (in Manus/Kiro workflow), including:
+•	Creating a database schema (“It’s designing this schema right now”).
+•	Attempting cloud DB connection (“Database URL… it gets stuck sometimes”).
+•	Planning to have an initial version running by the next day.
+________________________________________
+Notable statements / quotes (representative)
+•	On microbusiness scaling economics:
+“If you can make a dollar an hour profit… and you have a thousand agents running that’s like eight hundred dollars an hour.”
+•	On the product’s purpose:
+“We don’t need investors anymore, we’ll create our own micro-businesses.”
+•	On future autonomy:
+“The goal is to create autonomous… run 24 hours a day… with points to track profitability.”
+•	On “viral secrecy” positioning:
+“Maybe we should just call our app shhh… keep it quiet, but not really.”
+•	On the future UX vision:
+“The agents are going to kind of like listen to our conversation and by the time our conversation is over, it has everything developed.”
+________________________________________
+Decisions, open questions, and action items
+Decisions / direction
+•	Start with one focused app (stop trying to build “ten apps at the same time”).
+•	Build first on Manus AI using its API/integrations; their tool initially produces prompts/blueprints and evolves later.
+Open questions
+•	Is the dashboard primarily for internal use or external customers? (They settle on internal first, external later.)
+•	How to handle business transferability (emails/accounts) if a business is sold.
+•	Whether to keep early versions crypto-first or support both crypto and traditional payment rails.
+•	Hosting model: do they host businesses or act as a middle layer where customers choose AWS/GCP/etc.?
+Immediate next steps
+•	Finish the first working prototype (“Vibe” app concept), including DB setup and schema.
+•	Reconvene the next day for a short meeting and aim to run the “first business” through the system.
+
+________________________________________
+
+Ian Noble
+Noble Vision Inc.
+Mobile: 804.937.8785
+Email: Ian@NobleVision.com
+

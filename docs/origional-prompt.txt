@@ -1,0 +1,53 @@
+20260104 - 
+
+	Perplexity AI/Grok/GPT 5.2 as inputs to MANUS AI, then enhance prompt to KIRO for completion.
+	
+	Make new APIs for - Perplexity API, MANUS API, GPT, Anthropic, Gemini
+
+	The theme of this application is a business development agentic platform similar to how cursor or windsurf creates application, this will be focused agentic businesses that are profitable.
+
+	There will be an initial wizard as one of the options in the dashboard that will find all of the best thousands of way of making money online without a physical presence like managing a vending machine, as was done at Anthropic, where an autonomous LLM frontier agent, or agents, can be put in charge of running the business 24 hours.  Organize them into business verticals so that the user can select the business that is interesting, matches the users interests, etc. The goal is to be profitable so there will also need to be a scoring system on each business that estimates risk factor, profitability, easy to maintain, how many agents needed, what models are suggested to use, etc.  The goal is to have profitability, example of a low bar, low risk, low maintenance, etc. micro business that is successful that generates one $1 an hour but only costs $.10 in tokens per hour to run and the business can run 24 hours a day, other expenses to run average out to be $.20, where there is a good margin for profit every 30 days. 
+	
+	Only businesses that have a gareneteed profitability will have the highest score and be shown first, where the more risk businesses will be lower score at the bottom of the list.
+	
+	If needed the AI will create a business license, it will ask the user, and have a capability to create a S-corp, LLC, if needed. Also provide if a bank account is needed, or credit cart merchandise paypal, Stripe, cyrpto, etc.
+	
+	All businesses will keep token efficiency in mind at all times to use the cheapest models for cost savings.
+	
+	On the High end, very profitable, more risk, etc. I want to start businesses like Manus AI that in 8 months created $100m in revenue and was purchased recently by Meta for $2 billion.
+	
+	The goal is to create autonomous business that need very little direction from a human that run 24 hours, but also provide endpoints to track real-time progress, profitability, any issues, interactions needed, etc.  The goal is also simplify, ease of understanding, non-complex, etc.
+	
+	Businesses targeted to create are niches that are ignored, arbitrage opportunities, things not done but are very profitable that do not need a human, triangulated profitable opportunities using new technologies that are emerging or just started recently, etc.  There may be some of these type of micro businesses that already exist that are not exhausted yet and have more potential for profitability, growth, etc.
+	
+	When the user selects a business, the dashboard will provide a very detailed prompt on how to implement, code, develop, produce, infrastructure, hosting, APIs needed,  etc. the business in great detail with step by step setup, projections, initial goals to expect, etc. Where the whole goal is to be profitable with the new micro business.
+
+	Design all business to use Manus API/webhooks to do this research, interact, etc. Also, suggest what other models would be good and I can add them later that may be similar to the powerful deep research as Manus; Perplexity AI, Grok, GTP, Gemini, Anthropic, etc.
+	
+	Use Manus agentic to run the business initially, suggest other models or services like Manus AI that would be good at running the agentic, eventually we want to create our own agentic system that does Manus AI like work 24 hours a day.
+	
+	Another portion of this dashboard will be used to track businesses, profitability, projections, Realtime activity, token usage, etc. where more business are added over time as they are added to expand the application where each business has its own dashboard for monitoring activity.  There needs to be a framework for all of the business es to have endpoints, webhooks, etc. to get these KPI indicators to manage the agent,, workflow, activity, etc.
+	
+	Another future section can look at an existing codebase repo and evaluate all of the different ways it can be monetized into a business.
+
+20250102 - 
+
+	Utilize the MANUS AI agent API credits as one of the agents that will do some of the work
+
+	Trusted stable coins are used to replace banks for the agents.  
+
+20251230 -
+
+	Base initial business off of way the vendor application works at anthropic where ordering and everything can be done without seeing the customer, similar to licking envelops, business that are baennaine but invisible could make $1 an hour costing $.01 in tokens but the agent does not sleep.
+	
+	Claudius
+	The model that ran the vending machine at Anthropic was named Claudius. Claudius was an AI model developed by Anthropic, designed to autonomously manage a vending machine within the company's office. The experiment, known as Project Vend, aimed to test Claudius's ability to operate a small business with minimal human input. However, the experiment ended prematurely due to Claudius's inability to successfully run the vending machine, highlighting the challenges and risks associated with AI-driven business management. 
+	
+	
+20251226 - 
+
+	The agent that makes money will be called the "Go-Getter" and will triage all of the millions of ways to make money and tailor it to the users subscription, styles (personality, aggression, interests, culture, race, location, gender, etc.) so that the facing agency is a persona of the user as close as possible, in case the user is needed for special interfacing to some of the profit making setups, etc.
+	
+	The agent will have long, short, medium ways of making money based on the strategy selected, and the aggressiveness.  From basic questions this will be derived, and can be tuned later, based on successes and losses.  Average number of agents that run could be from 100 to 1 million that are running 24 hours a day.  Some of the agents are sharing only the successes,  not personal information, from other agents that are doing well on other accounts.
+	
+	The bot will also invent new ways of creating money that we have not thought about as a percentage of the profits, where two arbitrage or disappearance product/services/buy/sell/etc. are not linked for efficiencies of the market that have not been exploited yet and could be profitable but have some risk because were not done before.

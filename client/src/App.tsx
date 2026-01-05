@@ -1,0 +1,62 @@
+import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import NotFound from "@/pages/NotFound";
+import { Route, Switch } from "wouter";
+import ErrorBoundary from "./components/ErrorBoundary";
+import { ThemeProvider } from "./contexts/ThemeContext";
+import Home from "./pages/Home";
+import Wizard from "./pages/Wizard";
+import Catalog from "./pages/Catalog";
+import MyBusinesses from "./pages/MyBusinesses";
+import Monitoring from "./pages/Monitoring";
+import TokenUsage from "./pages/TokenUsage";
+import ApiConfig from "./pages/ApiConfig";
+import Webhooks from "./pages/Webhooks";
+import Blueprints from "./pages/Blueprints";
+import Resources from "./pages/Resources";
+import Settings from "./pages/Settings";
+
+function Router() {
+  // make sure to consider if you need authentication for certain routes
+  return (
+    <Switch>
+      <Route path="/" component={Home} />
+      <Route path="/wizard" component={Wizard} />
+      <Route path="/catalog" component={Catalog} />
+      <Route path="/my-businesses" component={MyBusinesses} />
+      <Route path="/monitoring" component={Monitoring} />
+      <Route path="/token-usage" component={TokenUsage} />
+      <Route path="/api-config" component={ApiConfig} />
+      <Route path="/webhooks" component={Webhooks} />
+      <Route path="/blueprints" component={Blueprints} />
+      <Route path="/resources" component={Resources} />
+      <Route path="/settings" component={Settings} />
+      <Route path="/404" component={NotFound} />
+      {/* Final fallback route */}
+      <Route component={NotFound} />
+    </Switch>
+  );
+}
+
+// NOTE: About Theme
+// - First choose a default theme according to your design style (dark or light bg), than change color palette in index.css
+//   to keep consistent foreground/background color across components
+// - If you want to make theme switchable, pass `switchable` ThemeProvider and use `useTheme` hook
+
+function App() {
+  return (
+    <ErrorBoundary>
+      <ThemeProvider
+        defaultTheme="dark"
+        // switchable
+      >
+        <TooltipProvider>
+          <Toaster />
+          <Router />
+        </TooltipProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
+  );
+}
+
+export default App;
