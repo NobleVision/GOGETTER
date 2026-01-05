@@ -1,4 +1,5 @@
 import { ApiConfig } from "@shared/types";
+import * as db from "../db";
 
 export type TaskType = 'research' | 'analysis' | 'generation' | 'scoring';
 export type ModelProvider = 'perplexity' | 'openai' | 'anthropic' | 'gemini' | 'grok' | 'manus';
@@ -15,7 +16,9 @@ export interface ModelRouter {
   executeWithFallback<T>(
     taskType: TaskType,
     prompt: string,
-    userConfigs: ApiConfig[]
+    userConfigs: ApiConfig[],
+    userId: number,
+    userBusinessId?: number
   ): Promise<T>;
 }
 
@@ -125,11 +128,14 @@ export class ModelRouterService implements ModelRouter {
   /**
    * Execute a request with fallback logic
    * Requirements 3.6: Add fallback logic for failed requests
+   * Requirements 3.7: Log all AI interactions for token usage tracking
    */
   async executeWithFallback<T>(
     taskType: TaskType,
     prompt: string,
-    userConfigs: ApiConfig[]
+    userConfigs: ApiConfig[],
+    userId: number,
+    userBusinessId?: number
   ): Promise<T> {
     // Get active providers from user configs
     const activeProviders = new Set(
@@ -158,7 +164,7 @@ export class ModelRouterService implements ModelRouter {
         const userConfig = userConfigs.find(config => config.provider === model.provider);
         if (!userConfig) continue;
 
-        const result = await this.executeModelRequest<T>(model, prompt, userConfig);
+        const result = await this.executeModelRequest<T>(model, prompt, userConfig, userId, userBusinessId);
         return result;
       } catch (error) {
         lastError = error as Error;
@@ -172,11 +178,14 @@ export class ModelRouterService implements ModelRouter {
 
   /**
    * Execute a request to a specific model
+   * Requirements 3.7: Log all AI interactions with model, tokens, cost
    */
   private async executeModelRequest<T>(
     model: ModelConfig,
     prompt: string,
-    userConfig: ApiConfig
+    userConfig: ApiConfig,
+    userId: number,
+    userBusinessId?: number
   ): Promise<T> {
     const baseUrl = userConfig.baseUrl || this.getDefaultBaseUrl(model.provider);
     const apiKey = userConfig.apiKey;
@@ -211,6 +220,9 @@ export class ModelRouterService implements ModelRouter {
 
     const result = await response.json();
     
+    // Log token usage
+    await this.logTokenUsage(model, result, userId, userBusinessId);
+    
     // Extract content from different response formats
     if (result.choices && result.choices[0] && result.choices[0].message) {
       const content = result.choices[0].message.content;
@@ -229,6 +241,47 @@ export class ModelRouterService implements ModelRouter {
     }
 
     throw new Error(`Unexpected response format from ${model.provider}`);
+  }
+
+  /**
+   * Log token usage to database
+   * Requirements 3.7: Log all AI interactions with model, tokens, cost
+   */
+  private async logTokenUsage(
+    model: ModelConfig,
+    result: any,
+    userId: number,
+    userBusinessId?: number
+  ): Promise<void> {
+    try {
+      const usage = result.usage;
+      if (!usage) {
+        console.warn(`No usage data returned from ${model.provider}/${model.model}`);
+        return;
+      }
+
+      const inputTokens = usage.prompt_tokens || 0;
+      const outputTokens = usage.completion_tokens || 0;
+      const totalTokens = usage.total_tokens || (inputTokens + outputTokens);
+      
+      // Calculate cost based on model's cost per 1k tokens
+      const totalCost = (totalTokens / 1000) * model.costPer1kTokens;
+
+      await db.logTokenUsage({
+        userId,
+        userBusinessId,
+        modelProvider: model.provider,
+        modelName: model.model,
+        inputTokens,
+        outputTokens,
+        totalCost: totalCost.toFixed(6)
+      });
+
+      console.log(`Logged token usage: ${model.provider}/${model.model} - ${totalTokens} tokens, $${totalCost.toFixed(6)}`);
+    } catch (error) {
+      console.error('Failed to log token usage:', error);
+      // Don't throw - token logging failure shouldn't break the main request
+    }
   }
 
   /**

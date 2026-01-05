@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
 import { trpc } from "@/lib/trpc";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { 
   Search, 
@@ -25,7 +25,9 @@ import {
   ChevronRight,
   Zap,
   Shield,
-  BarChart3
+  BarChart3,
+  Sparkles,
+  X
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -55,6 +57,30 @@ type Business = {
   implementationGuide: string | null;
 };
 
+type AIOpportunity = {
+  name: string;
+  description: string;
+  vertical: 'content_media' | 'digital_services' | 'ecommerce' | 'data_insights';
+  scores: {
+    guaranteedDemand: number;
+    automationLevel: number;
+    tokenEfficiency: number;
+    profitMargin: number;
+    maintenanceCost: number;
+    legalRisk: number;
+    competitionSaturation: number;
+    compositeScore: number;
+  };
+  estimatedRevenue: number;
+  estimatedCosts: number;
+  implementationGuide: string;
+  requiredApis?: string[];
+  infraRequirements?: string[];
+  setupTimeHours?: number;
+  minAgentsRequired?: number;
+  recommendedModels?: string[];
+};
+
 const VERTICALS = [
   { value: "all", label: "All Verticals" },
   { value: "content_media", label: "Content & Media" },
@@ -82,13 +108,157 @@ function ScoreBar({ label, value, color = "emerald" }: { label: string; value: n
   );
 }
 
+function AIOpportunityCard({ opportunity, onDismiss }: { opportunity: AIOpportunity; onDismiss: () => void }) {
+  const [showDetails, setShowDetails] = useState(false);
+  
+  const getScoreTier = (score: number) => {
+    if (score >= 90) return TIER_STYLES.prime;
+    if (score >= 70) return TIER_STYLES.stable;
+    if (score >= 50) return TIER_STYLES.experimental;
+    return TIER_STYLES.archived;
+  };
+
+  const tier = getScoreTier(opportunity.scores.compositeScore);
+
+  return (
+    <Card className="bg-gradient-to-br from-emerald-500/10 to-teal-600/10 border-emerald-500/30 hover:border-emerald-400 transition-all group">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-1">
+              <Badge variant="outline" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">
+                <Sparkles className="mr-1 h-3 w-3" />
+                AI Discovered
+              </Badge>
+              <Badge variant="outline" className={`${tier.bg} ${tier.text} ${tier.border} text-xs`}>
+                {tier.label}
+              </Badge>
+              <Badge variant="outline" className="text-xs capitalize">
+                {opportunity.vertical.replace('_', ' ')}
+              </Badge>
+            </div>
+            <CardTitle className="text-lg text-white group-hover:text-emerald-400 transition-colors">
+              {opportunity.name}
+            </CardTitle>
+          </div>
+          <div className="flex items-start gap-2">
+            <div className="flex flex-col items-end">
+              <div className="text-2xl font-bold text-emerald-400">{opportunity.scores.compositeScore}</div>
+              <div className="text-xs text-muted-foreground">Score</div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onDismiss}
+              className="h-6 w-6 p-0 text-muted-foreground hover:text-red-400"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+        <CardDescription className="line-clamp-2">{opportunity.description}</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        {/* Quick Stats */}
+        <div className="grid grid-cols-3 gap-3 text-center">
+          <div className="p-2 rounded-lg bg-emerald-500/10">
+            <DollarSign className="h-4 w-4 mx-auto text-emerald-400 mb-1" />
+            <div className="text-sm font-medium text-white">${(opportunity.estimatedRevenue / 30 / 24).toFixed(2)}/hr</div>
+            <div className="text-xs text-muted-foreground">Revenue</div>
+          </div>
+          <div className="p-2 rounded-lg bg-amber-500/10">
+            <Cpu className="h-4 w-4 mx-auto text-amber-400 mb-1" />
+            <div className="text-sm font-medium text-white">${(opportunity.estimatedCosts / 30 / 24).toFixed(2)}/hr</div>
+            <div className="text-xs text-muted-foreground">Cost</div>
+          </div>
+          <div className="p-2 rounded-lg bg-blue-500/10">
+            <Clock className="h-4 w-4 mx-auto text-blue-400 mb-1" />
+            <div className="text-sm font-medium text-white">{opportunity.setupTimeHours || '-'}h</div>
+            <div className="text-xs text-muted-foreground">Setup</div>
+          </div>
+        </div>
+
+        {/* Score Breakdown */}
+        <div className="space-y-2">
+          <ScoreBar label="Demand" value={opportunity.scores.guaranteedDemand} />
+          <ScoreBar label="Automation" value={opportunity.scores.automationLevel} />
+          <ScoreBar label="Token Efficiency" value={opportunity.scores.tokenEfficiency} />
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2 pt-2">
+          <Dialog open={showDetails} onOpenChange={setShowDetails}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex-1 border-emerald-500/30 hover:bg-emerald-500/10">
+                Details
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] bg-card border-border">
+              <DialogHeader>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
+                    <Sparkles className="mr-1 h-3 w-3" />
+                    AI Discovered
+                  </Badge>
+                  <Badge variant="outline" className={`${tier.bg} ${tier.text} ${tier.border}`}>
+                    {tier.label}
+                  </Badge>
+                  <Badge variant="outline" className="capitalize">
+                    {opportunity.vertical.replace('_', ' ')}
+                  </Badge>
+                </div>
+                <DialogTitle className="text-xl text-white">{opportunity.name}</DialogTitle>
+                <DialogDescription>{opportunity.description}</DialogDescription>
+              </DialogHeader>
+              <ScrollArea className="max-h-[60vh] pr-4">
+                <div className="space-y-6">
+                  {/* Implementation Guide */}
+                  <div>
+                    <h4 className="font-medium text-white mb-3 flex items-center gap-2">
+                      <Rocket className="h-4 w-4 text-emerald-400" />
+                      Implementation Guide
+                    </h4>
+                    <div className="p-4 rounded-lg bg-secondary/50 text-sm text-muted-foreground whitespace-pre-line">
+                      {opportunity.implementationGuide}
+                    </div>
+                  </div>
+                </div>
+              </ScrollArea>
+              <div className="flex gap-3 pt-4 border-t border-border">
+                <Button variant="outline" onClick={() => setShowDetails(false)} className="flex-1">
+                  Close
+                </Button>
+                <Button 
+                  className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-0"
+                  disabled
+                >
+                  <Rocket className="mr-2 h-4 w-4" />
+                  Coming Soon
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+          <Button 
+            disabled
+            className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0 opacity-50"
+          >
+            <Rocket className="mr-2 h-4 w-4" />
+            Coming Soon
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function BusinessCard({ business, onDeploy }: { business: Business; onDeploy: () => void }) {
   const tier = TIER_STYLES[business.scoreTier as keyof typeof TIER_STYLES] || TIER_STYLES.experimental;
   const [showDetails, setShowDetails] = useState(false);
 
   const formatCurrency = (value: string | null) => {
     if (!value) return '-';
-    return `$${parseFloat(value).toFixed(2)}`;
+    return `${parseFloat(value).toFixed(2)}`;
   };
 
   return (
@@ -144,143 +314,10 @@ function BusinessCard({ business, onDeploy }: { business: Business; onDeploy: ()
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">
-          <Dialog open={showDetails} onOpenChange={setShowDetails}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="flex-1 border-border">
-                Details
-                <ChevronRight className="ml-1 h-4 w-4" />
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] bg-card border-border">
-              <DialogHeader>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className={`${tier.bg} ${tier.text} ${tier.border}`}>
-                    {tier.label}
-                  </Badge>
-                  <Badge variant="outline" className="capitalize">
-                    {business.vertical.replace('_', ' ')}
-                  </Badge>
-                </div>
-                <DialogTitle className="text-xl text-white">{business.name}</DialogTitle>
-                <DialogDescription>{business.description}</DialogDescription>
-              </DialogHeader>
-              <ScrollArea className="max-h-[60vh] pr-4">
-                <div className="space-y-6">
-                  {/* Score Breakdown */}
-                  <div>
-                    <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-                      <BarChart3 className="h-4 w-4 text-emerald-400" />
-                      Score Breakdown
-                    </h4>
-                    <div className="grid gap-3">
-                      <ScoreBar label="Guaranteed Demand" value={business.guaranteedDemand} />
-                      <ScoreBar label="Automation Level" value={business.automationLevel} />
-                      <ScoreBar label="Token Efficiency" value={business.tokenEfficiency} />
-                      <ScoreBar label="Profit Margin" value={business.profitMargin} />
-                      <ScoreBar label="Maintenance Cost (lower=better)" value={100 - business.maintenanceCost} color="blue" />
-                      <ScoreBar label="Legal Risk (lower=better)" value={100 - business.legalRisk} color="amber" />
-                      <ScoreBar label="Competition (lower=better)" value={100 - business.competitionSaturation} color="purple" />
-                    </div>
-                  </div>
-
-                  {/* Financial Projections */}
-                  <div>
-                    <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-                      <DollarSign className="h-4 w-4 text-emerald-400" />
-                      Financial Projections
-                    </h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="p-3 rounded-lg bg-secondary/50">
-                        <div className="text-sm text-muted-foreground">Revenue/Hour</div>
-                        <div className="text-lg font-medium text-emerald-400">{formatCurrency(business.estimatedRevenuePerHour)}</div>
-                      </div>
-                      <div className="p-3 rounded-lg bg-secondary/50">
-                        <div className="text-sm text-muted-foreground">Token Cost/Hour</div>
-                        <div className="text-lg font-medium text-amber-400">{formatCurrency(business.estimatedTokenCostPerHour)}</div>
-                      </div>
-                      <div className="p-3 rounded-lg bg-secondary/50">
-                        <div className="text-sm text-muted-foreground">Infra Cost/Day</div>
-                        <div className="text-lg font-medium text-blue-400">{formatCurrency(business.estimatedInfraCostPerDay)}</div>
-                      </div>
-                      <div className="p-3 rounded-lg bg-secondary/50">
-                        <div className="text-sm text-muted-foreground">Setup Cost</div>
-                        <div className="text-lg font-medium text-white">{formatCurrency(business.setupCost)}</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Requirements */}
-                  <div>
-                    <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-                      <Cpu className="h-4 w-4 text-emerald-400" />
-                      Requirements
-                    </h4>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="p-3 rounded-lg bg-secondary/50">
-                        <div className="text-sm text-muted-foreground">Setup Time</div>
-                        <div className="font-medium text-white">{business.setupTimeHours || '-'} hours</div>
-                      </div>
-                      <div className="p-3 rounded-lg bg-secondary/50">
-                        <div className="text-sm text-muted-foreground">Min Agents</div>
-                        <div className="font-medium text-white">{business.minAgentsRequired || '-'} agents</div>
-                      </div>
-                    </div>
-                    {business.recommendedModels && (
-                      <div className="mt-3">
-                        <div className="text-sm text-muted-foreground mb-2">Recommended Models</div>
-                        <div className="flex flex-wrap gap-2">
-                          {(typeof business.recommendedModels === 'string' 
-                            ? JSON.parse(business.recommendedModels) 
-                            : business.recommendedModels
-                          ).map((model: string, idx: number) => (
-                            <Badge key={idx} variant="outline" className="text-xs">{model}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                    {business.requiredApis && (
-                      <div className="mt-3">
-                        <div className="text-sm text-muted-foreground mb-2">Required APIs</div>
-                        <div className="flex flex-wrap gap-2">
-                          {(typeof business.requiredApis === 'string' 
-                            ? JSON.parse(business.requiredApis) 
-                            : business.requiredApis
-                          ).map((api: string, idx: number) => (
-                            <Badge key={idx} variant="outline" className="text-xs">{api}</Badge>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Implementation Guide */}
-                  {business.implementationGuide && (
-                    <div>
-                      <h4 className="font-medium text-white mb-3 flex items-center gap-2">
-                        <Rocket className="h-4 w-4 text-emerald-400" />
-                        Implementation Guide
-                      </h4>
-                      <div className="p-4 rounded-lg bg-secondary/50 text-sm text-muted-foreground whitespace-pre-line">
-                        {business.implementationGuide}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </ScrollArea>
-              <div className="flex gap-3 pt-4 border-t border-border">
-                <Button variant="outline" onClick={() => setShowDetails(false)} className="flex-1">
-                  Close
-                </Button>
-                <Button 
-                  onClick={() => { setShowDetails(false); onDeploy(); }}
-                  className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 text-white border-0"
-                >
-                  <Rocket className="mr-2 h-4 w-4" />
-                  Deploy Business
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+          <Button variant="outline" className="flex-1 border-border">
+            Details
+            <ChevronRight className="ml-1 h-4 w-4" />
+          </Button>
           <Button 
             onClick={onDeploy}
             className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0"
@@ -298,6 +335,30 @@ export default function Catalog() {
   const [search, setSearch] = useState("");
   const [vertical, setVertical] = useState("all");
   const [sortBy, setSortBy] = useState("score");
+  const [aiOpportunities, setAiOpportunities] = useState<AIOpportunity[]>([]);
+
+  // Load AI-discovered opportunities from sessionStorage
+  useEffect(() => {
+    const stored = sessionStorage.getItem('aiDiscoveredOpportunities');
+    if (stored) {
+      try {
+        const opportunities = JSON.parse(stored) as AIOpportunity[];
+        setAiOpportunities(opportunities);
+      } catch (error) {
+        console.error('Failed to parse AI opportunities:', error);
+      }
+    }
+  }, []);
+
+  const dismissAiOpportunity = (index: number) => {
+    const updated = aiOpportunities.filter((_, i) => i !== index);
+    setAiOpportunities(updated);
+    if (updated.length === 0) {
+      sessionStorage.removeItem('aiDiscoveredOpportunities');
+    } else {
+      sessionStorage.setItem('aiDiscoveredOpportunities', JSON.stringify(updated));
+    }
+  };
 
   const { data: businesses, isLoading } = trpc.businesses.list.useQuery({
     vertical: vertical === "all" ? undefined : vertical as any,
@@ -371,6 +432,42 @@ export default function Catalog() {
             </Badge>
           </div>
         </div>
+
+        {/* AI-Discovered Opportunities */}
+        {aiOpportunities.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-emerald-400" />
+                <h2 className="text-xl font-semibold text-white">AI-Discovered Opportunities</h2>
+                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                  Personalized for you
+                </Badge>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setAiOpportunities([]);
+                  sessionStorage.removeItem('aiDiscoveredOpportunities');
+                }}
+                className="text-muted-foreground hover:text-red-400"
+              >
+                <X className="h-4 w-4 mr-1" />
+                Dismiss All
+              </Button>
+            </div>
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {aiOpportunities.map((opportunity, index) => (
+                <AIOpportunityCard
+                  key={index}
+                  opportunity={opportunity}
+                  onDismiss={() => dismissAiOpportunity(index)}
+                />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Filters */}
         <Card className="bg-card border-border">

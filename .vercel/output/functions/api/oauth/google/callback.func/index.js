@@ -47443,9 +47443,36 @@ var SDKServer = class {
 var sdk = new SDKServer();
 
 // api/oauth/google/callback.ts
+function parseQueryParams(req) {
+  if (req.query && typeof req.query === "object") {
+    const result2 = {};
+    for (const [key, value] of Object.entries(req.query)) {
+      if (typeof value === "string") {
+        result2[key] = value;
+      } else if (Array.isArray(value) && value.length > 0) {
+        result2[key] = value[0];
+      }
+    }
+    if (Object.keys(result2).length > 0) {
+      return result2;
+    }
+  }
+  const url2 = req.url || "";
+  const queryIndex = url2.indexOf("?");
+  if (queryIndex === -1) {
+    return {};
+  }
+  const queryString = url2.slice(queryIndex + 1);
+  const params = new URLSearchParams(queryString);
+  const result = {};
+  for (const [key, value] of params.entries()) {
+    result[key] = value;
+  }
+  return result;
+}
 function getQueryParam(req, key) {
-  const value = req.query[key];
-  return typeof value === "string" ? value : void 0;
+  const params = parseQueryParams(req);
+  return params[key];
 }
 function redirect(res, statusCode, url2) {
   res.writeHead(statusCode, { Location: url2 });

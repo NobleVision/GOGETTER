@@ -9,9 +9,46 @@ import { sdk } from "../../server/_core/sdk";
 import * as db from "../../server/db";
 import { COOKIE_NAME, ONE_YEAR_MS } from "../../shared/const";
 
+/**
+ * Parse query parameters from URL.
+ * In bundled Vercel functions, req.query may be undefined,
+ * so we parse directly from the URL as a fallback.
+ */
+function parseQueryParams(req: VercelRequest): Record<string, string> {
+  // First try req.query if it exists
+  if (req.query && typeof req.query === "object") {
+    const result: Record<string, string> = {};
+    for (const [key, value] of Object.entries(req.query)) {
+      if (typeof value === "string") {
+        result[key] = value;
+      } else if (Array.isArray(value) && value.length > 0) {
+        result[key] = value[0];
+      }
+    }
+    if (Object.keys(result).length > 0) {
+      return result;
+    }
+  }
+
+  // Fallback: parse from URL
+  const url = req.url || "";
+  const queryIndex = url.indexOf("?");
+  if (queryIndex === -1) {
+    return {};
+  }
+
+  const queryString = url.slice(queryIndex + 1);
+  const params = new URLSearchParams(queryString);
+  const result: Record<string, string> = {};
+  for (const [key, value] of params.entries()) {
+    result[key] = value;
+  }
+  return result;
+}
+
 function getQueryParam(req: VercelRequest, key: string): string | undefined {
-  const value = req.query[key];
-  return typeof value === "string" ? value : undefined;
+  const params = parseQueryParams(req);
+  return params[key];
 }
 
 /**

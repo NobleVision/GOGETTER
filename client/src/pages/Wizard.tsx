@@ -93,11 +93,34 @@ export default function Wizard() {
 
   const upsertProfile = trpc.profile.upsert.useMutation({
     onSuccess: () => {
-      toast.success("Profile saved! Redirecting to catalog...");
-      setTimeout(() => setLocation('/catalog'), 1500);
+      toast.success("Profile saved! Discovering opportunities...");
+      // Call Go-Getter agent after profile is saved
+      discoverOpportunities.mutate({
+        preferences: {
+          riskTolerance: formData.riskTolerance,
+          interests: formData.interests,
+          capitalAvailable: parseFloat(formData.capitalAvailable) || 0,
+          technicalSkills: formData.technicalSkills,
+          businessGoals: formData.businessGoals,
+        }
+      });
     },
     onError: (error) => {
       toast.error(error.message || "Failed to save profile");
+    }
+  });
+
+  const discoverOpportunities = trpc.agent.discover.useMutation({
+    onSuccess: (opportunities) => {
+      toast.success(`Discovered ${opportunities.length} AI-powered opportunities!`);
+      // Store opportunities in sessionStorage for the catalog page
+      sessionStorage.setItem('aiDiscoveredOpportunities', JSON.stringify(opportunities));
+      setTimeout(() => setLocation('/catalog'), 1500);
+    },
+    onError: (error) => {
+      console.warn('AI discovery failed, falling back to static catalog:', error);
+      toast.success("Profile saved! Redirecting to catalog...");
+      setTimeout(() => setLocation('/catalog'), 1500);
     }
   });
 
@@ -562,13 +585,15 @@ export default function Wizard() {
             )}
             <Button 
               onClick={handleNext}
-              disabled={upsertProfile.isPending}
+              disabled={upsertProfile.isPending || discoverOpportunities.isPending}
               className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0"
             >
               {step === STEPS.length ? (
                 <>
                   <Zap className="mr-2 h-4 w-4" />
-                  {upsertProfile.isPending ? 'Saving...' : 'Find Businesses'}
+                  {upsertProfile.isPending ? 'Saving Profile...' : 
+                   discoverOpportunities.isPending ? 'AI Discovering...' : 
+                   'Find Businesses'}
                 </>
               ) : (
                 <>

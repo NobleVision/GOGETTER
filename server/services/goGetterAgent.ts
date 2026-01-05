@@ -28,7 +28,7 @@ export interface CompositeScores {
 }
 
 export interface GoGetterAgent {
-  discoverOpportunities(preferences: UserPreferences, userConfigs: ApiConfig[]): Promise<BusinessOpportunity[]>;
+  discoverOpportunities(preferences: UserPreferences, userConfigs: ApiConfig[], userId: number): Promise<BusinessOpportunity[]>;
   scoreOpportunity(opportunity: Partial<BusinessOpportunity>): CompositeScores;
 }
 
@@ -36,8 +36,9 @@ export class GoGetterAgentService implements GoGetterAgent {
   /**
    * Discover business opportunities using AI
    * Requirements 3.1, 3.2: Use AI to research opportunities based on user preferences
+   * Requirements 3.7: Log all AI interactions for token usage tracking
    */
-  async discoverOpportunities(preferences: UserPreferences, userConfigs: ApiConfig[]): Promise<BusinessOpportunity[]> {
+  async discoverOpportunities(preferences: UserPreferences, userConfigs: ApiConfig[], userId: number): Promise<BusinessOpportunity[]> {
     try {
       // Generate research prompt based on user preferences
       const researchPrompt = this.buildResearchPrompt(preferences);
@@ -46,7 +47,8 @@ export class GoGetterAgentService implements GoGetterAgent {
       const researchResults = await modelRouter.executeWithFallback<string>(
         'research',
         researchPrompt,
-        userConfigs
+        userConfigs,
+        userId
       );
 
       // Generate analysis prompt to structure the research
@@ -56,7 +58,8 @@ export class GoGetterAgentService implements GoGetterAgent {
       const analysisResults = await modelRouter.executeWithFallback<BusinessOpportunity[]>(
         'analysis',
         analysisPrompt,
-        userConfigs
+        userConfigs,
+        userId
       );
 
       // Score each opportunity and ensure proper structure

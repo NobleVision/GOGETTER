@@ -6,6 +6,7 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
 import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
 import * as db from "./db";
+import { goGetterAgent } from "./services/goGetterAgent";
 
 export const appRouter = router({
   system: systemRouter,
@@ -312,6 +313,96 @@ export const appRouter = router({
       .input(z.object({ id: z.number() }))
       .query(async ({ ctx, input }) => {
         return db.getDiscoveryPresetById(ctx.user.id, input.id);
+      }),
+  }),
+
+  // Go-Getter Agent
+  agent: router({
+    discover: protectedProcedure
+      .input(z.object({
+        preferences: z.object({
+          riskTolerance: z.enum(["conservative", "moderate", "aggressive"]),
+          interests: z.array(z.string()),
+          capitalAvailable: z.number(),
+          technicalSkills: z.string(),
+          businessGoals: z.array(z.string()),
+        }),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Get user's API configurations
+        const userConfigs = await db.getApiConfigs(ctx.user.id);
+        const activeConfigs = userConfigs.filter(config => config.isActive && config.apiKey);
+        
+        // Requirements 3.5: Handle fallback to static catalog when no APIs configured
+        if (activeConfigs.length === 0) {
+          console.log('No active API configs found, falling back to static catalog');
+          // Return static business catalog as fallback
+          const staticBusinesses = await db.getAllBusinesses(true);
+          
+          // Convert to BusinessOpportunity format
+          return staticBusinesses.slice(0, 5).map(business => ({
+            name: business.name,
+            description: business.description,
+            vertical: business.vertical,
+            scores: {
+              guaranteedDemand: business.guaranteedDemand,
+              automationLevel: business.automationLevel,
+              tokenEfficiency: business.tokenEfficiency,
+              profitMargin: business.profitMargin,
+              maintenanceCost: business.maintenanceCost,
+              legalRisk: business.legalRisk,
+              competitionSaturation: business.competitionSaturation,
+              compositeScore: business.compositeScore,
+            },
+            estimatedRevenue: parseFloat(business.estimatedRevenuePerHour || '0') * 24 * 30, // Monthly estimate
+            estimatedCosts: parseFloat(business.estimatedTokenCostPerHour || '0') * 24 * 30 + parseFloat(business.estimatedInfraCostPerDay || '0') * 30,
+            implementationGuide: business.implementationGuide || 'Implementation guide available in business catalog.',
+            requiredApis: business.requiredApis || [],
+            infraRequirements: business.infraRequirements || [],
+            setupTimeHours: business.setupTimeHours,
+            minAgentsRequired: business.minAgentsRequired,
+            recommendedModels: business.recommendedModels || [],
+          }));
+        }
+
+        try {
+          // Requirements 3.1: Use Go-Getter agent to discover opportunities
+          const opportunities = await goGetterAgent.discoverOpportunities(
+            input.preferences,
+            activeConfigs,
+            ctx.user.id
+          );
+          
+          return opportunities;
+        } catch (error) {
+          console.error('Agent discovery failed, falling back to static catalog:', error);
+          
+          // Fallback to static catalog on error
+          const staticBusinesses = await db.getAllBusinesses(true);
+          return staticBusinesses.slice(0, 5).map(business => ({
+            name: business.name,
+            description: business.description,
+            vertical: business.vertical,
+            scores: {
+              guaranteedDemand: business.guaranteedDemand,
+              automationLevel: business.automationLevel,
+              tokenEfficiency: business.tokenEfficiency,
+              profitMargin: business.profitMargin,
+              maintenanceCost: business.maintenanceCost,
+              legalRisk: business.legalRisk,
+              competitionSaturation: business.competitionSaturation,
+              compositeScore: business.compositeScore,
+            },
+            estimatedRevenue: parseFloat(business.estimatedRevenuePerHour || '0') * 24 * 30,
+            estimatedCosts: parseFloat(business.estimatedTokenCostPerHour || '0') * 24 * 30 + parseFloat(business.estimatedInfraCostPerDay || '0') * 30,
+            implementationGuide: business.implementationGuide || 'Implementation guide available in business catalog.',
+            requiredApis: business.requiredApis || [],
+            infraRequirements: business.infraRequirements || [],
+            setupTimeHours: business.setupTimeHours,
+            minAgentsRequired: business.minAgentsRequired,
+            recommendedModels: business.recommendedModels || [],
+          }));
+        }
       }),
   }),
 });

@@ -53660,6 +53660,379 @@ function getScoreTier(score) {
   return "archived";
 }
 
+// server/services/modelRouter.ts
+var MODEL_CONFIGS = [
+  // Perplexity - Great for research
+  {
+    provider: "perplexity",
+    model: "llama-3.1-sonar-small-128k-online",
+    costPer1kTokens: 2e-4,
+    capabilities: ["research", "analysis"]
+  },
+  {
+    provider: "perplexity",
+    model: "llama-3.1-sonar-large-128k-online",
+    costPer1kTokens: 1e-3,
+    capabilities: ["research", "analysis", "generation"]
+  },
+  // OpenAI - Versatile for all tasks
+  {
+    provider: "openai",
+    model: "gpt-4o-mini",
+    costPer1kTokens: 15e-5,
+    capabilities: ["research", "analysis", "generation", "scoring"]
+  },
+  {
+    provider: "openai",
+    model: "gpt-4o",
+    costPer1kTokens: 25e-4,
+    capabilities: ["research", "analysis", "generation", "scoring"]
+  },
+  // Anthropic - Good for analysis and generation
+  {
+    provider: "anthropic",
+    model: "claude-3-haiku-20240307",
+    costPer1kTokens: 25e-5,
+    capabilities: ["analysis", "generation", "scoring"]
+  },
+  {
+    provider: "anthropic",
+    model: "claude-3-5-sonnet-20241022",
+    costPer1kTokens: 3e-3,
+    capabilities: ["research", "analysis", "generation", "scoring"]
+  },
+  // Gemini - Cost-effective for generation
+  {
+    provider: "gemini",
+    model: "gemini-1.5-flash",
+    costPer1kTokens: 75e-6,
+    capabilities: ["analysis", "generation", "scoring"]
+  },
+  {
+    provider: "gemini",
+    model: "gemini-1.5-pro",
+    costPer1kTokens: 125e-5,
+    capabilities: ["research", "analysis", "generation", "scoring"]
+  },
+  // Grok - Alternative for generation
+  {
+    provider: "grok",
+    model: "grok-beta",
+    costPer1kTokens: 5e-4,
+    capabilities: ["analysis", "generation", "scoring"]
+  },
+  // Manus - Fallback option
+  {
+    provider: "manus",
+    model: "gemini-2.5-flash",
+    costPer1kTokens: 1e-4,
+    capabilities: ["research", "analysis", "generation", "scoring"]
+  }
+];
+var ModelRouterService = class {
+  /**
+   * Select the most cost-effective model for a given task type
+   * Requirements 3.3: Route requests to most cost-effective model
+   */
+  selectModel(taskType, userConfigs) {
+    const activeProviders = new Set(
+      userConfigs.filter((config2) => config2.isActive && config2.apiKey).map((config2) => config2.provider)
+    );
+    const capableModels = MODEL_CONFIGS.filter(
+      (model) => model.capabilities.includes(taskType) && activeProviders.has(model.provider)
+    );
+    if (capableModels.length === 0) {
+      return null;
+    }
+    capableModels.sort((a, b) => a.costPer1kTokens - b.costPer1kTokens);
+    return capableModels[0];
+  }
+  /**
+   * Execute a request with fallback logic
+   * Requirements 3.6: Add fallback logic for failed requests
+   * Requirements 3.7: Log all AI interactions for token usage tracking
+   */
+  async executeWithFallback(taskType, prompt, userConfigs, userId, userBusinessId) {
+    const activeProviders = new Set(
+      userConfigs.filter((config2) => config2.isActive && config2.apiKey).map((config2) => config2.provider)
+    );
+    const capableModels = MODEL_CONFIGS.filter(
+      (model) => model.capabilities.includes(taskType) && activeProviders.has(model.provider)
+    ).sort((a, b) => a.costPer1kTokens - b.costPer1kTokens);
+    if (capableModels.length === 0) {
+      throw new Error(`No configured models available for task type: ${taskType}`);
+    }
+    let lastError = null;
+    for (const model of capableModels) {
+      try {
+        const userConfig = userConfigs.find((config2) => config2.provider === model.provider);
+        if (!userConfig) continue;
+        const result = await this.executeModelRequest(model, prompt, userConfig, userId, userBusinessId);
+        return result;
+      } catch (error46) {
+        lastError = error46;
+        console.warn(`Model ${model.provider}/${model.model} failed:`, error46);
+        continue;
+      }
+    }
+    throw new Error(`All models failed. Last error: ${lastError?.message}`);
+  }
+  /**
+   * Execute a request to a specific model
+   * Requirements 3.7: Log all AI interactions with model, tokens, cost
+   */
+  async executeModelRequest(model, prompt, userConfig, userId, userBusinessId) {
+    const baseUrl = userConfig.baseUrl || this.getDefaultBaseUrl(model.provider);
+    const apiKey = userConfig.apiKey;
+    if (!apiKey) {
+      throw new Error(`No API key configured for ${model.provider}`);
+    }
+    const response = await fetch(`${baseUrl}/chat/completions`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${apiKey}`
+      },
+      body: JSON.stringify({
+        model: model.model,
+        messages: [
+          {
+            role: "user",
+            content: prompt
+          }
+        ],
+        max_tokens: 4e3,
+        temperature: 0.7
+      })
+    });
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`${model.provider} API error: ${response.status} ${errorText}`);
+    }
+    const result = await response.json();
+    await this.logTokenUsage(model, result, userId, userBusinessId);
+    if (result.choices && result.choices[0] && result.choices[0].message) {
+      const content = result.choices[0].message.content;
+      if (typeof content === "string" && content.trim().startsWith("{")) {
+        try {
+          return JSON.parse(content);
+        } catch {
+          return content;
+        }
+      }
+      return content;
+    }
+    throw new Error(`Unexpected response format from ${model.provider}`);
+  }
+  /**
+   * Log token usage to database
+   * Requirements 3.7: Log all AI interactions with model, tokens, cost
+   */
+  async logTokenUsage(model, result, userId, userBusinessId) {
+    try {
+      const usage = result.usage;
+      if (!usage) {
+        console.warn(`No usage data returned from ${model.provider}/${model.model}`);
+        return;
+      }
+      const inputTokens = usage.prompt_tokens || 0;
+      const outputTokens = usage.completion_tokens || 0;
+      const totalTokens = usage.total_tokens || inputTokens + outputTokens;
+      const totalCost = totalTokens / 1e3 * model.costPer1kTokens;
+      await logTokenUsage({
+        userId,
+        userBusinessId,
+        modelProvider: model.provider,
+        modelName: model.model,
+        inputTokens,
+        outputTokens,
+        totalCost: totalCost.toFixed(6)
+      });
+      console.log(`Logged token usage: ${model.provider}/${model.model} - ${totalTokens} tokens, $${totalCost.toFixed(6)}`);
+    } catch (error46) {
+      console.error("Failed to log token usage:", error46);
+    }
+  }
+  /**
+   * Get default base URL for each provider
+   */
+  getDefaultBaseUrl(provider) {
+    const baseUrls = {
+      perplexity: "https://api.perplexity.ai",
+      openai: "https://api.openai.com/v1",
+      anthropic: "https://api.anthropic.com/v1",
+      gemini: "https://generativelanguage.googleapis.com/v1beta",
+      grok: "https://api.x.ai/v1",
+      manus: "https://forge.manus.im/v1"
+    };
+    return baseUrls[provider];
+  }
+};
+var modelRouter = new ModelRouterService();
+
+// server/services/goGetterAgent.ts
+var GoGetterAgentService = class {
+  /**
+   * Discover business opportunities using AI
+   * Requirements 3.1, 3.2: Use AI to research opportunities based on user preferences
+   * Requirements 3.7: Log all AI interactions for token usage tracking
+   */
+  async discoverOpportunities(preferences, userConfigs, userId) {
+    try {
+      const researchPrompt = this.buildResearchPrompt(preferences);
+      const researchResults = await modelRouter.executeWithFallback(
+        "research",
+        researchPrompt,
+        userConfigs,
+        userId
+      );
+      const analysisPrompt = this.buildAnalysisPrompt(researchResults, preferences);
+      const analysisResults = await modelRouter.executeWithFallback(
+        "analysis",
+        analysisPrompt,
+        userConfigs,
+        userId
+      );
+      const scoredOpportunities = analysisResults.map((opportunity) => {
+        const scores = this.scoreOpportunity(opportunity);
+        return {
+          ...opportunity,
+          scores,
+          estimatedRevenue: opportunity.estimatedRevenue || 0,
+          estimatedCosts: opportunity.estimatedCosts || 0,
+          implementationGuide: opportunity.implementationGuide || "Implementation guide to be developed."
+        };
+      });
+      return scoredOpportunities.sort((a, b) => b.scores.compositeScore - a.scores.compositeScore);
+    } catch (error46) {
+      console.error("Go-Getter Agent discovery failed:", error46);
+      throw new Error(`Failed to discover opportunities: ${error46 instanceof Error ? error46.message : "Unknown error"}`);
+    }
+  }
+  /**
+   * Score a business opportunity using composite scoring algorithm
+   * Requirements 3.4: Implement composite scoring for discovered opportunities
+   */
+  scoreOpportunity(opportunity) {
+    const scores = {
+      guaranteedDemand: opportunity.scores?.guaranteedDemand || 50,
+      automationLevel: opportunity.scores?.automationLevel || 50,
+      tokenEfficiency: opportunity.scores?.tokenEfficiency || 50,
+      profitMargin: opportunity.scores?.profitMargin || 50,
+      maintenanceCost: opportunity.scores?.maintenanceCost || 50,
+      legalRisk: opportunity.scores?.legalRisk || 50,
+      competitionSaturation: opportunity.scores?.competitionSaturation || 50,
+      compositeScore: 0
+    };
+    scores.compositeScore = this.calculateCompositeScore(scores);
+    return scores;
+  }
+  /**
+   * Build research prompt based on user preferences
+   * Requirements 3.2: Include user preferences in prompts
+   */
+  buildResearchPrompt(preferences) {
+    const riskLevel = preferences.riskTolerance;
+    const interests = preferences.interests.join(", ");
+    const capital = preferences.capitalAvailable;
+    const skills = preferences.technicalSkills;
+    const goals = preferences.businessGoals.join(", ");
+    return `
+You are a business opportunity researcher. Research and identify 3-5 autonomous micro-business opportunities based on these user preferences:
+
+Risk Tolerance: ${riskLevel}
+Interests: ${interests}
+Available Capital: $${capital}
+Technical Skills: ${skills}
+Business Goals: ${goals}
+
+Focus on businesses that can be automated using AI agents and require minimal human intervention. Consider current market trends, emerging technologies, and opportunities in these verticals:
+- Content & Media (content creation, social media management, newsletter automation)
+- Digital Services (data processing, API services, automation tools)
+- E-commerce (dropshipping, digital products, marketplace tools)
+- Data & Insights (market research, data analysis, reporting services)
+
+For each opportunity, research:
+1. Market demand and competition
+2. Automation potential using AI/LLMs
+3. Revenue potential and cost structure
+4. Required technical setup and APIs
+5. Legal and regulatory considerations
+6. Time to market and setup complexity
+
+Provide detailed research findings for each opportunity.`;
+  }
+  /**
+   * Build analysis prompt to structure research results
+   */
+  buildAnalysisPrompt(researchResults, preferences) {
+    return `
+Based on the following research results, structure the findings into a JSON array of business opportunities.
+
+Research Results:
+${researchResults}
+
+User Preferences:
+- Risk Tolerance: ${preferences.riskTolerance}
+- Available Capital: $${preferences.capitalAvailable}
+- Technical Skills: ${preferences.technicalSkills}
+
+Return a JSON array with 3-5 business opportunities. Each opportunity should have this exact structure:
+
+{
+  "name": "Business Name",
+  "description": "Detailed description of the business opportunity",
+  "vertical": "content_media" | "digital_services" | "ecommerce" | "data_insights",
+  "scores": {
+    "guaranteedDemand": 0-100,
+    "automationLevel": 0-100,
+    "tokenEfficiency": 0-100,
+    "profitMargin": 0-100,
+    "maintenanceCost": 0-100,
+    "legalRisk": 0-100,
+    "competitionSaturation": 0-100
+  },
+  "estimatedRevenue": monthly_revenue_estimate_in_dollars,
+  "estimatedCosts": monthly_cost_estimate_in_dollars,
+  "implementationGuide": "Step-by-step implementation guide",
+  "requiredApis": ["list", "of", "required", "apis"],
+  "infraRequirements": ["list", "of", "infrastructure", "requirements"],
+  "setupTimeHours": estimated_hours_to_setup,
+  "minAgentsRequired": minimum_number_of_ai_agents,
+  "recommendedModels": ["recommended", "ai", "models"]
+}
+
+Score each factor from 0-100 where:
+- guaranteedDemand: How certain is the market demand (higher = more certain)
+- automationLevel: How much can be automated (higher = more automated)
+- tokenEfficiency: How cost-effective for AI tokens (higher = more efficient)
+- profitMargin: Expected profit margins (higher = better margins)
+- maintenanceCost: Ongoing maintenance needs (lower = less maintenance)
+- legalRisk: Legal/regulatory risks (lower = less risky)
+- competitionSaturation: Market competition level (lower = less competition)
+
+Return only the JSON array, no additional text.`;
+  }
+  /**
+   * Calculate composite score using weighted algorithm
+   * Same algorithm as used in server/db.ts
+   */
+  calculateCompositeScore(scores) {
+    const weights = {
+      guaranteedDemand: 0.2,
+      automationLevel: 0.15,
+      tokenEfficiency: 0.15,
+      profitMargin: 0.15,
+      maintenanceCost: 0.1,
+      legalRisk: 0.1,
+      competitionSaturation: 0.1
+    };
+    const score = scores.guaranteedDemand * weights.guaranteedDemand + scores.automationLevel * weights.automationLevel + scores.tokenEfficiency * weights.tokenEfficiency + scores.profitMargin * weights.profitMargin + (100 - scores.maintenanceCost) * weights.maintenanceCost + (100 - scores.legalRisk) * weights.legalRisk + (100 - scores.competitionSaturation) * weights.competitionSaturation;
+    return Math.round(score);
+  }
+};
+var goGetterAgent = new GoGetterAgentService();
+
 // server/routers.ts
 var cookie = require_dist3();
 var appRouter = router({
@@ -53901,6 +54274,83 @@ var appRouter = router({
     }),
     get: protectedProcedure.input(external_exports.object({ id: external_exports.number() })).query(async ({ ctx, input }) => {
       return getDiscoveryPresetById(ctx.user.id, input.id);
+    })
+  }),
+  // Go-Getter Agent
+  agent: router({
+    discover: protectedProcedure.input(external_exports.object({
+      preferences: external_exports.object({
+        riskTolerance: external_exports.enum(["conservative", "moderate", "aggressive"]),
+        interests: external_exports.array(external_exports.string()),
+        capitalAvailable: external_exports.number(),
+        technicalSkills: external_exports.string(),
+        businessGoals: external_exports.array(external_exports.string())
+      })
+    })).mutation(async ({ ctx, input }) => {
+      const userConfigs = await getApiConfigs(ctx.user.id);
+      const activeConfigs = userConfigs.filter((config2) => config2.isActive && config2.apiKey);
+      if (activeConfigs.length === 0) {
+        console.log("No active API configs found, falling back to static catalog");
+        const staticBusinesses = await getAllBusinesses(true);
+        return staticBusinesses.slice(0, 5).map((business) => ({
+          name: business.name,
+          description: business.description,
+          vertical: business.vertical,
+          scores: {
+            guaranteedDemand: business.guaranteedDemand,
+            automationLevel: business.automationLevel,
+            tokenEfficiency: business.tokenEfficiency,
+            profitMargin: business.profitMargin,
+            maintenanceCost: business.maintenanceCost,
+            legalRisk: business.legalRisk,
+            competitionSaturation: business.competitionSaturation,
+            compositeScore: business.compositeScore
+          },
+          estimatedRevenue: parseFloat(business.estimatedRevenuePerHour || "0") * 24 * 30,
+          // Monthly estimate
+          estimatedCosts: parseFloat(business.estimatedTokenCostPerHour || "0") * 24 * 30 + parseFloat(business.estimatedInfraCostPerDay || "0") * 30,
+          implementationGuide: business.implementationGuide || "Implementation guide available in business catalog.",
+          requiredApis: business.requiredApis || [],
+          infraRequirements: business.infraRequirements || [],
+          setupTimeHours: business.setupTimeHours,
+          minAgentsRequired: business.minAgentsRequired,
+          recommendedModels: business.recommendedModels || []
+        }));
+      }
+      try {
+        const opportunities = await goGetterAgent.discoverOpportunities(
+          input.preferences,
+          activeConfigs,
+          ctx.user.id
+        );
+        return opportunities;
+      } catch (error46) {
+        console.error("Agent discovery failed, falling back to static catalog:", error46);
+        const staticBusinesses = await getAllBusinesses(true);
+        return staticBusinesses.slice(0, 5).map((business) => ({
+          name: business.name,
+          description: business.description,
+          vertical: business.vertical,
+          scores: {
+            guaranteedDemand: business.guaranteedDemand,
+            automationLevel: business.automationLevel,
+            tokenEfficiency: business.tokenEfficiency,
+            profitMargin: business.profitMargin,
+            maintenanceCost: business.maintenanceCost,
+            legalRisk: business.legalRisk,
+            competitionSaturation: business.competitionSaturation,
+            compositeScore: business.compositeScore
+          },
+          estimatedRevenue: parseFloat(business.estimatedRevenuePerHour || "0") * 24 * 30,
+          estimatedCosts: parseFloat(business.estimatedTokenCostPerHour || "0") * 24 * 30 + parseFloat(business.estimatedInfraCostPerDay || "0") * 30,
+          implementationGuide: business.implementationGuide || "Implementation guide available in business catalog.",
+          requiredApis: business.requiredApis || [],
+          infraRequirements: business.infraRequirements || [],
+          setupTimeHours: business.setupTimeHours,
+          minAgentsRequired: business.minAgentsRequired,
+          recommendedModels: business.recommendedModels || []
+        }));
+      }
     })
   })
 });
