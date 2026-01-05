@@ -129,7 +129,7 @@ async function build() {
       bundle: true,
       platform: "node",
       target: "node20",
-      format: "esm",
+      format: "cjs",
       outfile: join(funcDir, "index.js"),
       external: ["pg-native", "better-sqlite3"],
       plugins: [pathAliasPlugin],
@@ -145,16 +145,6 @@ async function build() {
       sourcemap: false,
       // Tree shaking
       treeShaking: true,
-      banner: {
-        js: `
-import { createRequire } from 'module';
-import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-const require = createRequire(import.meta.url);
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-`.trim(),
-      },
     });
 
     // Write .vc-config.json for the function
@@ -162,9 +152,15 @@ const __dirname = dirname(__filename);
       join(funcDir, ".vc-config.json"),
       JSON.stringify({
         runtime: "nodejs20.x",
-        handler: "index.default",
+        handler: "index.js",
         launcherType: "Nodejs",
       }, null, 2)
+    );
+
+    // Write a package.json to the function directory to ensure it's treated as CJS
+    writeFileSync(
+      join(funcDir, "package.json"),
+      JSON.stringify({ type: "commonjs" }, null, 2)
     );
   }
 
