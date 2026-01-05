@@ -9,7 +9,8 @@ import {
   tokenUsage, InsertTokenUsage,
   businessEvents, InsertBusinessEvent,
   apiConfigs, InsertApiConfig,
-  webhooks, InsertWebhook
+  webhooks, InsertWebhook,
+  discoveryPresets, InsertDiscoveryPreset, DiscoveryPreset, UserPreferences
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
@@ -451,6 +452,69 @@ export async function deleteWebhook(id: number, userId: number): Promise<boolean
   if (!db) return false;
   await db.delete(webhooks).where(and(eq(webhooks.id, id), eq(webhooks.userId, userId)));
   return true;
+}
+
+// ============ DISCOVERY PRESETS OPERATIONS ============
+
+export async function getDiscoveryPresets(userId: number): Promise<DiscoveryPreset[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(discoveryPresets)
+    .where(eq(discoveryPresets.userId, userId))
+    .orderBy(desc(discoveryPresets.createdAt));
+}
+
+export async function createDiscoveryPreset(userId: number, name: string, config: UserPreferences): Promise<DiscoveryPreset | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  try {
+    const result = await db.insert(discoveryPresets).values({
+      userId,
+      name,
+      config,
+    }).returning();
+    
+    return result[0];
+  } catch (error) {
+    // Handle unique constraint violation
+    if (error instanceof Error && error.message.includes('unique')) {
+      throw new Error(`A preset with the name "${name}" already exists`);
+    }
+    throw error;
+  }
+}
+
+export async function deleteDiscoveryPreset(userId: number, presetId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  
+  const result = await db.delete(discoveryPresets)
+    .where(and(eq(discoveryPresets.id, presetId), eq(discoveryPresets.userId, userId)));
+  
+  return result.rowCount > 0;
+}
+
+export async function getDiscoveryPresetCount(userId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  
+  const result = await db.select({ count: sql<number>`COUNT(*)` })
+    .from(discoveryPresets)
+    .where(eq(discoveryPresets.userId, userId));
+  
+  return result[0]?.count || 0;
+}
+
+export async function getDiscoveryPresetById(userId: number, presetId: number): Promise<DiscoveryPreset | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const result = await db.select().from(discoveryPresets)
+    .where(and(eq(discoveryPresets.id, presetId), eq(discoveryPresets.userId, userId)))
+    .limit(1);
+  
+  return result.length > 0 ? result[0] : undefined;
 }
 
 // ============ DASHBOARD STATS ============

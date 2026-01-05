@@ -35,6 +35,26 @@ function createAuthContext(): { ctx: TrpcContext; clearedCookies: CookieCall[] }
       clearCookie: (name: string, options: Record<string, unknown>) => {
         clearedCookies.push({ name, options });
       },
+      setHeader: (name: string, value: string) => {
+        // Mock setHeader for compatibility with logout implementation
+        if (name === "Set-Cookie") {
+          // Parse the cookie string to extract name and options for testing
+          const cookieParts = value.split(';');
+          const nameValue = cookieParts[0]?.split('=');
+          if (nameValue && nameValue[0]) {
+            clearedCookies.push({ 
+              name: nameValue[0].trim(), 
+              options: { 
+                maxAge: -1,
+                secure: true,
+                sameSite: "none",
+                httpOnly: true,
+                path: "/",
+              } 
+            });
+          }
+        }
+      },
     } as TrpcContext["res"],
   };
 

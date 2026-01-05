@@ -58,18 +58,18 @@ This implementation plan breaks down the GO-GETTER OS enhancements into discrete
     - **Property 14: Account Linking by Email**
     - **Validates: Requirements 8.2, 8.3**
 
-- [ ] 3. Checkpoint - Authentication Complete
+- [x] 3. Checkpoint - Authentication Complete
   - Ensure all auth tests pass
   - Verify Google OAuth flow works end-to-end
   - Ask the user if questions arise
 
-- [ ] 4. Discovery Presets Feature
-  - [ ] 4.1 Create discovery_presets database table
+- [-] 4. Discovery Presets Feature
+  - [x] 4.1 Create discovery_presets database table
     - Add `discoveryPresets` table to Drizzle schema
     - Create migration with unique constraint on (user_id, name)
     - Add database query functions in `server/db.ts`
     - _Requirements: 5.1, 5.2_
-  - [ ] 4.2 Implement presets tRPC router
+  - [x] 4.2 Implement presets tRPC router
     - Add `presets` router with list, create, delete procedures
     - Implement 10-preset limit check
     - Add preset name uniqueness validation
@@ -80,7 +80,7 @@ This implementation plan breaks down the GO-GETTER OS enhancements into discrete
   - [ ]* 4.4 Write property test for preset count limit
     - **Property 10: Preset Count Limit Enforcement**
     - **Validates: Requirements 5.6, 5.7**
-  - [ ] 4.5 Update Wizard UI with preset functionality
+  - [-] 4.5 Update Wizard UI with preset functionality
     - Add "Save as Preset" button after wizard completion
     - Add preset selection dropdown at wizard start
     - Implement preset loading to populate wizard fields

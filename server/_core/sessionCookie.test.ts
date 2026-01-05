@@ -147,15 +147,46 @@ describe("Property 3: Session Cookie Round-Trip", () => {
       fc.asyncProperty(
         openIdArb,
         nameArb,
-        fc.string({ minLength: 1, maxLength: 10 }),
-        async (openId, name, tampering) => {
+        fc.integer({ min: 0, max: 2 }), // tampering method selector
+        fc.integer({ min: 1, max: 5 }), // number of characters to modify
+        async (openId, name, tamperingMethod, numChars) => {
           // Create valid session token
           const token = await createSessionToken(openId, { name });
 
-          // Tamper with the token
-          const tamperedToken = token + tampering;
+          let tamperedToken: string;
+          
+          // Use different tampering methods that will actually invalidate the JWT
+          switch (tamperingMethod) {
+            case 0:
+              // Modify characters in the middle of the token (affects signature)
+              const midPoint = Math.floor(token.length / 2);
+              const chars = token.split('');
+              for (let i = 0; i < Math.min(numChars, chars.length - midPoint); i++) {
+                chars[midPoint + i] = chars[midPoint + i] === 'a' ? 'b' : 'a';
+              }
+              tamperedToken = chars.join('');
+              break;
+            case 1:
+              // Remove characters from the end (truncate signature)
+              tamperedToken = token.slice(0, -Math.min(numChars, token.length - 10));
+              break;
+            case 2:
+              // Replace part of the signature (last part of JWT)
+              const parts = token.split('.');
+              if (parts.length === 3 && parts[2].length > numChars) {
+                const signature = parts[2];
+                const modifiedSig = 'X'.repeat(numChars) + signature.slice(numChars);
+                tamperedToken = `${parts[0]}.${parts[1]}.${modifiedSig}`;
+              } else {
+                // Fallback: modify middle characters
+                tamperedToken = token.slice(0, -1) + 'X';
+              }
+              break;
+            default:
+              tamperedToken = token.slice(0, -1) + 'X';
+          }
 
-          // Verification should fail
+          // Verification should fail for all tampering methods
           const result = await verifySession(tamperedToken);
           expect(result).toBeNull();
         }

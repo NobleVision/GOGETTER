@@ -15,6 +15,13 @@
       "when": 1767592838709,
       "tag": "0001_plain_rocket_racer",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1767600490156,
+      "tag": "0002_wandering_falcon",
+      "breakpoints": true
     }
   ]
 }

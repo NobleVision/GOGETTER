@@ -214,3 +214,29 @@ export const webhooks = pgTable("webhooks", {
 
 export type Webhook = typeof webhooks.$inferSelect;
 export type InsertWebhook = typeof webhooks.$inferInsert;
+
+/**
+ * User preferences interface for discovery wizard
+ */
+export interface UserPreferences {
+  riskTolerance: 'conservative' | 'moderate' | 'aggressive';
+  interests: string[];
+  capitalAvailable: number;
+  technicalSkills: string;
+  businessGoals: string[];
+}
+
+/**
+ * Discovery presets for saving wizard configurations
+ */
+export const discoveryPresets = pgTable("discovery_presets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  config: json("config").$type<UserPreferences>().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type DiscoveryPreset = typeof discoveryPresets.$inferSelect;
+export type InsertDiscoveryPreset = typeof discoveryPresets.$inferInsert;

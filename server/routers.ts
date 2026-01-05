@@ -263,6 +263,57 @@ export const appRouter = router({
       return db.getDashboardStats(ctx.user.id);
     }),
   }),
+
+  // Discovery Presets
+  presets: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return db.getDiscoveryPresets(ctx.user.id);
+    }),
+    
+    create: protectedProcedure
+      .input(z.object({
+        name: z.string().min(1).max(255),
+        config: z.object({
+          riskTolerance: z.enum(["conservative", "moderate", "aggressive"]),
+          interests: z.array(z.string()),
+          capitalAvailable: z.number(),
+          technicalSkills: z.string(),
+          businessGoals: z.array(z.string()),
+        }),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        // Check preset count limit (10 presets max)
+        const currentCount = await db.getDiscoveryPresetCount(ctx.user.id);
+        if (currentCount >= 10) {
+          throw new Error("Maximum preset limit reached. Delete a preset first.");
+        }
+        
+        try {
+          return await db.createDiscoveryPreset(ctx.user.id, input.name, input.config);
+        } catch (error) {
+          if (error instanceof Error && error.message.includes('already exists')) {
+            throw new Error(`A preset with the name "${input.name}" already exists`);
+          }
+          throw error;
+        }
+      }),
+    
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        const deleted = await db.deleteDiscoveryPreset(ctx.user.id, input.id);
+        if (!deleted) {
+          throw new Error("Preset not found or access denied");
+        }
+        return { success: true };
+      }),
+    
+    get: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        return db.getDiscoveryPresetById(ctx.user.id, input.id);
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

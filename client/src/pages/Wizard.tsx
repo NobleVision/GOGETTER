@@ -6,6 +6,8 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { useState } from "react";
 import { useLocation } from "wouter";
@@ -19,7 +21,10 @@ import {
   Target,
   Cpu,
   Rocket,
-  Zap
+  Zap,
+  Save,
+  BookmarkPlus,
+  Trash2
 } from "lucide-react";
 
 const STEPS = [
@@ -48,6 +53,8 @@ const GOALS = [
 export default function Wizard() {
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
+  const [showSavePresetDialog, setShowSavePresetDialog] = useState(false);
+  const [presetName, setPresetName] = useState("");
   const [formData, setFormData] = useState({
     riskTolerance: "moderate" as "conservative" | "moderate" | "aggressive",
     capitalAvailable: "",
@@ -57,6 +64,31 @@ export default function Wizard() {
     aggressiveness: "medium" as "low" | "medium" | "high",
     strategyTimeframe: "medium" as "short" | "medium" | "long",
     monthlyTokenBudget: "100",
+  });
+
+  // Preset queries and mutations
+  const { data: presets = [], refetch: refetchPresets } = trpc.presets.list.useQuery();
+  
+  const createPreset = trpc.presets.create.useMutation({
+    onSuccess: () => {
+      toast.success("Preset saved successfully!");
+      setShowSavePresetDialog(false);
+      setPresetName("");
+      refetchPresets();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to save preset");
+    }
+  });
+
+  const deletePreset = trpc.presets.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Preset deleted successfully!");
+      refetchPresets();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to delete preset");
+    }
   });
 
   const upsertProfile = trpc.profile.upsert.useMutation({
