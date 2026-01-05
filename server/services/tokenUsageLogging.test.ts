@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import fc from 'fast-check';
 import { ModelRouterService, ModelProvider } from './modelRouter';
-import { ApiConfig } from '@shared/types';
 import * as db from '../db';
 
 // Test configuration
@@ -37,14 +36,30 @@ describe('AI Interaction Logging', () => {
         fc.option(fc.integer({ min: 1, max: 1000 })),
         // Generate model provider
         fc.constantFrom<ModelProvider>('perplexity', 'openai', 'anthropic', 'gemini', 'grok', 'manus'),
+        // Generate model name
+        fc.string({ minLength: 5, maxLength: 50 }),
         // Generate token usage data
         fc.record({
           prompt_tokens: fc.integer({ min: 1, max: 10000 }),
           completion_tokens: fc.integer({ min: 1, max: 10000 }),
-          total_tokens: fc.option(fc.integer({ min: 1, max: 20000 })),
+          total_tokens: fc.integer({ min: 2, max: 20000 }),
         }),
-        async (userId, userBusinessId, provider, usage) => {
-          // Mock the API response with usage data
+        // Generate cost per 1k tokens
+        fc.float({ min: 0.00001, max: 0.01 }),
+        (userId, userBusinessId, provider, modelName, usage, costPer1kTokens) => {
+          // Mock logTokenUsage to track calls
+          const mockLogTokenUsage = vi.mocked(db.logTokenUsage);
+          mockLogTokenUsage.mockResolvedValue();
+
+          // Create model config
+          const modelConfig = {
+            provider,
+            model: modelName,
+            costPer1kTokens,
+            capabilities: ['generation' as const]
+          };
+
+          // Create mock API response
           const mockResponse = {
             choices: [{
               message: {
@@ -54,62 +69,35 @@ describe('AI Interaction Logging', () => {
             usage
           };
 
-          // Mock fetch to return our test response
-          global.fetch = vi.fn().mockResolvedValue({
-            ok: true,
-            json: () => Promise.resolve(mockResponse)
-          });
+          // Test the private logTokenUsage method by calling it directly
+          // This focuses on the core property without complex integration
+          const logTokenUsageMethod = (modelRouter as any).logTokenUsage.bind(modelRouter);
+          
+          // Execute the logging
+          logTokenUsageMethod(modelConfig, mockResponse, userId, userBusinessId);
 
-          // Mock logTokenUsage to track calls
-          const mockLogTokenUsage = vi.mocked(db.logTokenUsage);
-          mockLogTokenUsage.mockResolvedValue();
+          // Verify that logTokenUsage was called exactly once
+          expect(mockLogTokenUsage).toHaveBeenCalledTimes(1);
 
-          // Create API config for the provider
-          const apiConfigs: ApiConfig[] = [{
-            id: 1,
-            userId,
-            provider,
-            apiKey: 'test-api-key',
-            baseUrl: null,
-            isActive: true,
-            lastValidated: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          }];
+          // Get the logged data
+          const loggedData = mockLogTokenUsage.mock.calls[0][0];
 
-          try {
-            // Execute a request through the model router
-            await modelRouter.executeWithFallback(
-              'generation',
-              'Test prompt',
-              apiConfigs,
-              userId,
-              userBusinessId
-            );
-
-            // Verify that logTokenUsage was called
-            expect(mockLogTokenUsage).toHaveBeenCalledTimes(1);
-
-            // Get the logged data
-            const loggedData = mockLogTokenUsage.mock.calls[0][0];
-
-            // Verify all required fields are present and correct
-            expect(loggedData.userId).toBe(userId);
-            expect(loggedData.userBusinessId).toBe(userBusinessId);
-            expect(loggedData.modelProvider).toBe(provider);
-            expect(loggedData.modelName).toBeDefined();
-            expect(loggedData.inputTokens).toBe(usage.prompt_tokens);
-            expect(loggedData.outputTokens).toBe(usage.completion_tokens);
-            expect(loggedData.totalCost).toBeDefined();
-            expect(typeof loggedData.totalCost).toBe('string');
-            expect(parseFloat(loggedData.totalCost)).toBeGreaterThanOrEqual(0);
-
-            return true;
-          } catch (error) {
-            // If the request fails for any reason, we still expect logging to be attempted
-            // (though it might not succeed if the response format is unexpected)
-            return true;
-          }
+          // Verify all required fields are present and correct
+          expect(loggedData.userId).toBe(userId);
+          expect(loggedData.userBusinessId).toBe(userBusinessId); // Can be null
+          expect(loggedData.modelProvider).toBe(provider);
+          expect(loggedData.modelName).toBe(modelName);
+          expect(loggedData.inputTokens).toBe(usage.prompt_tokens);
+          expect(loggedData.outputTokens).toBe(usage.completion_tokens);
+          expect(loggedData.totalCost).toBeDefined();
+          expect(typeof loggedData.totalCost).toBe('string');
+          
+          // Verify cost calculation is correct
+          const expectedCost = (usage.total_tokens / 1000) * costPer1kTokens;
+          const actualCost = parseFloat(loggedData.totalCost);
+          expect(Math.abs(actualCost - expectedCost)).toBeLessThan(0.000001); // Allow for floating point precision
+          
+          return true;
         }
       ),
       PBT_CONFIG
@@ -119,70 +107,52 @@ describe('AI Interaction Logging', () => {
   it('should calculate costs correctly based on token usage', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 1000 }),
+        fc.integer({ min: 1, max: 1000 }), // userId
         fc.constantFrom<ModelProvider>('perplexity', 'openai', 'anthropic', 'gemini', 'grok', 'manus'),
+        fc.string({ minLength: 5, maxLength: 50 }), // modelName
         fc.record({
           prompt_tokens: fc.integer({ min: 1, max: 5000 }),
           completion_tokens: fc.integer({ min: 1, max: 5000 }),
+          total_tokens: fc.integer({ min: 2, max: 10000 }),
         }),
-        async (userId, provider, usage) => {
-          const totalTokens = usage.prompt_tokens + usage.completion_tokens;
-          
+        fc.float({ min: 0.00001, max: 0.01 }), // costPer1kTokens
+        (userId, provider, modelName, usage, costPer1kTokens) => {
+          const mockLogTokenUsage = vi.mocked(db.logTokenUsage);
+          mockLogTokenUsage.mockResolvedValue();
+
+          const modelConfig = {
+            provider,
+            model: modelName,
+            costPer1kTokens,
+            capabilities: ['generation' as const]
+          };
+
           const mockResponse = {
             choices: [{
               message: {
                 content: 'Mock response'
               }
             }],
-            usage: {
-              ...usage,
-              total_tokens: totalTokens
-            }
+            usage
           };
 
-          global.fetch = vi.fn().mockResolvedValue({
-            ok: true,
-            json: () => Promise.resolve(mockResponse)
-          });
+          // Test the logging method directly
+          const logTokenUsageMethod = (modelRouter as any).logTokenUsage.bind(modelRouter);
+          logTokenUsageMethod(modelConfig, mockResponse, userId);
 
-          const mockLogTokenUsage = vi.mocked(db.logTokenUsage);
-          mockLogTokenUsage.mockResolvedValue();
+          // Verify cost calculation
+          const loggedData = mockLogTokenUsage.mock.calls[0][0];
+          const expectedCost = (usage.total_tokens / 1000) * costPer1kTokens;
+          const actualCost = parseFloat(loggedData.totalCost);
 
-          const apiConfigs: ApiConfig[] = [{
-            id: 1,
-            userId,
-            provider,
-            apiKey: 'test-key',
-            baseUrl: null,
-            isActive: true,
-            lastValidated: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          }];
+          // Cost should be calculated correctly
+          expect(Math.abs(actualCost - expectedCost)).toBeLessThan(0.000001);
+          
+          // Cost should be reasonable (positive and proportional)
+          expect(actualCost).toBeGreaterThan(0);
+          expect(actualCost).toBeLessThan(usage.total_tokens); // Cost per token should be less than $1
 
-          try {
-            await modelRouter.executeWithFallback(
-              'generation',
-              'Test prompt',
-              apiConfigs,
-              userId
-            );
-
-            if (mockLogTokenUsage.mock.calls.length > 0) {
-              const loggedData = mockLogTokenUsage.mock.calls[0][0];
-              const loggedCost = parseFloat(loggedData.totalCost);
-
-              // Cost should be proportional to token usage
-              expect(loggedCost).toBeGreaterThan(0);
-              
-              // Cost should be reasonable (not negative, not extremely high)
-              expect(loggedCost).toBeLessThan(totalTokens); // Cost per token should be less than $1
-            }
-
-            return true;
-          } catch (error) {
-            return true; // Allow test to pass if API call fails
-          }
+          return true;
         }
       ),
       PBT_CONFIG
@@ -192,9 +162,21 @@ describe('AI Interaction Logging', () => {
   it('should handle missing usage data gracefully', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 1000 }),
+        fc.integer({ min: 1, max: 1000 }), // userId
         fc.constantFrom<ModelProvider>('perplexity', 'openai', 'anthropic', 'gemini', 'grok', 'manus'),
-        async (userId, provider) => {
+        fc.string({ minLength: 5, maxLength: 50 }), // modelName
+        fc.float({ min: 0.00001, max: 0.01 }), // costPer1kTokens
+        (userId, provider, modelName, costPer1kTokens) => {
+          const mockLogTokenUsage = vi.mocked(db.logTokenUsage);
+          mockLogTokenUsage.mockResolvedValue();
+
+          const modelConfig = {
+            provider,
+            model: modelName,
+            costPer1kTokens,
+            capabilities: ['generation' as const]
+          };
+
           // Mock response without usage data
           const mockResponse = {
             choices: [{
@@ -205,41 +187,18 @@ describe('AI Interaction Logging', () => {
             // No usage field
           };
 
-          global.fetch = vi.fn().mockResolvedValue({
-            ok: true,
-            json: () => Promise.resolve(mockResponse)
-          });
+          // Test the logging method directly - should handle missing usage gracefully
+          const logTokenUsageMethod = (modelRouter as any).logTokenUsage.bind(modelRouter);
+          
+          // Should not throw an error
+          expect(() => {
+            logTokenUsageMethod(modelConfig, mockResponse, userId);
+          }).not.toThrow();
 
-          const mockLogTokenUsage = vi.mocked(db.logTokenUsage);
-          mockLogTokenUsage.mockResolvedValue();
+          // Should not call logTokenUsage when usage data is missing
+          expect(mockLogTokenUsage).not.toHaveBeenCalled();
 
-          const apiConfigs: ApiConfig[] = [{
-            id: 1,
-            userId,
-            provider,
-            apiKey: 'test-key',
-            baseUrl: null,
-            isActive: true,
-            lastValidated: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          }];
-
-          try {
-            await modelRouter.executeWithFallback(
-              'generation',
-              'Test prompt',
-              apiConfigs,
-              userId
-            );
-
-            // Should not crash, but may or may not log depending on implementation
-            // The key is that it handles missing usage data gracefully
-            return true;
-          } catch (error) {
-            // Should not throw errors due to missing usage data
-            return true;
-          }
+          return true;
         }
       ),
       PBT_CONFIG
@@ -249,59 +208,44 @@ describe('AI Interaction Logging', () => {
   it('should not fail when logging fails', () => {
     fc.assert(
       fc.property(
-        fc.integer({ min: 1, max: 1000 }),
+        fc.integer({ min: 1, max: 1000 }), // userId
         fc.constantFrom<ModelProvider>('perplexity', 'openai', 'anthropic', 'gemini', 'grok', 'manus'),
-        async (userId, provider) => {
+        fc.string({ minLength: 5, maxLength: 50 }), // modelName
+        fc.record({
+          prompt_tokens: fc.integer({ min: 1, max: 1000 }),
+          completion_tokens: fc.integer({ min: 1, max: 1000 }),
+          total_tokens: fc.integer({ min: 2, max: 2000 }),
+        }),
+        fc.float({ min: 0.00001, max: 0.01 }), // costPer1kTokens
+        (userId, provider, modelName, usage, costPer1kTokens) => {
+          // Mock logTokenUsage to fail
+          const mockLogTokenUsage = vi.mocked(db.logTokenUsage);
+          mockLogTokenUsage.mockRejectedValue(new Error('Database error'));
+
+          const modelConfig = {
+            provider,
+            model: modelName,
+            costPer1kTokens,
+            capabilities: ['generation' as const]
+          };
+
           const mockResponse = {
             choices: [{
               message: {
                 content: 'Mock response'
               }
             }],
-            usage: {
-              prompt_tokens: 100,
-              completion_tokens: 50,
-              total_tokens: 150
-            }
+            usage
           };
 
-          global.fetch = vi.fn().mockResolvedValue({
-            ok: true,
-            json: () => Promise.resolve(mockResponse)
-          });
+          // Test the logging method directly - should not throw even if DB fails
+          const logTokenUsageMethod = (modelRouter as any).logTokenUsage.bind(modelRouter);
+          
+          expect(() => {
+            logTokenUsageMethod(modelConfig, mockResponse, userId);
+          }).not.toThrow();
 
-          // Mock logTokenUsage to fail
-          const mockLogTokenUsage = vi.mocked(db.logTokenUsage);
-          mockLogTokenUsage.mockRejectedValue(new Error('Database error'));
-
-          const apiConfigs: ApiConfig[] = [{
-            id: 1,
-            userId,
-            provider,
-            apiKey: 'test-key',
-            baseUrl: null,
-            isActive: true,
-            lastValidated: null,
-            createdAt: new Date(),
-            updatedAt: new Date(),
-          }];
-
-          try {
-            const result = await modelRouter.executeWithFallback(
-              'generation',
-              'Test prompt',
-              apiConfigs,
-              userId
-            );
-
-            // Should still return the AI response even if logging fails
-            expect(result).toBeDefined();
-            return true;
-          } catch (error) {
-            // The main request should not fail just because logging fails
-            // But we allow this test to pass if there are other issues
-            return true;
-          }
+          return true;
         }
       ),
       PBT_CONFIG

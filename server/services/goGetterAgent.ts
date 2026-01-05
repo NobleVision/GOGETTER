@@ -88,15 +88,15 @@ export class GoGetterAgentService implements GoGetterAgent {
    * Requirements 3.4: Implement composite scoring for discovered opportunities
    */
   scoreOpportunity(opportunity: Partial<BusinessOpportunity>): CompositeScores {
-    // Default scores if not provided
+    // Use provided scores or defaults (50) only when scores are undefined/null, not when they are 0
     const scores = {
-      guaranteedDemand: opportunity.scores?.guaranteedDemand || 50,
-      automationLevel: opportunity.scores?.automationLevel || 50,
-      tokenEfficiency: opportunity.scores?.tokenEfficiency || 50,
-      profitMargin: opportunity.scores?.profitMargin || 50,
-      maintenanceCost: opportunity.scores?.maintenanceCost || 50,
-      legalRisk: opportunity.scores?.legalRisk || 50,
-      competitionSaturation: opportunity.scores?.competitionSaturation || 50,
+      guaranteedDemand: opportunity.scores?.guaranteedDemand ?? 50,
+      automationLevel: opportunity.scores?.automationLevel ?? 50,
+      tokenEfficiency: opportunity.scores?.tokenEfficiency ?? 50,
+      profitMargin: opportunity.scores?.profitMargin ?? 50,
+      maintenanceCost: opportunity.scores?.maintenanceCost ?? 50,
+      legalRisk: opportunity.scores?.legalRisk ?? 50,
+      competitionSaturation: opportunity.scores?.competitionSaturation ?? 50,
       compositeScore: 0
     };
 
