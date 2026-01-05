@@ -19,6 +19,15 @@ function getQueryParam(req: VercelRequest, key: string): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
+/**
+ * Helper to perform redirects in Vercel serverless functions.
+ * VercelResponse doesn't have a redirect method, so we use writeHead + end.
+ */
+function redirect(res: VercelResponse, statusCode: number, url: string): void {
+  res.writeHead(statusCode, { Location: url });
+  res.end();
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const code = getQueryParam(req, "code");
   const state = getQueryParam(req, "state");
@@ -26,20 +35,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (error) {
     console.error("[GoogleOAuth] Authorization error:", error);
-    return res.redirect(302, "/?error=google_auth_denied");
+    return redirect(res, 302, "/?error=google_auth_denied");
   }
 
   if (!code || !state) {
-    return res.redirect(302, "/?error=google_auth_invalid");
+    return redirect(res, 302, "/?error=google_auth_invalid");
   }
 
   // Verify state from cookie
   const cookies = parseCookie(req.headers.cookie || "");
   const storedState = cookies.oauth_state;
-  
+
   if (!storedState || storedState !== state) {
     console.error("[GoogleOAuth] Invalid or expired state");
-    return res.redirect(302, "/?error=google_auth_state_invalid");
+    return redirect(res, 302, "/?error=google_auth_state_invalid");
   }
 
   try {
@@ -51,7 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const googleUser = await getGoogleUserInfo(tokens.access_token);
 
     if (!googleUser.email) {
-      return res.redirect(302, "/?error=google_auth_no_email");
+      return redirect(res, 302, "/?error=google_auth_no_email");
     }
 
     const googleOpenId = `google_${googleUser.id}`;
@@ -78,9 +87,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       `oauth_state=; Path=/; HttpOnly; Max-Age=0`,
     ]);
 
-    return res.redirect(302, "/");
+    return redirect(res, 302, "/");
   } catch (error) {
     console.error("[GoogleOAuth] Callback failed:", error);
-    return res.redirect(302, "/?error=google_auth_failed");
+    return redirect(res, 302, "/?error=google_auth_failed");
   }
 }

@@ -11,6 +11,15 @@ import {
   isGoogleOAuthConfigured,
 } from "../../../server/_core/googleOAuth";
 
+/**
+ * Helper to perform redirects in Vercel serverless functions.
+ * VercelResponse doesn't have a redirect method, so we use writeHead + end.
+ */
+function redirect(res: VercelResponse, statusCode: number, url: string): void {
+  res.writeHead(statusCode, { Location: url });
+  res.end();
+}
+
 export default function handler(req: VercelRequest, res: VercelResponse) {
   if (!isGoogleOAuthConfigured()) {
     return res.status(503).json({ error: "Google OAuth is not configured" });
@@ -28,5 +37,5 @@ export default function handler(req: VercelRequest, res: VercelResponse) {
   );
 
   const authUrl = getGoogleAuthorizationUrl(redirectUri, state);
-  return res.redirect(302, authUrl);
+  return redirect(res, 302, authUrl);
 }

@@ -18799,6 +18799,10 @@ function isGoogleOAuthConfigured() {
 }
 
 // api/oauth/google/init.ts
+function redirect(res, statusCode, url) {
+  res.writeHead(statusCode, { Location: url });
+  res.end();
+}
 function handler(req, res) {
   if (!isGoogleOAuthConfigured()) {
     return res.status(503).json({ error: "Google OAuth is not configured" });
@@ -18812,7 +18816,7 @@ function handler(req, res) {
     `oauth_state=${state}; Path=/; HttpOnly; SameSite=Lax; Max-Age=600`
   );
   const authUrl = getGoogleAuthorizationUrl(redirectUri, state);
-  return res.redirect(302, authUrl);
+  return redirect(res, 302, authUrl);
 }
 /*! Bundled license information:
 

@@ -47094,6 +47094,14 @@ var webhooks = pgTable("webhooks", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
+var discoveryPresets = pgTable("discovery_presets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  config: json("config").$type().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
 
 // server/db.ts
 var _db = null;
@@ -47439,22 +47447,26 @@ function getQueryParam(req, key) {
   const value = req.query[key];
   return typeof value === "string" ? value : void 0;
 }
+function redirect(res, statusCode, url2) {
+  res.writeHead(statusCode, { Location: url2 });
+  res.end();
+}
 async function handler(req, res) {
   const code = getQueryParam(req, "code");
   const state = getQueryParam(req, "state");
   const error = getQueryParam(req, "error");
   if (error) {
     console.error("[GoogleOAuth] Authorization error:", error);
-    return res.redirect(302, "/?error=google_auth_denied");
+    return redirect(res, 302, "/?error=google_auth_denied");
   }
   if (!code || !state) {
-    return res.redirect(302, "/?error=google_auth_invalid");
+    return redirect(res, 302, "/?error=google_auth_invalid");
   }
   const cookies = (0, import_cookie2.parse)(req.headers.cookie || "");
   const storedState = cookies.oauth_state;
   if (!storedState || storedState !== state) {
     console.error("[GoogleOAuth] Invalid or expired state");
-    return res.redirect(302, "/?error=google_auth_state_invalid");
+    return redirect(res, 302, "/?error=google_auth_state_invalid");
   }
   try {
     const protocol = req.headers["x-forwarded-proto"] || "https";
@@ -47463,7 +47475,7 @@ async function handler(req, res) {
     const tokens = await exchangeCodeForTokens(code, redirectUri);
     const googleUser = await getGoogleUserInfo(tokens.access_token);
     if (!googleUser.email) {
-      return res.redirect(302, "/?error=google_auth_no_email");
+      return redirect(res, 302, "/?error=google_auth_no_email");
     }
     const googleOpenId = `google_${googleUser.id}`;
     await upsertUserWithGoogle({
@@ -47484,10 +47496,10 @@ async function handler(req, res) {
       `${COOKIE_NAME}=${sessionToken}; Path=/; HttpOnly; SameSite=None; Max-Age=${ONE_YEAR_MS / 1e3}${isSecure ? "; Secure" : ""}`,
       `oauth_state=; Path=/; HttpOnly; Max-Age=0`
     ]);
-    return res.redirect(302, "/");
+    return redirect(res, 302, "/");
   } catch (error2) {
     console.error("[GoogleOAuth] Callback failed:", error2);
-    return res.redirect(302, "/?error=google_auth_failed");
+    return redirect(res, 302, "/?error=google_auth_failed");
   }
 }
 /*! Bundled license information:

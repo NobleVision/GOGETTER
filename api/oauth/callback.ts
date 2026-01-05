@@ -14,6 +14,15 @@ function getQueryParam(req: VercelRequest, key: string): string | undefined {
   return typeof value === "string" ? value : undefined;
 }
 
+/**
+ * Helper to perform redirects in Vercel serverless functions.
+ * VercelResponse doesn't have a redirect method, so we use writeHead + end.
+ */
+function redirect(res: VercelResponse, statusCode: number, url: string): void {
+  res.writeHead(statusCode, { Location: url });
+  res.end();
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   const code = getQueryParam(req, "code");
   const state = getQueryParam(req, "state");
@@ -50,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       `${COOKIE_NAME}=${sessionToken}; Path=/; HttpOnly; SameSite=None; Max-Age=${ONE_YEAR_MS / 1000}${isSecure ? "; Secure" : ""}`
     );
 
-    return res.redirect(302, "/");
+    return redirect(res, 302, "/");
   } catch (error) {
     console.error("[OAuth] Callback failed", error);
     return res.status(500).json({ error: "OAuth callback failed" });

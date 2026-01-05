@@ -93,13 +93,13 @@ This implementation plan breaks down the GO-GETTER OS enhancements into discrete
     - **Property 9: Preset Loading Completeness**
     - **Validates: Requirements 5.3, 5.4**
 
-- [-] 5. Checkpoint - Presets Complete
+- [x] 5. Checkpoint - Presets Complete
   - Ensure all preset tests pass
   - Verify preset save/load cycle works
   - Ask the user if questions arise
 
-- [ ] 6. Go-Getter Agent with Real AI Execution
-  - [ ] 6.1 Create model router service
+- [-] 6. Go-Getter Agent with Real AI Execution
+  - [x] 6.1 Create model router service
     - Create `server/services/modelRouter.ts`
     - Implement model selection by task type and cost
     - Add fallback logic for failed requests
@@ -107,7 +107,7 @@ This implementation plan breaks down the GO-GETTER OS enhancements into discrete
   - [ ]* 6.2 Write property test for model router cost optimization
     - **Property 5: Model Router Cost Optimization**
     - **Validates: Requirements 3.3**
-  - [ ] 6.3 Implement Go-Getter agent service
+  - [x] 6.3 Implement Go-Getter agent service
     - Create `server/services/goGetterAgent.ts`
     - Implement `discoverOpportunities` with AI API calls
     - Include user preferences in prompts (risk, interests, capital)
@@ -116,7 +116,7 @@ This implementation plan breaks down the GO-GETTER OS enhancements into discrete
   - [ ]* 6.4 Write property test for composite score consistency
     - **Property 4: Composite Score Calculation Consistency**
     - **Validates: Requirements 3.4**
-  - [ ] 6.5 Add token usage logging to agent
+  - [-] 6.5 Add token usage logging to agent
     - Log all AI interactions with model, tokens, cost
     - Integrate with existing tokenUsage table
     - _Requirements: 3.7_

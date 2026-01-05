@@ -53340,6 +53340,14 @@ var webhooks = pgTable("webhooks", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
+var discoveryPresets = pgTable("discovery_presets", {
+  id: serial("id").primaryKey(),
+  userId: integer2("user_id").notNull().references(() => users.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  config: json2("config").$type().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
 
 // server/db.ts
 var _db = null;
@@ -53570,6 +53578,46 @@ async function deleteWebhook(id, userId) {
   if (!db) return false;
   await db.delete(webhooks).where(and(eq(webhooks.id, id), eq(webhooks.userId, userId)));
   return true;
+}
+async function getDiscoveryPresets(userId) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(discoveryPresets).where(eq(discoveryPresets.userId, userId)).orderBy(desc(discoveryPresets.createdAt));
+}
+async function createDiscoveryPreset(userId, name, config2) {
+  const db = await getDb();
+  if (!db) return void 0;
+  try {
+    const result = await db.insert(discoveryPresets).values({
+      userId,
+      name,
+      config: config2
+    }).returning();
+    return result[0];
+  } catch (error46) {
+    if (error46 instanceof Error && error46.message.includes("unique")) {
+      throw new Error(`A preset with the name "${name}" already exists`);
+    }
+    throw error46;
+  }
+}
+async function deleteDiscoveryPreset(userId, presetId) {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db.delete(discoveryPresets).where(and(eq(discoveryPresets.id, presetId), eq(discoveryPresets.userId, userId)));
+  return (result.rowCount ?? 0) > 0;
+}
+async function getDiscoveryPresetCount(userId) {
+  const db = await getDb();
+  if (!db) return 0;
+  const result = await db.select({ count: sql`COUNT(*)` }).from(discoveryPresets).where(eq(discoveryPresets.userId, userId));
+  return result[0]?.count || 0;
+}
+async function getDiscoveryPresetById(userId, presetId) {
+  const db = await getDb();
+  if (!db) return void 0;
+  const result = await db.select().from(discoveryPresets).where(and(eq(discoveryPresets.id, presetId), eq(discoveryPresets.userId, userId))).limit(1);
+  return result.length > 0 ? result[0] : void 0;
 }
 async function getDashboardStats(userId) {
   const db = await getDb();
@@ -53814,6 +53862,45 @@ var appRouter = router({
   dashboard: router({
     stats: protectedProcedure.query(async ({ ctx }) => {
       return getDashboardStats(ctx.user.id);
+    })
+  }),
+  // Discovery Presets
+  presets: router({
+    list: protectedProcedure.query(async ({ ctx }) => {
+      return getDiscoveryPresets(ctx.user.id);
+    }),
+    create: protectedProcedure.input(external_exports.object({
+      name: external_exports.string().min(1).max(255),
+      config: external_exports.object({
+        riskTolerance: external_exports.enum(["conservative", "moderate", "aggressive"]),
+        interests: external_exports.array(external_exports.string()),
+        capitalAvailable: external_exports.number(),
+        technicalSkills: external_exports.string(),
+        businessGoals: external_exports.array(external_exports.string())
+      })
+    })).mutation(async ({ ctx, input }) => {
+      const currentCount = await getDiscoveryPresetCount(ctx.user.id);
+      if (currentCount >= 10) {
+        throw new Error("Maximum preset limit reached. Delete a preset first.");
+      }
+      try {
+        return await createDiscoveryPreset(ctx.user.id, input.name, input.config);
+      } catch (error46) {
+        if (error46 instanceof Error && error46.message.includes("already exists")) {
+          throw new Error(`A preset with the name "${input.name}" already exists`);
+        }
+        throw error46;
+      }
+    }),
+    delete: protectedProcedure.input(external_exports.object({ id: external_exports.number() })).mutation(async ({ ctx, input }) => {
+      const deleted = await deleteDiscoveryPreset(ctx.user.id, input.id);
+      if (!deleted) {
+        throw new Error("Preset not found or access denied");
+      }
+      return { success: true };
+    }),
+    get: protectedProcedure.input(external_exports.object({ id: external_exports.number() })).query(async ({ ctx, input }) => {
+      return getDiscoveryPresetById(ctx.user.id, input.id);
     })
   })
 });

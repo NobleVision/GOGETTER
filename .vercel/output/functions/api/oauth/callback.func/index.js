@@ -28770,6 +28770,14 @@ var webhooks = pgTable("webhooks", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull()
 });
+var discoveryPresets = pgTable("discovery_presets", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").notNull().references(() => users.id),
+  name: varchar("name", { length: 255 }).notNull(),
+  config: json("config").$type().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull()
+});
 
 // server/_core/env.ts
 var ENV = {
@@ -29070,6 +29078,10 @@ function getQueryParam(req, key) {
   const value = req.query[key];
   return typeof value === "string" ? value : void 0;
 }
+function redirect(res, statusCode, url2) {
+  res.writeHead(statusCode, { Location: url2 });
+  res.end();
+}
 async function handler(req, res) {
   const code = getQueryParam(req, "code");
   const state = getQueryParam(req, "state");
@@ -29098,7 +29110,7 @@ async function handler(req, res) {
       "Set-Cookie",
       `${COOKIE_NAME}=${sessionToken}; Path=/; HttpOnly; SameSite=None; Max-Age=${ONE_YEAR_MS / 1e3}${isSecure ? "; Secure" : ""}`
     );
-    return res.redirect(302, "/");
+    return redirect(res, 302, "/");
   } catch (error) {
     console.error("[OAuth] Callback failed", error);
     return res.status(500).json({ error: "OAuth callback failed" });
