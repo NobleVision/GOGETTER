@@ -492,7 +492,7 @@ export async function deleteDiscoveryPreset(userId: number, presetId: number): P
   const result = await db.delete(discoveryPresets)
     .where(and(eq(discoveryPresets.id, presetId), eq(discoveryPresets.userId, userId)));
   
-  return result.rowCount > 0;
+  return (result.rowCount ?? 0) > 0;
 }
 
 export async function getDiscoveryPresetCount(userId: number): Promise<number> {

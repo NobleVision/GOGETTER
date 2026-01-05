@@ -63,7 +63,7 @@ This implementation plan breaks down the GO-GETTER OS enhancements into discrete
   - Verify Google OAuth flow works end-to-end
   - Ask the user if questions arise
 
-- [-] 4. Discovery Presets Feature
+- [x] 4. Discovery Presets Feature
   - [x] 4.1 Create discovery_presets database table
     - Add `discoveryPresets` table to Drizzle schema
     - Create migration with unique constraint on (user_id, name)
@@ -74,23 +74,26 @@ This implementation plan breaks down the GO-GETTER OS enhancements into discrete
     - Implement 10-preset limit check
     - Add preset name uniqueness validation
     - _Requirements: 5.2, 5.5, 5.6, 5.7_
-  - [ ]* 4.3 Write property test for preset name uniqueness
+  - [x] 4.3 Write property test for preset name uniqueness
+
     - **Property 8: Preset Name Uniqueness**
     - **Validates: Requirements 5.2**
-  - [ ]* 4.4 Write property test for preset count limit
+  - [x] 4.4 Write property test for preset count limit
+
     - **Property 10: Preset Count Limit Enforcement**
     - **Validates: Requirements 5.6, 5.7**
-  - [-] 4.5 Update Wizard UI with preset functionality
+  - [x] 4.5 Update Wizard UI with preset functionality
     - Add "Save as Preset" button after wizard completion
     - Add preset selection dropdown at wizard start
     - Implement preset loading to populate wizard fields
     - Add preset deletion in settings or wizard
     - _Requirements: 5.1, 5.3, 5.4, 5.5_
-  - [ ]* 4.6 Write property test for preset loading completeness
+  - [x] 4.6 Write property test for preset loading completeness
+
     - **Property 9: Preset Loading Completeness**
     - **Validates: Requirements 5.3, 5.4**
 
-- [ ] 5. Checkpoint - Presets Complete
+- [-] 5. Checkpoint - Presets Complete
   - Ensure all preset tests pass
   - Verify preset save/load cycle works
   - Ask the user if questions arise

@@ -103,6 +103,47 @@ export default function Wizard() {
 
   const progress = (step / STEPS.length) * 100;
 
+  const loadPreset = (presetId: string) => {
+    const preset = presets.find(p => p.id.toString() === presetId);
+    if (preset) {
+      setFormData({
+        riskTolerance: preset.config.riskTolerance,
+        capitalAvailable: preset.config.capitalAvailable.toString(),
+        interests: preset.config.interests,
+        technicalSkills: preset.config.technicalSkills as "beginner" | "intermediate" | "advanced" | "expert",
+        businessGoals: preset.config.businessGoals,
+        aggressiveness: "medium", // Default values for fields not in preset
+        strategyTimeframe: "medium",
+        monthlyTokenBudget: "100",
+      });
+      toast.success(`Loaded preset: ${preset.name}`);
+    }
+  };
+
+  const handleSavePreset = () => {
+    if (!presetName.trim()) {
+      toast.error("Please enter a preset name");
+      return;
+    }
+
+    const presetConfig = {
+      riskTolerance: formData.riskTolerance,
+      interests: formData.interests,
+      capitalAvailable: parseFloat(formData.capitalAvailable) || 0,
+      technicalSkills: formData.technicalSkills,
+      businessGoals: formData.businessGoals,
+    };
+
+    createPreset.mutate({
+      name: presetName.trim(),
+      config: presetConfig,
+    });
+  };
+
+  const handleDeletePreset = (presetId: number) => {
+    deletePreset.mutate({ id: presetId });
+  };
+
   const handleNext = () => {
     if (step < STEPS.length) {
       setStep(step + 1);
@@ -149,6 +190,54 @@ export default function Wizard() {
             Let's find the perfect autonomous business opportunities for you
           </p>
         </div>
+
+        {/* Preset Selection */}
+        {presets.length > 0 && (
+          <Card className="bg-card border-border">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center gap-2">
+                <BookmarkPlus className="h-5 w-5 text-emerald-400" />
+                Quick Start with Preset
+              </CardTitle>
+              <CardDescription>
+                Load a saved configuration to skip the wizard
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <Select onValueChange={loadPreset}>
+                  <SelectTrigger className="bg-secondary border-border">
+                    <SelectValue placeholder="Choose a saved preset..." />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {presets.map((preset) => (
+                      <SelectItem key={preset.id} value={preset.id.toString()}>
+                        {preset.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {presets.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {presets.map((preset) => (
+                      <div key={preset.id} className="flex items-center gap-1 bg-secondary/50 rounded-md px-2 py-1">
+                        <span className="text-xs text-muted-foreground">{preset.name}</span>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeletePreset(preset.id)}
+                          className="h-4 w-4 p-0 text-muted-foreground hover:text-red-400"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Progress */}
         <div className="space-y-2">
@@ -424,23 +513,71 @@ export default function Wizard() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back
           </Button>
-          <Button 
-            onClick={handleNext}
-            disabled={upsertProfile.isPending}
-            className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0"
-          >
-            {step === STEPS.length ? (
-              <>
-                <Zap className="mr-2 h-4 w-4" />
-                {upsertProfile.isPending ? 'Saving...' : 'Find Businesses'}
-              </>
-            ) : (
-              <>
-                Next
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </>
+          <div className="flex gap-2">
+            {step === STEPS.length && (
+              <Dialog open={showSavePresetDialog} onOpenChange={setShowSavePresetDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="border-border">
+                    <Save className="mr-2 h-4 w-4" />
+                    Save as Preset
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="bg-card border-border">
+                  <DialogHeader>
+                    <DialogTitle className="text-white">Save Configuration as Preset</DialogTitle>
+                    <DialogDescription>
+                      Save your current wizard configuration for quick access later.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="presetName" className="text-white">Preset Name</Label>
+                      <Input
+                        id="presetName"
+                        placeholder="e.g., Conservative Content Strategy"
+                        value={presetName}
+                        onChange={(e) => setPresetName(e.target.value)}
+                        className="bg-secondary border-border"
+                      />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowSavePresetDialog(false)}
+                      className="border-border"
+                    >
+                      Cancel
+                    </Button>
+                    <Button 
+                      onClick={handleSavePreset}
+                      disabled={createPreset.isPending || !presetName.trim()}
+                      className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0"
+                    >
+                      {createPreset.isPending ? 'Saving...' : 'Save Preset'}
+                    </Button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             )}
-          </Button>
+            <Button 
+              onClick={handleNext}
+              disabled={upsertProfile.isPending}
+              className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0"
+            >
+              {step === STEPS.length ? (
+                <>
+                  <Zap className="mr-2 h-4 w-4" />
+                  {upsertProfile.isPending ? 'Saving...' : 'Find Businesses'}
+                </>
+              ) : (
+                <>
+                  Next
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </div>
     </DashboardLayout>
