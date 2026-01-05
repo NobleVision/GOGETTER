@@ -23,11 +23,11 @@ const oauthStates = new Map<string, { redirectUri: string; createdAt: number }>(
 function cleanupExpiredStates() {
   const now = Date.now();
   const TEN_MINUTES = 10 * 60 * 1000;
-  for (const [state, data] of oauthStates.entries()) {
+  oauthStates.forEach((data, state) => {
     if (now - data.createdAt > TEN_MINUTES) {
       oauthStates.delete(state);
     }
-  }
+  });
 }
 
 export function registerOAuthRoutes(app: Express) {
