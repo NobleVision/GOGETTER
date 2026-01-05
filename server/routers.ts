@@ -1,4 +1,5 @@
 import { COOKIE_NAME } from "@shared/const";
+import { serialize } from "cookie";
 import { z } from "zod";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -7,12 +8,18 @@ import * as db from "./db";
 
 export const appRouter = router({
   system: systemRouter,
-  
+
   auth: router({
     me: publicProcedure.query(opts => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      // Use setHeader instead of clearCookie for compatibility with Vercel serverless
+      const clearCookie = serialize(COOKIE_NAME, "", {
+        ...cookieOptions,
+        maxAge: 0,
+        expires: new Date(0),
+      });
+      ctx.res.setHeader("Set-Cookie", clearCookie);
       return { success: true } as const;
     }),
   }),
