@@ -53413,6 +53413,12 @@ async function getUserByOpenId(openId) {
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result.length > 0 ? result[0] : void 0;
 }
+async function getUserByGoogleId(googleId) {
+  const db = await getDb();
+  if (!db) return void 0;
+  const result = await db.select().from(users).where(eq(users.googleId, googleId)).limit(1);
+  return result.length > 0 ? result[0] : void 0;
+}
 async function getUserProfile(userId) {
   const db = await getDb();
   if (!db) return void 0;
@@ -59348,8 +59354,20 @@ var SDKServer = class {
     }
     const sessionUserId = session.openId;
     const signedInAt = /* @__PURE__ */ new Date();
+    const isGoogleUser = sessionUserId.startsWith("google_");
     let user = await getUserByOpenId(sessionUserId);
+    if (!user && isGoogleUser) {
+      const googleId = sessionUserId.replace("google_", "");
+      user = await getUserByGoogleId(googleId);
+      if (user) {
+        console.log(`[Auth] Found Google user by googleId, openId mismatch: session=${sessionUserId}, db=${user.openId}`);
+      }
+    }
     if (!user) {
+      if (isGoogleUser) {
+        console.error(`[Auth] Google OAuth user not found in database: ${sessionUserId}`);
+        throw ForbiddenError("User not found - please sign in again");
+      }
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
         await upsertUser({

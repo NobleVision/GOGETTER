@@ -47201,7 +47201,10 @@ async function upsertUserWithGoogle(user) {
     if (existingByEmail) {
       const currentProviders = existingByEmail.authProviders || [];
       const updatedProviders = currentProviders.includes("google") ? currentProviders : [...currentProviders, "google"];
+      console.log(`[Database] Linking Google account to existing user: email=${user.email}, oldOpenId=${existingByEmail.openId}, newOpenId=${user.openId}`);
       await db.update(users).set({
+        openId: user.openId,
+        // Update openId to Google format for session lookup
         googleId: user.googleId,
         pictureUrl: user.pictureUrl || existingByEmail.pictureUrl,
         authProviders: updatedProviders,
@@ -47413,8 +47416,20 @@ var SDKServer = class {
     }
     const sessionUserId = session.openId;
     const signedInAt = /* @__PURE__ */ new Date();
+    const isGoogleUser = sessionUserId.startsWith("google_");
     let user = await getUserByOpenId(sessionUserId);
+    if (!user && isGoogleUser) {
+      const googleId = sessionUserId.replace("google_", "");
+      user = await getUserByGoogleId(googleId);
+      if (user) {
+        console.log(`[Auth] Found Google user by googleId, openId mismatch: session=${sessionUserId}, db=${user.openId}`);
+      }
+    }
     if (!user) {
+      if (isGoogleUser) {
+        console.error(`[Auth] Google OAuth user not found in database: ${sessionUserId}`);
+        throw ForbiddenError("User not found - please sign in again");
+      }
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
         await upsertUser({

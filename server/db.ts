@@ -157,15 +157,19 @@ export async function upsertUserWithGoogle(user: {
 
     // Check if user exists by email (for account linking)
     const existingByEmail = await getUserByEmail(user.email);
-    
+
     if (existingByEmail) {
       // Link Google account to existing user
+      // IMPORTANT: Also update openId to the Google format so session lookup works
       const currentProviders = existingByEmail.authProviders || [];
-      const updatedProviders = currentProviders.includes("google") 
-        ? currentProviders 
+      const updatedProviders = currentProviders.includes("google")
+        ? currentProviders
         : [...currentProviders, "google"];
-      
+
+      console.log(`[Database] Linking Google account to existing user: email=${user.email}, oldOpenId=${existingByEmail.openId}, newOpenId=${user.openId}`);
+
       await db.update(users).set({
+        openId: user.openId, // Update openId to Google format for session lookup
         googleId: user.googleId,
         pictureUrl: user.pictureUrl || existingByEmail.pictureUrl,
         authProviders: updatedProviders,

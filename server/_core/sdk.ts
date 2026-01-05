@@ -276,10 +276,32 @@ class SDKServer {
 
     const sessionUserId = session.openId;
     const signedInAt = new Date();
+
+    // Check if this is a Google OAuth user (openId starts with "google_")
+    const isGoogleUser = sessionUserId.startsWith("google_");
+
     let user = await db.getUserByOpenId(sessionUserId);
 
+    // For Google OAuth users, also try to find by Google ID if not found by openId
+    // This handles the case where account linking kept the original openId
+    if (!user && isGoogleUser) {
+      const googleId = sessionUserId.replace("google_", "");
+      user = await db.getUserByGoogleId(googleId);
+
+      if (user) {
+        console.log(`[Auth] Found Google user by googleId, openId mismatch: session=${sessionUserId}, db=${user.openId}`);
+      }
+    }
+
     // If user not in DB, sync from OAuth server automatically
+    // Skip this for Google OAuth users - they should already be in DB
     if (!user) {
+      if (isGoogleUser) {
+        console.error(`[Auth] Google OAuth user not found in database: ${sessionUserId}`);
+        throw ForbiddenError("User not found - please sign in again");
+      }
+
+      // Only try Manus OAuth sync for non-Google users
       try {
         const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
         await db.upsertUser({
