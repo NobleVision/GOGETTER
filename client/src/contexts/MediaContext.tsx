@@ -59,6 +59,10 @@ interface MediaContextType {
   // Music skip track callback (set by BackgroundMusic component)
   skipTrack: () => void;
   setSkipTrackCallback: (callback: () => void) => void;
+
+  // Current track name (set by BackgroundMusic component)
+  currentTrackName: string;
+  setCurrentTrackName: (name: string) => void;
 }
 
 const MediaContext = createContext<MediaContextType | undefined>(undefined);
@@ -90,6 +94,9 @@ export function MediaProvider({ children }: MediaProviderProps) {
 
   // Skip track callback - set by BackgroundMusic component
   const [skipTrackCallback, setSkipTrackCallbackState] = useState<() => void>(() => () => {});
+
+  // Current track name - set by BackgroundMusic component
+  const [currentTrackName, setCurrentTrackName] = useState<string>("");
 
   const setSkipTrackCallback = useCallback((callback: () => void) => {
     setSkipTrackCallbackState(() => callback);
@@ -143,6 +150,8 @@ export function MediaProvider({ children }: MediaProviderProps) {
         setIsMusicPage,
         skipTrack,
         setSkipTrackCallback,
+        currentTrackName,
+        setCurrentTrackName,
       }}
     >
       {children}

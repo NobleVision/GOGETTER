@@ -16,6 +16,7 @@ import {
   VideoOff,
   Volume2,
   VolumeX,
+  Music,
   Music2,
   SkipForward
 } from "lucide-react";
@@ -43,6 +44,7 @@ export default function MediaControls({
     setMusicVolume,
     isMusicPage,
     skipTrack,
+    currentTrackName,
   } = useMedia();
 
   const buttonSize = compact ? "sm" : "default";
@@ -128,6 +130,15 @@ export default function MediaControls({
                 </div>
                 {musicEnabled && (
                   <div className="space-y-3">
+                    {/* Current Track Display */}
+                    {currentTrackName && (
+                      <div className="flex items-start gap-2 p-2 bg-slate-800/50 rounded-md">
+                        <Music className="h-4 w-4 text-emerald-400 mt-0.5 flex-shrink-0" />
+                        <span className="text-xs text-slate-300 leading-tight line-clamp-2">
+                          {currentTrackName}
+                        </span>
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <div className="flex items-center justify-between text-xs text-muted-foreground">
                         <span>Volume</span>

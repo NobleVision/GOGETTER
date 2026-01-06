@@ -45,9 +45,20 @@ function shuffleArray<T>(array: T[]): T[] {
 
 const FADE_DURATION = 1000; // ms
 
+// Helper function to format track name for display
+function formatTrackName(filename: string): string {
+  // Remove file extension
+  let name = filename.replace(/\.mp3$/i, "");
+  // Remove "Suno Playlist_NobleVision - " prefix
+  name = name.replace(/^Suno Playlist_NobleVision - /, "");
+  // Remove the AI model suffix in parentheses like (OPUS4.5), (GEMINI3FLASH), etc.
+  name = name.replace(/\s*\([^)]*\)\s*$/, "");
+  return name.trim();
+}
+
 export default function BackgroundMusic() {
   const [location] = useLocation();
-  const { musicEnabled, musicVolume, setIsMusicPage, setSkipTrackCallback } = useMedia();
+  const { musicEnabled, musicVolume, setIsMusicPage, setSkipTrackCallback, setCurrentTrackName } = useMedia();
 
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playlist, setPlaylist] = useState<string[]>(() => shuffleArray(MUSIC_FILES));
@@ -57,6 +68,19 @@ export default function BackgroundMusic() {
   const [userHasInteracted, setUserHasInteracted] = useState(false);
   const [pendingPlay, setPendingPlay] = useState(false);
   const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Use refs to avoid stale closure issues with the skip callback
+  const playlistRef = useRef(playlist);
+  const currentTrackIndexRef = useRef(currentTrackIndex);
+
+  // Keep refs in sync with state
+  useEffect(() => {
+    playlistRef.current = playlist;
+  }, [playlist]);
+
+  useEffect(() => {
+    currentTrackIndexRef.current = currentTrackIndex;
+  }, [currentTrackIndex]);
 
   // Check if current page should have music
   const isPageWithMusic = MUSIC_ENABLED_PAGES.includes(location);
@@ -158,20 +182,31 @@ export default function BackgroundMusic() {
     }, stepDuration);
   }, [isPlaying]);
 
-  // Handle track end - play next in shuffled playlist
+  // Handle track end - play next in shuffled playlist (using refs to avoid stale closure)
   const handleTrackEnded = useCallback(() => {
-    const nextIndex = (currentTrackIndex + 1) % playlist.length;
+    const currentIndex = currentTrackIndexRef.current;
+    const currentPlaylist = playlistRef.current;
+    const nextIndex = (currentIndex + 1) % currentPlaylist.length;
     if (nextIndex === 0) {
       // Reshuffle when playlist ends
-      setPlaylist(shuffleArray(MUSIC_FILES));
+      const newPlaylist = shuffleArray(MUSIC_FILES);
+      setPlaylist(newPlaylist);
+      playlistRef.current = newPlaylist;
     }
     setCurrentTrackIndex(nextIndex);
-  }, [currentTrackIndex, playlist.length]);
+    currentTrackIndexRef.current = nextIndex;
+  }, []); // No dependencies - uses refs
 
-  // Register skip track callback with the context
+  // Register skip track callback with the context (only once since callback is stable)
   useEffect(() => {
     setSkipTrackCallback(handleTrackEnded);
   }, [setSkipTrackCallback, handleTrackEnded]);
+
+  // Update current track name in context
+  const currentTrack = playlist[currentTrackIndex];
+  useEffect(() => {
+    setCurrentTrackName(formatTrackName(currentTrack));
+  }, [currentTrack, setCurrentTrackName]);
 
   // Update volume when preference changes
   useEffect(() => {
@@ -198,7 +233,6 @@ export default function BackgroundMusic() {
     };
   }, []);
 
-  const currentTrack = playlist[currentTrackIndex];
   const musicUrl = `/music/${encodeURIComponent(currentTrack)}`;
 
   return (
