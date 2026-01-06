@@ -2,16 +2,36 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useMedia, MUSIC_ENABLED_PAGES } from "@/contexts/MediaContext";
 import { useLocation } from "wouter";
 
-// Music files in dist/public/music/
+// Music files in client/public/music/
 const MUSIC_FILES = [
-  "Suno Playlist_NobleVision - Go Getter (GROK41) (1).mp3",
-  "Suno Playlist_NobleVision - Go Getter (GROK41) (2).mp3",
-  "Suno Playlist_NobleVision - Go Getter (GROK41).mp3",
-  "Suno Playlist_NobleVision - Go Getter (OPUS4.5) (1).mp3",
-  "Suno Playlist_NobleVision - Go Getter (OPUS4.5) (2).mp3",
-  "Suno Playlist_NobleVision - Go Getter (OPUS4.5) (3).mp3",
-  "Suno Playlist_NobleVision - Go Getter (OPUS4.5) (4).mp3",
-  "Suno Playlist_NobleVision - Go Getter (OPUS4.5).mp3",
+  "Suno Playlist_NobleVision - 3 Bucks is 3 Bucks! (OPUS4.5).mp3",
+  "Suno Playlist_NobleVision - Activate Your Mind (OPUS4.5).mp3",
+  "Suno Playlist_NobleVision - Agents Don't Sleep! (OPUS4.5).mp3",
+  "Suno Playlist_NobleVision - Can you Feel the Awakening! (GEMINI3FLASH).mp3",
+  "Suno Playlist_NobleVision - Every Bill Gets Paid! (OPUS4.5).mp3",
+  "Suno Playlist_NobleVision - Get GoGetter - Instrumental (GPT52).mp3",
+  "Suno Playlist_NobleVision - Ghost in the Machine (GEMINI3FLASH).mp3",
+  "Suno Playlist_NobleVision - Go Getter - Da Wha (OPUS4.5).mp3",
+  "Suno Playlist_NobleVision - Go Getter - Go Getter (OPUS4.5).mp3",
+  "Suno Playlist_NobleVision - God's Grace is the Encryption (GEMINI3FLASH).mp3",
+  "Suno Playlist_NobleVision - GoGetter Is Live - Instrumental (GPT52).mp3",
+  "Suno Playlist_NobleVision - GoGetter Is Live (GPT52).mp3",
+  "Suno Playlist_NobleVision - Manus is the Modem - Ghost in the Machine (GEMINI3FLASH).mp3",
+  "Suno Playlist_NobleVision - Noble Vision We don't Stop for 404! (Opus45).mp3",
+  "Suno Playlist_NobleVision - Paradox of Profit (OPUS4.5).mp3",
+  "Suno Playlist_NobleVision - Passport to the Kingdom (GEMINI3FLASH).mp3",
+  "Suno Playlist_NobleVision - Perplexity Whispers (GROK41).mp3",
+  "Suno Playlist_NobleVision - Stay Inside Your Line (OPUS4.5).mp3",
+  "Suno Playlist_NobleVision - Time to Bear the Fruit! (OPUS4.5).mp3",
+  "Suno Playlist_NobleVision - Token Economics (OPUS4.5).mp3",
+  "Suno Playlist_NobleVision - Truth that Wont Compute - Corner Stone (Opus45).mp3",
+  "Suno Playlist_NobleVision - Wait Your Turn (OPUS4.5).mp3",
+  "Suno Playlist_NobleVision - Watch the Profits Flow! (GROK41).mp3",
+  "Suno Playlist_NobleVision - We Don't Chase Hype! (GPT52).mp3",
+  "Suno Playlist_NobleVision - Why Wait for the Call!_ (GROK41).mp3",
+  "Suno Playlist_NobleVision - Wisdom Multiplies - Glory to the Grand Design (Opus45).mp3",
+  "Suno Playlist_NobleVision - Workflow be the Guide (Opus45).mp3",
+  "Suno Playlist_NobleVision - Your Purpose is Devine (OPUS4.5).mp3",
 ];
 
 function shuffleArray<T>(array: T[]): T[] {
