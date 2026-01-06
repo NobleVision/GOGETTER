@@ -2,6 +2,9 @@ import { useEffect, useRef, useState, useCallback } from "react";
 import { useMedia, MUSIC_ENABLED_PAGES } from "@/contexts/MediaContext";
 import { useLocation } from "wouter";
 
+// Cache buster - change this value to force rebuild
+const PLAYLIST_VERSION = "2026-01-06-v2";
+
 // Music files in client/public/music/
 const MUSIC_FILES = [
   "Suno Playlist_NobleVision - 3 Bucks is 3 Bucks! (OPUS4.5).mp3",
@@ -241,7 +244,7 @@ export default function BackgroundMusic() {
       src={musicUrl}
       onEnded={handleTrackEnded}
       onError={() => {
-        console.warn("Music file failed to load:", currentTrack);
+        console.warn(`[${PLAYLIST_VERSION}] Music file failed to load:`, currentTrack);
         handleTrackEnded(); // Skip to next track
       }}
       preload="auto"
