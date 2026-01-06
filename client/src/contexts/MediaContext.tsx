@@ -16,7 +16,7 @@ export type VideoCategory = keyof typeof VIDEO_CATEGORIES;
 
 // Map routes to video categories
 export const ROUTE_VIDEO_MAP: Record<string, VideoCategory> = {
-  "/": "dashboard",
+  "/": "hero", // Hero videos for main dashboard and login page
   "/wizard": "wizard",
   "/catalog": "catalog",
   "/my-businesses": "dashboard",
@@ -29,8 +29,8 @@ export const ROUTE_VIDEO_MAP: Record<string, VideoCategory> = {
   "/settings": "ambient",
 };
 
-// Pages that should have music enabled
-export const MUSIC_ENABLED_PAGES = ["/", "/wizard"];
+// Pages that should have music enabled (main page and dashboard)
+export const MUSIC_ENABLED_PAGES = ["/"];
 
 // localStorage keys
 const STORAGE_KEYS = {

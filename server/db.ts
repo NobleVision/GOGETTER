@@ -377,12 +377,122 @@ export async function getTokenUsageSummary(userId: number) {
   return result[0];
 }
 
+/**
+ * Token usage time-series aggregation
+ * Requirements 6.2, 6.3: Support aggregation by provider and time groupings
+ */
+export async function getTokenUsageTimeSeries(
+  userId: number,
+  timeRange: '7d' | '30d' | '90d',
+  grouping: 'day' | 'week' | 'month'
+) {
+  const db = await getDb();
+  if (!db) return { byProvider: [], total: [] };
+
+  // Calculate the start time based on time range
+  const now = new Date();
+  let startTime: Date;
+  
+  switch (timeRange) {
+    case '7d':
+      startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case '30d':
+      startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case '90d':
+      startTime = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      break;
+  }
+
+  // Determine the SQL date truncation function based on grouping
+  let dateTrunc: string;
+  switch (grouping) {
+    case 'day':
+      dateTrunc = "date_trunc('day', timestamp)";
+      break;
+    case 'week':
+      dateTrunc = "date_trunc('week', timestamp)";
+      break;
+    case 'month':
+      dateTrunc = "date_trunc('month', timestamp)";
+      break;
+  }
+
+  // Query for aggregated data by provider
+  const byProviderQuery = await db.select({
+    timestamp: sql<Date>`${sql.raw(dateTrunc)}`,
+    modelProvider: tokenUsage.modelProvider,
+    totalCost: sql<string>`COALESCE(SUM(${tokenUsage.totalCost}), 0)`,
+    inputTokens: sql<number>`COALESCE(SUM(${tokenUsage.inputTokens}), 0)`,
+    outputTokens: sql<number>`COALESCE(SUM(${tokenUsage.outputTokens}), 0)`,
+  })
+  .from(tokenUsage)
+  .where(and(
+    eq(tokenUsage.userId, userId),
+    sql`${tokenUsage.timestamp} >= ${startTime.toISOString()}`
+  ))
+  .groupBy(sql.raw(dateTrunc), tokenUsage.modelProvider)
+  .orderBy(sql.raw(dateTrunc), tokenUsage.modelProvider);
+
+  // Query for total aggregated data (all providers combined)
+  const totalQuery = await db.select({
+    timestamp: sql<Date>`${sql.raw(dateTrunc)}`,
+    totalCost: sql<string>`COALESCE(SUM(${tokenUsage.totalCost}), 0)`,
+    inputTokens: sql<number>`COALESCE(SUM(${tokenUsage.inputTokens}), 0)`,
+    outputTokens: sql<number>`COALESCE(SUM(${tokenUsage.outputTokens}), 0)`,
+  })
+  .from(tokenUsage)
+  .where(and(
+    eq(tokenUsage.userId, userId),
+    sql`${tokenUsage.timestamp} >= ${startTime.toISOString()}`
+  ))
+  .groupBy(sql.raw(dateTrunc))
+  .orderBy(sql.raw(dateTrunc));
+
+  // Convert to the expected format
+  const byProvider = byProviderQuery.map(row => ({
+    timestamp: row.timestamp,
+    modelProvider: row.modelProvider,
+    totalCost: parseFloat(row.totalCost),
+    inputTokens: row.inputTokens,
+    outputTokens: row.outputTokens,
+  }));
+
+  const total = totalQuery.map(row => ({
+    timestamp: row.timestamp,
+    totalCost: parseFloat(row.totalCost),
+    inputTokens: row.inputTokens,
+    outputTokens: row.outputTokens,
+  }));
+
+  return {
+    byProvider,
+    total,
+  };
+}
+
 // ============ BUSINESS EVENTS OPERATIONS ============
 
 export async function logBusinessEvent(event: InsertBusinessEvent): Promise<void> {
   const db = await getDb();
   if (!db) return;
-  await db.insert(businessEvents).values(event);
+
+  // Requirements 7.1, 7.2: Ensure event storage completeness
+  // Validate that revenue and cost events have required fields
+  if (event.eventType === 'revenue' || event.eventType === 'cost') {
+    if (!event.amount || parseFloat(event.amount) < 0) {
+      throw new Error(`${event.eventType} events must have a valid positive amount`);
+    }
+  }
+
+  // Ensure timestamp is present (will use defaultNow if not provided)
+  const eventToInsert = {
+    ...event,
+    timestamp: event.timestamp || new Date(),
+  };
+
+  await db.insert(businessEvents).values(eventToInsert);
 }
 
 export async function getBusinessEvents(userBusinessId: number, limit = 50) {

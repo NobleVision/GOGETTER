@@ -40,6 +40,7 @@ export default function Monitoring() {
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | undefined>(
     selectedIdParam || undefined
   );
+  const [timeRange, setTimeRange] = useState<'24h' | '7d' | '30d' | '90d'>('24h');
 
   const { data: userBusinesses, isLoading: businessesLoading } = trpc.userBusinesses.list.useQuery();
   const { data: selectedBusiness } = trpc.userBusinesses.get.useQuery(
@@ -48,6 +49,14 @@ export default function Monitoring() {
   );
   const { data: events, isLoading: eventsLoading, refetch: refetchEvents } = trpc.events.list.useQuery(
     { userBusinessId: parseInt(selectedBusinessId || '0'), limit: 50 },
+    { enabled: !!selectedBusinessId }
+  );
+  const { data: timeSeriesData, isLoading: timeSeriesLoading } = trpc.events.timeSeries.useQuery(
+    { 
+      userBusinessId: parseInt(selectedBusinessId || '0'), 
+      timeRange,
+      grouping: timeRange === '24h' ? 'hour' : timeRange === '7d' ? 'day' : 'day'
+    },
     { enabled: !!selectedBusinessId }
   );
   const { data: stats } = trpc.dashboard.stats.useQuery();
@@ -65,15 +74,76 @@ export default function Monitoring() {
     });
   };
 
-  // Mock chart data - in production this would come from real metrics
+  // Process time-series data for charts
   const chartData = useMemo(() => {
-    const hours = Array.from({ length: 24 }, (_, i) => ({
-      hour: `${i}:00`,
-      revenue: Math.random() * 10 + 2,
-      cost: Math.random() * 2 + 0.5,
-    }));
-    return hours;
-  }, [selectedBusinessId]);
+    if (!timeSeriesData) return [];
+
+    // Create a map of all timestamps from revenue, costs, and profit data
+    const timestampMap = new Map<string, { timestamp: Date; revenue: number; cost: number; profit: number }>();
+
+    // Add revenue data
+    timeSeriesData.revenue.forEach(point => {
+      const key = point.timestamp.toISOString();
+      timestampMap.set(key, {
+        timestamp: point.timestamp,
+        revenue: point.value,
+        cost: 0,
+        profit: 0,
+      });
+    });
+
+    // Add cost data
+    timeSeriesData.costs.forEach(point => {
+      const key = point.timestamp.toISOString();
+      const existing = timestampMap.get(key);
+      if (existing) {
+        existing.cost = point.value;
+      } else {
+        timestampMap.set(key, {
+          timestamp: point.timestamp,
+          revenue: 0,
+          cost: point.value,
+          profit: 0,
+        });
+      }
+    });
+
+    // Add profit data
+    timeSeriesData.profit.forEach(point => {
+      const key = point.timestamp.toISOString();
+      const existing = timestampMap.get(key);
+      if (existing) {
+        existing.profit = point.value;
+      } else {
+        timestampMap.set(key, {
+          timestamp: point.timestamp,
+          revenue: 0,
+          cost: 0,
+          profit: point.value,
+        });
+      }
+    });
+
+    // Convert to array and sort by timestamp
+    return Array.from(timestampMap.values())
+      .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime())
+      .map(point => ({
+        time: formatChartTime(point.timestamp, timeRange),
+        revenue: point.revenue,
+        cost: point.cost,
+        profit: point.profit,
+      }));
+  }, [timeSeriesData, timeRange]);
+
+  const formatChartTime = (date: Date, range: string) => {
+    if (range === '24h') {
+      return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    } else if (range === '7d') {
+      return date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    } else {
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+  };
 
   const profit = selectedBusiness 
     ? parseFloat(selectedBusiness.totalRevenue || '0') - parseFloat(selectedBusiness.totalTokenCost || '0') - parseFloat(selectedBusiness.totalInfraCost || '0')
@@ -89,6 +159,17 @@ export default function Monitoring() {
             <p className="text-muted-foreground">Track your business performance and agent activity</p>
           </div>
           <div className="flex items-center gap-3">
+            <Select value={timeRange} onValueChange={(value: '24h' | '7d' | '30d' | '90d') => setTimeRange(value)}>
+              <SelectTrigger className="w-[120px] bg-secondary border-border">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="24h">24 Hours</SelectItem>
+                <SelectItem value="7d">7 Days</SelectItem>
+                <SelectItem value="30d">30 Days</SelectItem>
+                <SelectItem value="90d">90 Days</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={selectedBusinessId} onValueChange={setSelectedBusinessId}>
               <SelectTrigger className="w-[280px] bg-secondary border-border">
                 <SelectValue placeholder="Select a business" />
@@ -196,71 +277,116 @@ export default function Monitoring() {
               <Card className="bg-card border-border">
                 <CardHeader>
                   <CardTitle className="text-white">Revenue Over Time</CardTitle>
-                  <CardDescription>Hourly revenue for the last 24 hours</CardDescription>
+                  <CardDescription>
+                    {timeRange === '24h' ? 'Hourly revenue for the last 24 hours' :
+                     timeRange === '7d' ? 'Daily revenue for the last 7 days' :
+                     timeRange === '30d' ? 'Daily revenue for the last 30 days' :
+                     'Daily revenue for the last 90 days'}
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[250px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData}>
-                        <defs>
-                          <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                        <XAxis dataKey="hour" stroke="#6b7280" fontSize={12} />
-                        <YAxis stroke="#6b7280" fontSize={12} />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: '#1f2937', 
-                            border: '1px solid #374151',
-                            borderRadius: '8px'
-                          }}
-                          labelStyle={{ color: '#9ca3af' }}
-                        />
-                        <Area 
-                          type="monotone" 
-                          dataKey="revenue" 
-                          stroke="#10b981" 
-                          fill="url(#revenueGradient)"
-                          strokeWidth={2}
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
+                    {timeSeriesLoading ? (
+                      <div className="flex items-center justify-center h-full">
+                        <Skeleton className="h-full w-full" />
+                      </div>
+                    ) : chartData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={chartData}>
+                          <defs>
+                            <linearGradient id="revenueGradient" x1="0" y1="0" x2="0" y2="1">
+                              <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                              <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                            </linearGradient>
+                          </defs>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                          <XAxis dataKey="time" stroke="#6b7280" fontSize={12} />
+                          <YAxis stroke="#6b7280" fontSize={12} />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: '#1f2937', 
+                              border: '1px solid #374151',
+                              borderRadius: '8px'
+                            }}
+                            labelStyle={{ color: '#9ca3af' }}
+                            formatter={(value: number) => [`$${value.toFixed(2)}`, 'Revenue']}
+                          />
+                          <Area 
+                            type="monotone" 
+                            dataKey="revenue" 
+                            stroke="#10b981" 
+                            fill="url(#revenueGradient)"
+                            strokeWidth={2}
+                          />
+                        </AreaChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-muted-foreground">
+                        <div className="text-center">
+                          <TrendingUp className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                          <p>No revenue data available</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="bg-card border-border">
                 <CardHeader>
-                  <CardTitle className="text-white">Cost Analysis</CardTitle>
-                  <CardDescription>Token costs over time</CardDescription>
+                  <CardTitle className="text-white">Cost & Profit Analysis</CardTitle>
+                  <CardDescription>Token costs and profit trends over time</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="h-[250px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                        <XAxis dataKey="hour" stroke="#6b7280" fontSize={12} />
-                        <YAxis stroke="#6b7280" fontSize={12} />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: '#1f2937', 
-                            border: '1px solid #374151',
-                            borderRadius: '8px'
-                          }}
-                          labelStyle={{ color: '#9ca3af' }}
-                        />
-                        <Line 
-                          type="monotone" 
-                          dataKey="cost" 
-                          stroke="#f59e0b" 
-                          strokeWidth={2}
-                          dot={false}
-                        />
-                      </LineChart>
-                    </ResponsiveContainer>
+                    {timeSeriesLoading ? (
+                      <div className="flex items-center justify-center h-full">
+                        <Skeleton className="h-full w-full" />
+                      </div>
+                    ) : chartData.length > 0 ? (
+                      <ResponsiveContainer width="100%" height="100%">
+                        <LineChart data={chartData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                          <XAxis dataKey="time" stroke="#6b7280" fontSize={12} />
+                          <YAxis stroke="#6b7280" fontSize={12} />
+                          <Tooltip 
+                            contentStyle={{ 
+                              backgroundColor: '#1f2937', 
+                              border: '1px solid #374151',
+                              borderRadius: '8px'
+                            }}
+                            labelStyle={{ color: '#9ca3af' }}
+                            formatter={(value: number, name: string) => [
+                              `$${value.toFixed(2)}`, 
+                              name === 'cost' ? 'Cost' : 'Profit'
+                            ]}
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="cost" 
+                            stroke="#f59e0b" 
+                            strokeWidth={2}
+                            dot={false}
+                            name="cost"
+                          />
+                          <Line 
+                            type="monotone" 
+                            dataKey="profit" 
+                            stroke="#10b981" 
+                            strokeWidth={2}
+                            dot={false}
+                            name="profit"
+                          />
+                        </LineChart>
+                      </ResponsiveContainer>
+                    ) : (
+                      <div className="flex items-center justify-center h-full text-muted-foreground">
+                        <div className="text-center">
+                          <Cpu className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                          <p>No cost data available</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>

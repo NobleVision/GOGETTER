@@ -143,32 +143,32 @@ This implementation plan breaks down the GO-GETTER OS enhancements into discrete
   - Verify fallback to static catalog works
   - Ask the user if questions arise
 
-- [ ] 8. Enhanced Monitoring Dashboard with Time-Series Charts
+- [x] 8. Enhanced Monitoring Dashboard with Time-Series Charts
   - [x] 8.1 Add time-series aggregation API
     - Create `events.timeSeries` tRPC procedure
     - Implement SQL aggregation by hour, day, week
     - Support time range filtering (24h, 7d, 30d, 90d)
     - Return revenue, costs, and profit data points
     - _Requirements: 7.3, 7.4_
-  - [ ]* 8.2 Write property test for chart data time range filtering
+  - [x] 8.2 Write property test for chart data time range filtering
     - **Property 7: Chart Data Time Range Filtering**
     - **Validates: Requirements 4.1, 4.2, 4.3, 4.5**
-  - [ ]* 8.3 Write property test for event aggregation
+  - [x] 8.3 Write property test for event aggregation
     - **Property 13: Event Aggregation by Time Period**
     - **Validates: Requirements 7.3, 7.4**
-  - [ ] 8.4 Update Monitoring page with real time-series charts
+  - [x] 8.4 Update Monitoring page with real time-series charts
     - Replace mock chart data with real API data
     - Add time range selector (24h, 7d, 30d)
     - Display revenue trend chart with real data
     - Display token cost trend chart with real data
     - Add profit/loss trend line
     - _Requirements: 4.1, 4.2, 4.3, 4.5_
-  - [ ] 8.5 Ensure event storage completeness
+  - [x] 8.5 Ensure event storage completeness
     - Verify revenue events store timestamp and amount
     - Verify cost events store timestamp and amount
     - Add validation in event logging
     - _Requirements: 7.1, 7.2_
-  - [ ]* 8.6 Write property test for event storage completeness
+  - [x] 8.6 Write property test for event storage completeness
     - **Property 12: Event Storage Completeness**
     - **Validates: Requirements 7.1, 7.2**
 

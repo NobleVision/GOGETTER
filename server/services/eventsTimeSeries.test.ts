@@ -225,4 +225,99 @@ describe('Events Time-Series Property Tests', () => {
       { numRuns: 30, timeout: 15000 }
     );
   });
+
+  /**
+   * Property 12: Event Storage Completeness
+   * Validates: Requirements 7.1, 7.2
+   * 
+   * Property: Event storage should:
+   * 1. Require valid amounts for revenue and cost events
+   * 2. Store timestamps correctly for all events
+   * 3. Reject invalid data (negative amounts, missing required fields)
+   * 4. Handle edge cases gracefully
+   */
+  it('Property 12: Event storage completeness validation', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        // Generate various event types and data
+        fc.record({
+          eventType: fc.constantFrom('revenue', 'cost', 'error', 'intervention', 'status_change', 'agent_activity'),
+          amount: fc.option(fc.float({ min: -100, max: 1000 }).map(n => Math.fround(n).toFixed(2))),
+          message: fc.option(fc.string({ minLength: 1, maxLength: 100 })),
+          requiresIntervention: fc.option(fc.boolean()),
+          timestamp: fc.option(fc.date({ min: new Date('2024-01-01'), max: new Date() })),
+        }),
+        async (eventData) => {
+          const database = await getDb();
+          if (!database) return;
+
+          const event = {
+            userBusinessId: testUserBusinessId,
+            ...eventData,
+          };
+
+          try {
+            // Property 1: Revenue and cost events must have valid positive amounts
+            if ((event.eventType === 'revenue' || event.eventType === 'cost')) {
+              if (!event.amount || parseFloat(event.amount) < 0) {
+                // Should throw an error for invalid amounts
+                await expect(db.logBusinessEvent(event)).rejects.toThrow();
+                return; // Test passed - invalid data was rejected
+              }
+            }
+
+            // Property 2: Valid events should be stored successfully
+            await db.logBusinessEvent(event);
+
+            // Property 3: Verify the event was stored with correct data
+            const storedEvents = await db.getBusinessEvents(testUserBusinessId, 1);
+            expect(storedEvents.length).toBeGreaterThan(0);
+
+            const storedEvent = storedEvents[0];
+
+            // Property 4: Timestamp should always be present and valid
+            expect(storedEvent.timestamp).toBeInstanceOf(Date);
+            expect(storedEvent.timestamp.getTime()).not.toBeNaN();
+
+            // Property 5: Event type should match
+            expect(storedEvent.eventType).toBe(event.eventType);
+
+            // Property 6: Amount should be preserved for revenue/cost events
+            if (event.eventType === 'revenue' || event.eventType === 'cost') {
+              expect(storedEvent.amount).toBe(event.amount);
+              expect(parseFloat(storedEvent.amount!)).toBeGreaterThanOrEqual(0);
+            }
+
+            // Property 7: Optional fields should be preserved if provided
+            if (event.message) {
+              expect(storedEvent.message).toBe(event.message);
+            }
+
+            if (event.requiresIntervention !== undefined) {
+              expect(storedEvent.requiresIntervention).toBe(event.requiresIntervention);
+            }
+
+            // Property 8: Custom timestamp should be preserved
+            if (event.timestamp) {
+              // Allow for small differences due to database precision
+              const timeDiff = Math.abs(storedEvent.timestamp.getTime() - event.timestamp.getTime());
+              expect(timeDiff).toBeLessThan(1000); // Within 1 second
+            }
+
+          } catch (error) {
+            // If we expect this to fail (invalid data), that's okay
+            if ((event.eventType === 'revenue' || event.eventType === 'cost') && 
+                (!event.amount || parseFloat(event.amount) < 0)) {
+              // Expected failure for invalid data
+              expect(error).toBeDefined();
+            } else {
+              // Unexpected failure - re-throw
+              throw error;
+            }
+          }
+        }
+      ),
+      { numRuns: 40, timeout: 12000 }
+    );
+  });
 });

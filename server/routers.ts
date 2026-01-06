@@ -175,6 +175,15 @@ export const appRouter = router({
     summary: protectedProcedure.query(async ({ ctx }) => {
       return db.getTokenUsageSummary(ctx.user.id);
     }),
+
+    timeSeries: protectedProcedure
+      .input(z.object({
+        timeRange: z.enum(['7d', '30d', '90d']),
+        grouping: z.enum(['day', 'week', 'month']),
+      }))
+      .query(async ({ ctx, input }) => {
+        return db.getTokenUsageTimeSeries(ctx.user.id, input.timeRange, input.grouping);
+      }),
   }),
 
   // Business Events & Monitoring
