@@ -86,7 +86,7 @@ export function MediaProvider({ children }: MediaProviderProps) {
 
   const [musicVolume, setMusicVolumeState] = useState(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.musicVolume);
-    return stored !== null ? parseFloat(stored) : 0.5; // Default 50% volume
+    return stored !== null ? parseFloat(stored) : 0.1; // Default 10% volume
   });
 
   const [currentVideoCategory, setCurrentVideoCategory] = useState<VideoCategory>("dashboard");

@@ -200,10 +200,45 @@ export default function BackgroundMusic() {
     currentTrackIndexRef.current = nextIndex;
   }, []); // No dependencies - uses refs
 
-  // Register skip track callback with the context (only once since callback is stable)
+  // Skip track function - explicitly stops current and plays next
+  const skipToNextTrack = useCallback(() => {
+    if (!audioRef.current) return;
+
+    // Stop current playback
+    audioRef.current.pause();
+    audioRef.current.currentTime = 0;
+
+    // Calculate next track
+    const currentIndex = currentTrackIndexRef.current;
+    const currentPlaylist = playlistRef.current;
+    const nextIndex = (currentIndex + 1) % currentPlaylist.length;
+
+    if (nextIndex === 0) {
+      // Reshuffle when playlist ends
+      const newPlaylist = shuffleArray(MUSIC_FILES);
+      setPlaylist(newPlaylist);
+      playlistRef.current = newPlaylist;
+    }
+
+    setCurrentTrackIndex(nextIndex);
+    currentTrackIndexRef.current = nextIndex;
+
+    // The audio src will update due to state change, then we need to play
+    // Use a small timeout to let React update the src first
+    setTimeout(() => {
+      if (audioRef.current && musicEnabled && isPageWithMusic) {
+        audioRef.current.volume = musicVolume;
+        audioRef.current.play().catch(() => {
+          // Autoplay prevented, will play on next user interaction
+        });
+      }
+    }, 50);
+  }, [musicEnabled, isPageWithMusic, musicVolume]);
+
+  // Register skip track callback with the context
   useEffect(() => {
-    setSkipTrackCallback(handleTrackEnded);
-  }, [setSkipTrackCallback, handleTrackEnded]);
+    setSkipTrackCallback(skipToNextTrack);
+  }, [setSkipTrackCallback, skipToNextTrack]);
 
   // Update current track name in context
   const currentTrack = playlist[currentTrackIndex];
