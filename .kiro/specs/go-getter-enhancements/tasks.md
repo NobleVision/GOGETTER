@@ -172,44 +172,44 @@ This implementation plan breaks down the GO-GETTER OS enhancements into discrete
     - **Property 12: Event Storage Completeness**
     - **Validates: Requirements 7.1, 7.2**
 
-- [ ] 9. Token Usage Time-Series Enhancement
-  - [ ] 9.1 Add token usage aggregation API
+- [x] 9. Token Usage Time-Series Enhancement
+  - [x] 9.1 Add token usage aggregation API
     - Create `tokenUsage.timeSeries` tRPC procedure
     - Implement aggregation by provider
     - Support daily, weekly, monthly groupings
     - _Requirements: 6.2, 6.3_
-  - [ ]* 9.2 Write property test for token usage aggregation
+  - [x] 9.2 Write property test for token usage aggregation
     - **Property 11: Token Usage Aggregation Accuracy**
     - **Validates: Requirements 6.2, 6.3, 6.4**
-  - [ ] 9.3 Update Token Usage page with charts
+  - [x] 9.3 Update Token Usage page with charts
     - Add time-series chart for token costs
     - Add breakdown by model provider
     - Add budget warning when approaching limit
     - _Requirements: 6.4, 6.5_
 
-- [ ] 10. Checkpoint - Monitoring Complete
+- [x] 10. Checkpoint - Monitoring Complete
   - Ensure all monitoring tests pass
   - Verify charts display real data
   - Verify time range filtering works
   - Ask the user if questions arise
 
-- [ ] 11. Settings Page Enhancements
-  - [ ] 11.1 Add linked providers display
+- [x] 11. Settings Page Enhancements
+  - [x] 11.1 Add linked providers display
     - Show which OAuth providers are linked to account
     - Display Google profile picture if available
     - _Requirements: 8.4_
-  - [ ] 11.2 Add provider linking functionality
+  - [x] 11.2 Add provider linking functionality
     - Allow linking additional OAuth providers
     - Handle account merge for same email
     - _Requirements: 8.2_
 
-- [ ] 12. Final Integration & Polish
-  - [ ] 12.1 Add error handling throughout
+- [x] 12. Final Integration & Polish
+  - [x] 12.1 Add error handling throughout
     - Implement error boundaries for auth failures
     - Add user-friendly error messages
     - Add retry logic for transient failures
     - _Requirements: 2.7, 1.4_
-  - [ ] 12.2 Add loading states
+  - [x] 12.2 Add loading states
     - Add skeleton loaders for charts
     - Add loading indicators for AI processing
     - Add progress feedback for long operations
@@ -219,7 +219,7 @@ This implementation plan breaks down the GO-GETTER OS enhancements into discrete
     - Test agent discovery flow
     - Test chart data retrieval
 
-- [ ] 13. Final Checkpoint
+- [x] 13. Final Checkpoint
   - Ensure all tests pass
   - Verify all features work end-to-end
   - Review error handling and edge cases

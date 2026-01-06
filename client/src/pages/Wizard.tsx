@@ -8,8 +8,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AILoading, AIProcessingOverlay } from "@/components/ui/ai-loading";
+import { ProgressFeedback, ProgressStep } from "@/components/ui/progress-feedback";
 import { trpc } from "@/lib/trpc";
-import { useState } from "react";
+import { withErrorHandling } from "@/lib/errorHandling";
+import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { 
@@ -55,6 +58,8 @@ export default function Wizard() {
   const [step, setStep] = useState(1);
   const [showSavePresetDialog, setShowSavePresetDialog] = useState(false);
   const [presetName, setPresetName] = useState("");
+  const [showAIProcessing, setShowAIProcessing] = useState(false);
+  const [processingSteps, setProcessingSteps] = useState<ProgressStep[]>([]);
   const [formData, setFormData] = useState({
     riskTolerance: "moderate" as "conservative" | "moderate" | "aggressive",
     capitalAvailable: "",
@@ -93,36 +98,96 @@ export default function Wizard() {
 
   const upsertProfile = trpc.profile.upsert.useMutation({
     onSuccess: () => {
-      toast.success("Profile saved! Discovering opportunities...");
-      // Call Go-Getter agent after profile is saved
-      discoverOpportunities.mutate({
-        preferences: {
-          riskTolerance: formData.riskTolerance,
-          interests: formData.interests,
-          capitalAvailable: parseFloat(formData.capitalAvailable) || 0,
-          technicalSkills: formData.technicalSkills,
-          businessGoals: formData.businessGoals,
-        }
-      });
+      // Update processing steps
+      setProcessingSteps(prev => prev.map(step => 
+        step.id === 'profile' 
+          ? { ...step, status: 'completed' }
+          : step
+      ));
+      
+      // Start AI discovery
+      const preferences = {
+        riskTolerance: formData.riskTolerance,
+        interests: formData.interests,
+        capitalAvailable: parseFloat(formData.capitalAvailable) || 0,
+        technicalSkills: formData.technicalSkills,
+        businessGoals: formData.businessGoals,
+      };
+      
+      discoverOpportunities.mutate({ preferences });
     },
     onError: (error) => {
+      setProcessingSteps(prev => prev.map(step => 
+        step.id === 'profile' 
+          ? { ...step, status: 'error', error: error.message }
+          : step
+      ));
+      setShowAIProcessing(false);
       toast.error(error.message || "Failed to save profile");
     }
   });
 
   const discoverOpportunities = trpc.agent.discover.useMutation({
     onSuccess: (opportunities) => {
-      toast.success(`Discovered ${opportunities.length} AI-powered opportunities!`);
-      // Store opportunities in sessionStorage for the catalog page
+      // Update processing steps
+      setProcessingSteps(prev => prev.map(step => 
+        step.id === 'discover' 
+          ? { ...step, status: 'completed' }
+          : step.id === 'finalize'
+          ? { ...step, status: 'completed' }
+          : step
+      ));
+      
+      // Store opportunities and redirect
       sessionStorage.setItem('aiDiscoveredOpportunities', JSON.stringify(opportunities));
-      setTimeout(() => setLocation('/catalog'), 1500);
+      
+      setTimeout(() => {
+        setShowAIProcessing(false);
+        toast.success(`Discovered ${opportunities.length} AI-powered opportunities!`);
+        setTimeout(() => setLocation('/catalog'), 1000);
+      }, 1500);
     },
     onError: (error) => {
       console.warn('AI discovery failed, falling back to static catalog:', error);
-      toast.success("Profile saved! Redirecting to catalog...");
-      setTimeout(() => setLocation('/catalog'), 1500);
+      
+      // Update processing steps
+      setProcessingSteps(prev => prev.map(step => 
+        step.id === 'discover' 
+          ? { ...step, status: 'error', error: 'AI discovery failed, using static catalog' }
+          : step.id === 'finalize'
+          ? { ...step, status: 'completed' }
+          : step
+      ));
+      
+      setTimeout(() => {
+        setShowAIProcessing(false);
+        toast.success("Profile saved! Redirecting to catalog...");
+        setTimeout(() => setLocation('/catalog'), 1000);
+      }, 1500);
     }
   });
+
+  // Initialize processing steps
+  const initializeProcessingSteps = (): ProgressStep[] => [
+    {
+      id: 'profile',
+      title: 'Saving Profile',
+      description: 'Storing your preferences and settings',
+      status: 'in_progress'
+    },
+    {
+      id: 'discover',
+      title: 'AI Discovery',
+      description: 'Analyzing market opportunities with AI',
+      status: 'pending'
+    },
+    {
+      id: 'finalize',
+      title: 'Finalizing Results',
+      description: 'Preparing personalized recommendations',
+      status: 'pending'
+    }
+  ];
 
   const progress = (step / STEPS.length) * 100;
 
@@ -171,7 +236,11 @@ export default function Wizard() {
     if (step < STEPS.length) {
       setStep(step + 1);
     } else {
-      // Submit
+      // Initialize processing and show overlay
+      setProcessingSteps(initializeProcessingSteps());
+      setShowAIProcessing(true);
+      
+      // Submit profile
       upsertProfile.mutate({
         ...formData,
         wizardCompleted: true,
@@ -605,6 +674,29 @@ export default function Wizard() {
           </div>
         </div>
       </div>
+
+      {/* AI Processing Overlay */}
+      <AIProcessingOverlay 
+        isVisible={showAIProcessing}
+        message="Discovering personalized business opportunities..."
+        onCancel={() => {
+          setShowAIProcessing(false);
+          // Cancel any ongoing mutations if possible
+          // Note: tRPC doesn't provide direct cancellation, but we can ignore results
+        }}
+      />
+
+      {/* Processing Steps Dialog */}
+      {showAIProcessing && (
+        <div className="fixed bottom-4 right-4 z-40">
+          <ProgressFeedback
+            steps={processingSteps}
+            title="Processing Your Request"
+            compact
+            className="bg-card/95 backdrop-blur-sm border-border shadow-lg"
+          />
+        </div>
+      )}
     </DashboardLayout>
   );
 }

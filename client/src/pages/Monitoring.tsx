@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { LineChartSkeleton, AreaChartSkeleton } from "@/components/ui/chart-skeleton";
 import { trpc } from "@/lib/trpc";
 import { useState, useMemo } from "react";
 import { useSearch } from "wouter";
@@ -20,7 +22,6 @@ import {
   ArrowUpRight,
   ArrowDownRight
 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
 
 const EVENT_STYLES = {

@@ -1,5 +1,4 @@
 import { trpc } from "@/lib/trpc";
-import { getGoogleLoginUrl } from "@/const";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
@@ -10,31 +9,36 @@ import "./index.css";
 
 const queryClient = new QueryClient();
 
-const redirectToLoginIfUnauthorized = (error: unknown) => {
+// Log auth errors but don't auto-redirect - let the landing page handle unauthenticated users
+const logAuthError = (error: unknown) => {
   if (!(error instanceof TRPCClientError)) return;
-  if (typeof window === "undefined") return;
 
   const isUnauthorized = error.message === UNAUTHED_ERR_MSG;
 
-  if (!isUnauthorized) return;
-
-  // Redirect to Google OAuth login
-  window.location.href = getGoogleLoginUrl();
+  if (isUnauthorized) {
+    console.log("[Auth] User is not authenticated - showing landing page");
+  }
 };
 
 queryClient.getQueryCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.query.state.error;
-    redirectToLoginIfUnauthorized(error);
-    console.error("[API Query Error]", error);
+    logAuthError(error);
+    // Only log non-auth errors to console.error
+    if (!(error instanceof TRPCClientError) || error.message !== UNAUTHED_ERR_MSG) {
+      console.error("[API Query Error]", error);
+    }
   }
 });
 
 queryClient.getMutationCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.mutation.state.error;
-    redirectToLoginIfUnauthorized(error);
-    console.error("[API Mutation Error]", error);
+    logAuthError(error);
+    // Only log non-auth errors to console.error
+    if (!(error instanceof TRPCClientError) || error.message !== UNAUTHED_ERR_MSG) {
+      console.error("[API Mutation Error]", error);
+    }
   }
 });
 

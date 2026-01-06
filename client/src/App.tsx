@@ -3,6 +3,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
+import UrlNotifications from "./components/UrlNotifications";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { MediaProvider } from "./contexts/MediaContext";
 import BackgroundVideo from "./components/BackgroundVideo";
@@ -58,6 +59,9 @@ function App() {
             {/* Global background media - renders behind everything */}
             <BackgroundVideo />
             <BackgroundMusic />
+
+            {/* Handle URL-based notifications */}
+            <UrlNotifications />
 
             <Toaster />
             <Router />

@@ -198,6 +198,44 @@ export async function upsertUserWithGoogle(user: {
   }
 }
 
+/**
+ * Link Google account to existing user
+ * Requirement 8.2: Allow linking additional OAuth providers
+ */
+export async function linkGoogleAccount(userId: number, googleData: {
+  googleId: string;
+  pictureUrl: string | null;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database connection failed");
+
+  try {
+    // Get current user to check existing providers
+    const user = await getUserById(userId);
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const currentProviders = user.authProviders || [];
+    const updatedProviders = currentProviders.includes("google")
+      ? currentProviders
+      : [...currentProviders, "google"];
+
+    // Update user with Google data
+    await db.update(users).set({
+      googleId: googleData.googleId,
+      pictureUrl: googleData.pictureUrl || user.pictureUrl,
+      authProviders: updatedProviders,
+      updatedAt: new Date(),
+    }).where(eq(users.id, userId));
+
+    return await getUserById(userId);
+  } catch (error) {
+    console.error("[DB] Failed to link Google account:", error);
+    throw error;
+  }
+}
+
 // ============ USER PROFILE OPERATIONS ============
 
 export async function getUserProfile(userId: number): Promise<UserProfile | undefined> {
