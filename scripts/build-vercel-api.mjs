@@ -11,7 +11,7 @@ import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const rootDir = join(__dirname, "..");
-const apiDir = join(rootDir, "api");
+const apiDir = join(rootDir, "src-api");
 const distDir = join(rootDir, "dist");
 const outputDir = join(rootDir, ".vercel", "output");
 
