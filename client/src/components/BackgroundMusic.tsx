@@ -54,6 +54,8 @@ export default function BackgroundMusic() {
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFading, setIsFading] = useState(false);
+  const [userHasInteracted, setUserHasInteracted] = useState(false);
+  const [pendingPlay, setPendingPlay] = useState(false);
   const fadeIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // Check if current page should have music
@@ -64,17 +66,44 @@ export default function BackgroundMusic() {
     setIsMusicPage(isPageWithMusic);
   }, [isPageWithMusic, setIsMusicPage]);
 
+  // Listen for user interaction to unlock autoplay
+  useEffect(() => {
+    const handleUserInteraction = () => {
+      setUserHasInteracted(true);
+      // Remove listeners once user has interacted
+      document.removeEventListener("click", handleUserInteraction);
+      document.removeEventListener("keydown", handleUserInteraction);
+      document.removeEventListener("touchstart", handleUserInteraction);
+    };
+
+    document.addEventListener("click", handleUserInteraction);
+    document.addEventListener("keydown", handleUserInteraction);
+    document.addEventListener("touchstart", handleUserInteraction);
+
+    return () => {
+      document.removeEventListener("click", handleUserInteraction);
+      document.removeEventListener("keydown", handleUserInteraction);
+      document.removeEventListener("touchstart", handleUserInteraction);
+    };
+  }, []);
+
   // Fade in function
   const fadeIn = useCallback(() => {
     if (!audioRef.current) return;
-    
+
     setIsFading(true);
     audioRef.current.volume = 0;
-    audioRef.current.play().catch(() => {
-      // Autoplay was prevented - user needs to interact first
-      console.log("Autoplay prevented - waiting for user interaction");
-    });
-    
+
+    const playPromise = audioRef.current.play();
+
+    if (playPromise !== undefined) {
+      playPromise.catch(() => {
+        // Autoplay was prevented - mark as pending and wait for user interaction
+        setIsFading(false);
+        setPendingPlay(true);
+      });
+    }
+
     const targetVolume = musicVolume;
     const steps = 20;
     const stepDuration = FADE_DURATION / steps;
@@ -93,6 +122,14 @@ export default function BackgroundMusic() {
       }
     }, stepDuration);
   }, [musicVolume]);
+
+  // When user interacts and we have a pending play, start the music
+  useEffect(() => {
+    if (userHasInteracted && pendingPlay && musicEnabled && isPageWithMusic) {
+      setPendingPlay(false);
+      fadeIn();
+    }
+  }, [userHasInteracted, pendingPlay, musicEnabled, isPageWithMusic, fadeIn]);
 
   // Fade out function
   const fadeOut = useCallback(() => {
