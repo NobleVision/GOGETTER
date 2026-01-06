@@ -21952,7 +21952,7 @@ var require_cookie = __commonJS({
   "node_modules/.pnpm/cookie@0.7.1/node_modules/cookie/index.js"(exports2) {
     "use strict";
     exports2.parse = parse3;
-    exports2.serialize = serialize;
+    exports2.serialize = serialize2;
     var __toString = Object.prototype.toString;
     var cookieNameRegExp = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
     var cookieValueRegExp = /^("?)[\u0021\u0023-\u002B\u002D-\u003A\u003C-\u005B\u005D-\u007E]*\1$/;
@@ -22010,7 +22010,7 @@ var require_cookie = __commonJS({
       }
       return min;
     }
-    function serialize(name, val, opt) {
+    function serialize2(name, val, opt) {
       var enc = opt && opt.encode || encodeURIComponent;
       if (typeof enc !== "function") {
         throw new TypeError("option encode is invalid");
@@ -22906,6 +22906,165 @@ var require_express2 = __commonJS({
   "node_modules/.pnpm/express@4.21.2/node_modules/express/index.js"(exports2, module2) {
     "use strict";
     module2.exports = require_express();
+  }
+});
+
+// node_modules/.pnpm/cookie@1.0.2/node_modules/cookie/dist/index.js
+var require_dist = __commonJS({
+  "node_modules/.pnpm/cookie@1.0.2/node_modules/cookie/dist/index.js"(exports2) {
+    "use strict";
+    Object.defineProperty(exports2, "__esModule", { value: true });
+    exports2.parse = parse3;
+    exports2.serialize = serialize2;
+    var cookieNameRegExp = /^[\u0021-\u003A\u003C\u003E-\u007E]+$/;
+    var cookieValueRegExp = /^[\u0021-\u003A\u003C-\u007E]*$/;
+    var domainValueRegExp = /^([.]?[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)([.][a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/i;
+    var pathValueRegExp = /^[\u0020-\u003A\u003D-\u007E]*$/;
+    var __toString = Object.prototype.toString;
+    var NullObject = /* @__PURE__ */ (() => {
+      const C = function() {
+      };
+      C.prototype = /* @__PURE__ */ Object.create(null);
+      return C;
+    })();
+    function parse3(str, options) {
+      const obj = new NullObject();
+      const len = str.length;
+      if (len < 2)
+        return obj;
+      const dec = options?.decode || decode4;
+      let index = 0;
+      do {
+        const eqIdx = str.indexOf("=", index);
+        if (eqIdx === -1)
+          break;
+        const colonIdx = str.indexOf(";", index);
+        const endIdx = colonIdx === -1 ? len : colonIdx;
+        if (eqIdx > endIdx) {
+          index = str.lastIndexOf(";", eqIdx - 1) + 1;
+          continue;
+        }
+        const keyStartIdx = startIndex(str, index, eqIdx);
+        const keyEndIdx = endIndex(str, eqIdx, keyStartIdx);
+        const key = str.slice(keyStartIdx, keyEndIdx);
+        if (obj[key] === void 0) {
+          let valStartIdx = startIndex(str, eqIdx + 1, endIdx);
+          let valEndIdx = endIndex(str, endIdx, valStartIdx);
+          const value = dec(str.slice(valStartIdx, valEndIdx));
+          obj[key] = value;
+        }
+        index = endIdx + 1;
+      } while (index < len);
+      return obj;
+    }
+    function startIndex(str, index, max) {
+      do {
+        const code = str.charCodeAt(index);
+        if (code !== 32 && code !== 9)
+          return index;
+      } while (++index < max);
+      return max;
+    }
+    function endIndex(str, index, min) {
+      while (index > min) {
+        const code = str.charCodeAt(--index);
+        if (code !== 32 && code !== 9)
+          return index + 1;
+      }
+      return min;
+    }
+    function serialize2(name, val, options) {
+      const enc = options?.encode || encodeURIComponent;
+      if (!cookieNameRegExp.test(name)) {
+        throw new TypeError(`argument name is invalid: ${name}`);
+      }
+      const value = enc(val);
+      if (!cookieValueRegExp.test(value)) {
+        throw new TypeError(`argument val is invalid: ${val}`);
+      }
+      let str = name + "=" + value;
+      if (!options)
+        return str;
+      if (options.maxAge !== void 0) {
+        if (!Number.isInteger(options.maxAge)) {
+          throw new TypeError(`option maxAge is invalid: ${options.maxAge}`);
+        }
+        str += "; Max-Age=" + options.maxAge;
+      }
+      if (options.domain) {
+        if (!domainValueRegExp.test(options.domain)) {
+          throw new TypeError(`option domain is invalid: ${options.domain}`);
+        }
+        str += "; Domain=" + options.domain;
+      }
+      if (options.path) {
+        if (!pathValueRegExp.test(options.path)) {
+          throw new TypeError(`option path is invalid: ${options.path}`);
+        }
+        str += "; Path=" + options.path;
+      }
+      if (options.expires) {
+        if (!isDate(options.expires) || !Number.isFinite(options.expires.valueOf())) {
+          throw new TypeError(`option expires is invalid: ${options.expires}`);
+        }
+        str += "; Expires=" + options.expires.toUTCString();
+      }
+      if (options.httpOnly) {
+        str += "; HttpOnly";
+      }
+      if (options.secure) {
+        str += "; Secure";
+      }
+      if (options.partitioned) {
+        str += "; Partitioned";
+      }
+      if (options.priority) {
+        const priority = typeof options.priority === "string" ? options.priority.toLowerCase() : void 0;
+        switch (priority) {
+          case "low":
+            str += "; Priority=Low";
+            break;
+          case "medium":
+            str += "; Priority=Medium";
+            break;
+          case "high":
+            str += "; Priority=High";
+            break;
+          default:
+            throw new TypeError(`option priority is invalid: ${options.priority}`);
+        }
+      }
+      if (options.sameSite) {
+        const sameSite = typeof options.sameSite === "string" ? options.sameSite.toLowerCase() : options.sameSite;
+        switch (sameSite) {
+          case true:
+          case "strict":
+            str += "; SameSite=Strict";
+            break;
+          case "lax":
+            str += "; SameSite=Lax";
+            break;
+          case "none":
+            str += "; SameSite=None";
+            break;
+          default:
+            throw new TypeError(`option sameSite is invalid: ${options.sameSite}`);
+        }
+      }
+      return str;
+    }
+    function decode4(str) {
+      if (str.indexOf("%") === -1)
+        return str;
+      try {
+        return decodeURIComponent(str);
+      } catch (e) {
+        return str;
+      }
+    }
+    function isDate(val) {
+      return __toString.call(val) === "[object Date]";
+    }
   }
 });
 
@@ -24110,7 +24269,7 @@ var require_cjs2 = __commonJS({
 });
 
 // node_modules/.pnpm/superjson@1.13.3/node_modules/superjson/dist/index.js
-var require_dist = __commonJS({
+var require_dist2 = __commonJS({
   "node_modules/.pnpm/superjson@1.13.3/node_modules/superjson/dist/index.js"(exports2) {
     "use strict";
     var __assign = exports2 && exports2.__assign || function() {
@@ -26843,7 +27002,7 @@ var require_serializer = __commonJS({
       99
       /* code.copyDone */
     );
-    var serialize = {
+    var serialize2 = {
       startup,
       password,
       requestSsl,
@@ -26863,7 +27022,7 @@ var require_serializer = __commonJS({
       copyFail,
       cancel
     };
-    exports2.serialize = serialize;
+    exports2.serialize = serialize2;
   }
 });
 
@@ -27221,7 +27380,7 @@ var require_parser = __commonJS({
 });
 
 // node_modules/.pnpm/pg-protocol@1.10.3/node_modules/pg-protocol/dist/index.js
-var require_dist2 = __commonJS({
+var require_dist3 = __commonJS({
   "node_modules/.pnpm/pg-protocol@1.10.3/node_modules/pg-protocol/dist/index.js"(exports2) {
     "use strict";
     Object.defineProperty(exports2, "__esModule", { value: true });
@@ -27324,11 +27483,11 @@ var require_connection = __commonJS({
   "node_modules/.pnpm/pg@8.16.3/node_modules/pg/lib/connection.js"(exports2, module2) {
     "use strict";
     var EventEmitter = require("events").EventEmitter;
-    var { parse: parse3, serialize } = require_dist2();
+    var { parse: parse3, serialize: serialize2 } = require_dist3();
     var { getStream, getSecureStream } = require_stream();
-    var flushBuffer = serialize.flush();
-    var syncBuffer = serialize.sync();
-    var endBuffer = serialize.end();
+    var flushBuffer = serialize2.flush();
+    var syncBuffer = serialize2.sync();
+    var endBuffer = serialize2.end();
     var Connection2 = class extends EventEmitter {
       constructor(config2) {
         super();
@@ -27420,22 +27579,22 @@ var require_connection = __commonJS({
         });
       }
       requestSsl() {
-        this.stream.write(serialize.requestSsl());
+        this.stream.write(serialize2.requestSsl());
       }
       startup(config2) {
-        this.stream.write(serialize.startup(config2));
+        this.stream.write(serialize2.startup(config2));
       }
       cancel(processID, secretKey) {
-        this._send(serialize.cancel(processID, secretKey));
+        this._send(serialize2.cancel(processID, secretKey));
       }
       password(password) {
-        this._send(serialize.password(password));
+        this._send(serialize2.password(password));
       }
       sendSASLInitialResponseMessage(mechanism, initialResponse) {
-        this._send(serialize.sendSASLInitialResponseMessage(mechanism, initialResponse));
+        this._send(serialize2.sendSASLInitialResponseMessage(mechanism, initialResponse));
       }
       sendSCRAMClientFinalMessage(additionalData) {
-        this._send(serialize.sendSCRAMClientFinalMessage(additionalData));
+        this._send(serialize2.sendSCRAMClientFinalMessage(additionalData));
       }
       _send(buffer) {
         if (!this.stream.writable) {
@@ -27444,19 +27603,19 @@ var require_connection = __commonJS({
         return this.stream.write(buffer);
       }
       query(text2) {
-        this._send(serialize.query(text2));
+        this._send(serialize2.query(text2));
       }
       // send parse message
       parse(query) {
-        this._send(serialize.parse(query));
+        this._send(serialize2.parse(query));
       }
       // send bind message
       bind(config2) {
-        this._send(serialize.bind(config2));
+        this._send(serialize2.bind(config2));
       }
       // send execute message
       execute(config2) {
-        this._send(serialize.execute(config2));
+        this._send(serialize2.execute(config2));
       }
       flush() {
         if (this.stream.writable) {
@@ -27484,19 +27643,19 @@ var require_connection = __commonJS({
         });
       }
       close(msg) {
-        this._send(serialize.close(msg));
+        this._send(serialize2.close(msg));
       }
       describe(msg) {
-        this._send(serialize.describe(msg));
+        this._send(serialize2.describe(msg));
       }
       sendCopyFromChunk(chunk) {
-        this._send(serialize.copyData(chunk));
+        this._send(serialize2.copyData(chunk));
       }
       endCopyFrom() {
-        this._send(serialize.copyDone());
+        this._send(serialize2.copyDone());
       }
       sendCopyFail(msg) {
-        this._send(serialize.copyFail(msg));
+        this._send(serialize2.copyFail(msg));
       }
     };
     module2.exports = Connection2;
@@ -29114,7 +29273,7 @@ var require_lib4 = __commonJS({
     var utils = require_utils3();
     var Pool3 = require_pg_pool();
     var TypeOverrides2 = require_type_overrides();
-    var { DatabaseError: DatabaseError2 } = require_dist2();
+    var { DatabaseError: DatabaseError2 } = require_dist3();
     var { escapeIdentifier: escapeIdentifier2, escapeLiteral: escapeLiteral2 } = require_utils3();
     var poolFactory = (Client3) => {
       return class BoundPool extends Pool3 {
@@ -29160,165 +29319,6 @@ var require_lib4 = __commonJS({
           return native;
         }
       });
-    }
-  }
-});
-
-// node_modules/.pnpm/cookie@1.0.2/node_modules/cookie/dist/index.js
-var require_dist3 = __commonJS({
-  "node_modules/.pnpm/cookie@1.0.2/node_modules/cookie/dist/index.js"(exports2) {
-    "use strict";
-    Object.defineProperty(exports2, "__esModule", { value: true });
-    exports2.parse = parse3;
-    exports2.serialize = serialize;
-    var cookieNameRegExp = /^[\u0021-\u003A\u003C\u003E-\u007E]+$/;
-    var cookieValueRegExp = /^[\u0021-\u003A\u003C-\u007E]*$/;
-    var domainValueRegExp = /^([.]?[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)([.][a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*$/i;
-    var pathValueRegExp = /^[\u0020-\u003A\u003D-\u007E]*$/;
-    var __toString = Object.prototype.toString;
-    var NullObject = /* @__PURE__ */ (() => {
-      const C = function() {
-      };
-      C.prototype = /* @__PURE__ */ Object.create(null);
-      return C;
-    })();
-    function parse3(str, options) {
-      const obj = new NullObject();
-      const len = str.length;
-      if (len < 2)
-        return obj;
-      const dec = options?.decode || decode4;
-      let index = 0;
-      do {
-        const eqIdx = str.indexOf("=", index);
-        if (eqIdx === -1)
-          break;
-        const colonIdx = str.indexOf(";", index);
-        const endIdx = colonIdx === -1 ? len : colonIdx;
-        if (eqIdx > endIdx) {
-          index = str.lastIndexOf(";", eqIdx - 1) + 1;
-          continue;
-        }
-        const keyStartIdx = startIndex(str, index, eqIdx);
-        const keyEndIdx = endIndex(str, eqIdx, keyStartIdx);
-        const key = str.slice(keyStartIdx, keyEndIdx);
-        if (obj[key] === void 0) {
-          let valStartIdx = startIndex(str, eqIdx + 1, endIdx);
-          let valEndIdx = endIndex(str, endIdx, valStartIdx);
-          const value = dec(str.slice(valStartIdx, valEndIdx));
-          obj[key] = value;
-        }
-        index = endIdx + 1;
-      } while (index < len);
-      return obj;
-    }
-    function startIndex(str, index, max) {
-      do {
-        const code = str.charCodeAt(index);
-        if (code !== 32 && code !== 9)
-          return index;
-      } while (++index < max);
-      return max;
-    }
-    function endIndex(str, index, min) {
-      while (index > min) {
-        const code = str.charCodeAt(--index);
-        if (code !== 32 && code !== 9)
-          return index + 1;
-      }
-      return min;
-    }
-    function serialize(name, val, options) {
-      const enc = options?.encode || encodeURIComponent;
-      if (!cookieNameRegExp.test(name)) {
-        throw new TypeError(`argument name is invalid: ${name}`);
-      }
-      const value = enc(val);
-      if (!cookieValueRegExp.test(value)) {
-        throw new TypeError(`argument val is invalid: ${val}`);
-      }
-      let str = name + "=" + value;
-      if (!options)
-        return str;
-      if (options.maxAge !== void 0) {
-        if (!Number.isInteger(options.maxAge)) {
-          throw new TypeError(`option maxAge is invalid: ${options.maxAge}`);
-        }
-        str += "; Max-Age=" + options.maxAge;
-      }
-      if (options.domain) {
-        if (!domainValueRegExp.test(options.domain)) {
-          throw new TypeError(`option domain is invalid: ${options.domain}`);
-        }
-        str += "; Domain=" + options.domain;
-      }
-      if (options.path) {
-        if (!pathValueRegExp.test(options.path)) {
-          throw new TypeError(`option path is invalid: ${options.path}`);
-        }
-        str += "; Path=" + options.path;
-      }
-      if (options.expires) {
-        if (!isDate(options.expires) || !Number.isFinite(options.expires.valueOf())) {
-          throw new TypeError(`option expires is invalid: ${options.expires}`);
-        }
-        str += "; Expires=" + options.expires.toUTCString();
-      }
-      if (options.httpOnly) {
-        str += "; HttpOnly";
-      }
-      if (options.secure) {
-        str += "; Secure";
-      }
-      if (options.partitioned) {
-        str += "; Partitioned";
-      }
-      if (options.priority) {
-        const priority = typeof options.priority === "string" ? options.priority.toLowerCase() : void 0;
-        switch (priority) {
-          case "low":
-            str += "; Priority=Low";
-            break;
-          case "medium":
-            str += "; Priority=Medium";
-            break;
-          case "high":
-            str += "; Priority=High";
-            break;
-          default:
-            throw new TypeError(`option priority is invalid: ${options.priority}`);
-        }
-      }
-      if (options.sameSite) {
-        const sameSite = typeof options.sameSite === "string" ? options.sameSite.toLowerCase() : options.sameSite;
-        switch (sameSite) {
-          case true:
-          case "strict":
-            str += "; SameSite=Strict";
-            break;
-          case "lax":
-            str += "; SameSite=Lax";
-            break;
-          case "none":
-            str += "; SameSite=None";
-            break;
-          default:
-            throw new TypeError(`option sameSite is invalid: ${options.sameSite}`);
-        }
-      }
-      return str;
-    }
-    function decode4(str) {
-      if (str.indexOf("%") === -1)
-        return str;
-      try {
-        return decodeURIComponent(str);
-      } catch (e) {
-        return str;
-      }
-    }
-    function isDate(val) {
-      return __toString.call(val) === "[object Date]";
     }
   }
 });
@@ -31016,10 +31016,10 @@ function _createBatchStreamProducer() {
 }
 function jsonlStreamProducer(opts) {
   let stream = readableStreamFrom(createBatchStreamProducer(opts));
-  const { serialize } = opts;
-  if (serialize) stream = stream.pipeThrough(new TransformStream({ transform(chunk, controller) {
+  const { serialize: serialize2 } = opts;
+  if (serialize2) stream = stream.pipeThrough(new TransformStream({ transform(chunk, controller) {
     if (chunk === PING_SYM) controller.enqueue(PING_SYM);
-    else controller.enqueue(serialize(chunk));
+    else controller.enqueue(serialize2(chunk));
   } }));
   return stream.pipeThrough(new TransformStream({ transform(chunk, controller) {
     if (chunk === PING_SYM) controller.enqueue(" ");
@@ -31062,7 +31062,7 @@ var CONNECTED_EVENT = "connected";
 var RETURN_EVENT = "return";
 function sseStreamProducer(opts) {
   var _opts$ping$enabled, _opts$ping, _opts$ping$intervalMs, _opts$ping2, _opts$client;
-  const { serialize = identity } = opts;
+  const { serialize: serialize2 = identity } = opts;
   const ping = {
     enabled: (_opts$ping$enabled = (_opts$ping = opts.ping) === null || _opts$ping === void 0 ? void 0 : _opts$ping.enabled) !== null && _opts$ping$enabled !== void 0 ? _opts$ping$enabled : false,
     intervalMs: (_opts$ping$intervalMs = (_opts$ping2 = opts.ping) === null || _opts$ping2 === void 0 ? void 0 : _opts$ping2.intervalMs) !== null && _opts$ping$intervalMs !== void 0 ? _opts$ping$intervalMs : 1e3
@@ -31105,7 +31105,7 @@ function sseStreamProducer(opts) {
               id: value[0],
               data: value[1]
             } : { data: value };
-            chunk.data = JSON.stringify(serialize(chunk.data));
+            chunk.data = JSON.stringify(serialize2(chunk.data));
             yield chunk;
             value = null;
             chunk = null;
@@ -31142,7 +31142,7 @@ function sseStreamProducer(opts) {
         const data = (_opts$formatError = (_opts$formatError2 = opts.formatError) === null || _opts$formatError2 === void 0 ? void 0 : _opts$formatError2.call(opts, { error: error46 })) !== null && _opts$formatError !== void 0 ? _opts$formatError : null;
         yield {
           event: SERIALIZED_ERROR_EVENT,
-          data: JSON.stringify(serialize(data))
+          data: JSON.stringify(serialize2(data))
         };
       }
     });
@@ -32091,6 +32091,9 @@ var COOKIE_NAME = "app_session_id";
 var ONE_YEAR_MS = 1e3 * 60 * 60 * 24 * 365;
 var UNAUTHED_ERR_MSG = "Please login (10001)";
 var NOT_ADMIN_ERR_MSG = "You do not have required permission (10002)";
+
+// server/routers.ts
+var cookie = __toESM(require_dist(), 1);
 
 // node_modules/.pnpm/zod@4.1.12/node_modules/zod/v4/classic/external.js
 var external_exports = {};
@@ -44747,7 +44750,7 @@ async function notifyOwner(payload) {
 }
 
 // server/_core/trpc.ts
-var import_superjson = __toESM(require_dist(), 1);
+var import_superjson = __toESM(require_dist2(), 1);
 var t = initTRPC.context().create({
   transformer: import_superjson.default
 });
@@ -52101,10 +52104,84 @@ async function getTokenUsageSummary(userId) {
   }).from(tokenUsage).where(eq(tokenUsage.userId, userId));
   return result[0];
 }
+async function getTokenUsageTimeSeries(userId, timeRange, grouping) {
+  const db = await getDb();
+  if (!db) return { byProvider: [], total: [] };
+  const now = /* @__PURE__ */ new Date();
+  let startTime;
+  switch (timeRange) {
+    case "7d":
+      startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1e3);
+      break;
+    case "30d":
+      startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1e3);
+      break;
+    case "90d":
+      startTime = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1e3);
+      break;
+  }
+  let dateTrunc;
+  switch (grouping) {
+    case "day":
+      dateTrunc = "date_trunc('day', timestamp)";
+      break;
+    case "week":
+      dateTrunc = "date_trunc('week', timestamp)";
+      break;
+    case "month":
+      dateTrunc = "date_trunc('month', timestamp)";
+      break;
+  }
+  const byProviderQuery = await db.select({
+    timestamp: sql`${sql.raw(dateTrunc)}`,
+    modelProvider: tokenUsage.modelProvider,
+    totalCost: sql`COALESCE(SUM(${tokenUsage.totalCost}), 0)`,
+    inputTokens: sql`COALESCE(SUM(${tokenUsage.inputTokens}), 0)`,
+    outputTokens: sql`COALESCE(SUM(${tokenUsage.outputTokens}), 0)`
+  }).from(tokenUsage).where(and(
+    eq(tokenUsage.userId, userId),
+    sql`${tokenUsage.timestamp} >= ${startTime.toISOString()}`
+  )).groupBy(sql.raw(dateTrunc), tokenUsage.modelProvider).orderBy(sql.raw(dateTrunc), tokenUsage.modelProvider);
+  const totalQuery = await db.select({
+    timestamp: sql`${sql.raw(dateTrunc)}`,
+    totalCost: sql`COALESCE(SUM(${tokenUsage.totalCost}), 0)`,
+    inputTokens: sql`COALESCE(SUM(${tokenUsage.inputTokens}), 0)`,
+    outputTokens: sql`COALESCE(SUM(${tokenUsage.outputTokens}), 0)`
+  }).from(tokenUsage).where(and(
+    eq(tokenUsage.userId, userId),
+    sql`${tokenUsage.timestamp} >= ${startTime.toISOString()}`
+  )).groupBy(sql.raw(dateTrunc)).orderBy(sql.raw(dateTrunc));
+  const byProvider = byProviderQuery.map((row) => ({
+    timestamp: row.timestamp,
+    modelProvider: row.modelProvider,
+    totalCost: parseFloat(row.totalCost),
+    inputTokens: row.inputTokens,
+    outputTokens: row.outputTokens
+  }));
+  const total = totalQuery.map((row) => ({
+    timestamp: row.timestamp,
+    totalCost: parseFloat(row.totalCost),
+    inputTokens: row.inputTokens,
+    outputTokens: row.outputTokens
+  }));
+  return {
+    byProvider,
+    total
+  };
+}
 async function logBusinessEvent(event) {
   const db = await getDb();
   if (!db) return;
-  await db.insert(businessEvents).values(event);
+  if (event.eventType === "revenue" || event.eventType === "cost") {
+    if (!event.amount || parseFloat(event.amount) < 0) {
+      throw new Error(`${event.eventType} events must have a valid positive amount`);
+    }
+  }
+  const eventToInsert = {
+    ...event,
+    timestamp: event.timestamp || /* @__PURE__ */ new Date()
+  };
+  await db.insert(businessEvents).values(eventToInsert);
 }
 async function getBusinessEvents(userBusinessId, limit = 50) {
   const db = await getDb();
@@ -52120,6 +52197,80 @@ async function getPendingInterventions(userId) {
     eq(businessEvents.resolved, false)
   )).orderBy(desc(businessEvents.timestamp));
   return result.map((r) => ({ ...r.business_events, userBusiness: r.user_businesses }));
+}
+async function getAggregatedEvents(userBusinessId, timeRange, grouping) {
+  const db = await getDb();
+  if (!db) return { revenue: [], costs: [], profit: [] };
+  const now = /* @__PURE__ */ new Date();
+  let startTime;
+  switch (timeRange) {
+    case "24h":
+      startTime = new Date(now.getTime() - 24 * 60 * 60 * 1e3);
+      break;
+    case "7d":
+      startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1e3);
+      break;
+    case "30d":
+      startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1e3);
+      break;
+    case "90d":
+      startTime = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1e3);
+      break;
+  }
+  let dateTrunc;
+  switch (grouping) {
+    case "hour":
+      dateTrunc = "date_trunc('hour', timestamp)";
+      break;
+    case "day":
+      dateTrunc = "date_trunc('day', timestamp)";
+      break;
+    case "week":
+      dateTrunc = "date_trunc('week', timestamp)";
+      break;
+  }
+  const revenueQuery = await db.select({
+    timestamp: sql`${sql.raw(dateTrunc)}`,
+    value: sql`COALESCE(SUM(${businessEvents.amount}), 0)`
+  }).from(businessEvents).where(and(
+    eq(businessEvents.userBusinessId, userBusinessId),
+    eq(businessEvents.eventType, "revenue"),
+    sql`${businessEvents.timestamp} >= ${startTime.toISOString()}`
+  )).groupBy(sql.raw(dateTrunc)).orderBy(sql.raw(dateTrunc));
+  const costQuery = await db.select({
+    timestamp: sql`${sql.raw(dateTrunc)}`,
+    value: sql`COALESCE(SUM(${businessEvents.amount}), 0)`
+  }).from(businessEvents).where(and(
+    eq(businessEvents.userBusinessId, userBusinessId),
+    eq(businessEvents.eventType, "cost"),
+    sql`${businessEvents.timestamp} >= ${startTime.toISOString()}`
+  )).groupBy(sql.raw(dateTrunc)).orderBy(sql.raw(dateTrunc));
+  const revenue = revenueQuery.map((row) => ({
+    timestamp: row.timestamp,
+    value: parseFloat(row.value)
+  }));
+  const costs = costQuery.map((row) => ({
+    timestamp: row.timestamp,
+    value: parseFloat(row.value)
+  }));
+  const profitMap = /* @__PURE__ */ new Map();
+  revenue.forEach((point2) => {
+    const key = point2.timestamp.toISOString();
+    profitMap.set(key, (profitMap.get(key) || 0) + point2.value);
+  });
+  costs.forEach((point2) => {
+    const key = point2.timestamp.toISOString();
+    profitMap.set(key, (profitMap.get(key) || 0) - point2.value);
+  });
+  const profit = Array.from(profitMap.entries()).map(([timestamp2, value]) => ({
+    timestamp: new Date(timestamp2),
+    value
+  })).sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+  return {
+    revenue,
+    costs,
+    profit
+  };
 }
 async function getApiConfigs(userId) {
   const db = await getDb();
@@ -52489,13 +52640,13 @@ var GoGetterAgentService = class {
    */
   scoreOpportunity(opportunity) {
     const scores = {
-      guaranteedDemand: opportunity.scores?.guaranteedDemand || 50,
-      automationLevel: opportunity.scores?.automationLevel || 50,
-      tokenEfficiency: opportunity.scores?.tokenEfficiency || 50,
-      profitMargin: opportunity.scores?.profitMargin || 50,
-      maintenanceCost: opportunity.scores?.maintenanceCost || 50,
-      legalRisk: opportunity.scores?.legalRisk || 50,
-      competitionSaturation: opportunity.scores?.competitionSaturation || 50,
+      guaranteedDemand: opportunity.scores?.guaranteedDemand ?? 50,
+      automationLevel: opportunity.scores?.automationLevel ?? 50,
+      tokenEfficiency: opportunity.scores?.tokenEfficiency ?? 50,
+      profitMargin: opportunity.scores?.profitMargin ?? 50,
+      maintenanceCost: opportunity.scores?.maintenanceCost ?? 50,
+      legalRisk: opportunity.scores?.legalRisk ?? 50,
+      competitionSaturation: opportunity.scores?.competitionSaturation ?? 50,
       compositeScore: 0
     };
     scores.compositeScore = this.calculateCompositeScore(scores);
@@ -52608,7 +52759,6 @@ Return only the JSON array, no additional text.`;
 var goGetterAgent = new GoGetterAgentService();
 
 // server/routers.ts
-var cookie = require_dist3();
 var appRouter = router({
   system: systemRouter,
   auth: router({
@@ -52740,6 +52890,12 @@ var appRouter = router({
     }),
     summary: protectedProcedure.query(async ({ ctx }) => {
       return getTokenUsageSummary(ctx.user.id);
+    }),
+    timeSeries: protectedProcedure.input(external_exports.object({
+      timeRange: external_exports.enum(["7d", "30d", "90d"]),
+      grouping: external_exports.enum(["day", "week", "month"])
+    })).query(async ({ ctx, input }) => {
+      return getTokenUsageTimeSeries(ctx.user.id, input.timeRange, input.grouping);
     })
   }),
   // Business Events & Monitoring
@@ -52763,6 +52919,13 @@ var appRouter = router({
     }),
     pendingInterventions: protectedProcedure.query(async ({ ctx }) => {
       return getPendingInterventions(ctx.user.id);
+    }),
+    timeSeries: protectedProcedure.input(external_exports.object({
+      userBusinessId: external_exports.number(),
+      timeRange: external_exports.enum(["24h", "7d", "30d", "90d"]),
+      grouping: external_exports.enum(["hour", "day", "week"])
+    })).query(async ({ input }) => {
+      return getAggregatedEvents(input.userBusinessId, input.timeRange, input.grouping);
     })
   }),
   // API Configuration
@@ -52940,7 +53103,7 @@ var HttpError = class extends Error {
 var ForbiddenError = (msg) => new HttpError(403, msg);
 
 // server/_core/sdk.ts
-var import_cookie = __toESM(require_dist3(), 1);
+var import_cookie = __toESM(require_dist(), 1);
 
 // node_modules/.pnpm/jose@6.1.0/node_modules/jose/dist/webapi/lib/buffer_utils.js
 var encoder = new TextEncoder();

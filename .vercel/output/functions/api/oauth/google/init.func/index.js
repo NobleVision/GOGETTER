@@ -18774,6 +18774,9 @@ var ENV = {
 
 // server/_core/googleOAuth.ts
 function createOAuth2Client(redirectUri) {
+  if (!ENV.googleClientId || !ENV.googleClientSecret) {
+    throw new Error("Google OAuth credentials not configured");
+  }
   return new import_google_auth_library.OAuth2Client(
     ENV.googleClientId,
     ENV.googleClientSecret,
@@ -18781,20 +18784,30 @@ function createOAuth2Client(redirectUri) {
   );
 }
 function getGoogleAuthorizationUrl(redirectUri, state) {
-  const client = createOAuth2Client(redirectUri);
-  const authUrl = client.generateAuthUrl({
-    access_type: "offline",
-    scope: [
-      "https://www.googleapis.com/auth/userinfo.email",
-      "https://www.googleapis.com/auth/userinfo.profile"
-    ],
-    state,
-    prompt: "consent"
-  });
-  return authUrl;
+  try {
+    const client = createOAuth2Client(redirectUri);
+    const authUrl = client.generateAuthUrl({
+      access_type: "offline",
+      scope: [
+        "https://www.googleapis.com/auth/userinfo.email",
+        "https://www.googleapis.com/auth/userinfo.profile"
+      ],
+      state,
+      prompt: "consent",
+      include_granted_scopes: true
+    });
+    return authUrl;
+  } catch (error) {
+    console.error("[GoogleOAuth] Failed to generate authorization URL:", error);
+    throw new Error(`Failed to generate Google authorization URL: ${error.message}`);
+  }
 }
 function isGoogleOAuthConfigured() {
-  return Boolean(ENV.googleClientId && ENV.googleClientSecret);
+  const configured = Boolean(ENV.googleClientId && ENV.googleClientSecret);
+  if (!configured) {
+    console.warn("[GoogleOAuth] Google OAuth not configured - missing client ID or secret");
+  }
+  return configured;
 }
 
 // api/oauth/google/init.ts

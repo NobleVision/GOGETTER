@@ -23856,6 +23856,9 @@ var ENV = {
 
 // server/_core/googleOAuth.ts
 function createOAuth2Client(redirectUri) {
+  if (!ENV.googleClientId || !ENV.googleClientSecret) {
+    throw new Error("Google OAuth credentials not configured");
+  }
   return new import_google_auth_library.OAuth2Client(
     ENV.googleClientId,
     ENV.googleClientSecret,
@@ -23863,37 +23866,78 @@ function createOAuth2Client(redirectUri) {
   );
 }
 async function exchangeCodeForTokens(code, redirectUri) {
-  const client = createOAuth2Client(redirectUri);
-  const { tokens } = await client.getToken(code);
-  return {
-    access_token: tokens.access_token || "",
-    id_token: tokens.id_token || void 0,
-    refresh_token: tokens.refresh_token || void 0,
-    expiry_date: tokens.expiry_date || void 0,
-    token_type: tokens.token_type || "Bearer",
-    scope: tokens.scope || ""
-  };
+  try {
+    const client = createOAuth2Client(redirectUri);
+    const { tokens } = await client.getToken(code);
+    if (!tokens.access_token) {
+      throw new Error("No access token received from Google");
+    }
+    return {
+      access_token: tokens.access_token,
+      id_token: tokens.id_token || void 0,
+      refresh_token: tokens.refresh_token || void 0,
+      expiry_date: tokens.expiry_date || void 0,
+      token_type: tokens.token_type || "Bearer",
+      scope: tokens.scope || ""
+    };
+  } catch (error) {
+    console.error("[GoogleOAuth] Token exchange failed:", error);
+    if (error.message?.includes("invalid_grant")) {
+      throw new Error("Authorization code expired or invalid");
+    } else if (error.message?.includes("invalid_client")) {
+      throw new Error("Google OAuth client configuration error");
+    } else if (error.message?.includes("invalid_request")) {
+      throw new Error("Invalid OAuth request parameters");
+    } else {
+      throw new Error(`Token exchange failed: ${error.message}`);
+    }
+  }
 }
 async function getGoogleUserInfo(accessToken) {
-  const response = await fetch(
-    "https://www.googleapis.com/oauth2/v2/userinfo",
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`
+  try {
+    const response = await fetch(
+      "https://www.googleapis.com/oauth2/v2/userinfo",
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`
+        },
+        timeout: 1e4
+        // 10 second timeout
       }
+    );
+    if (!response.ok) {
+      const errorText = await response.text().catch(() => "Unknown error");
+      throw new Error(`Google API error (${response.status}): ${errorText}`);
     }
-  );
-  if (!response.ok) {
-    throw new Error(`Failed to get user info: ${response.statusText}`);
+    const data = await response.json();
+    if (!data.id) {
+      throw new Error("Google user ID not provided");
+    }
+    if (!data.email) {
+      throw new Error("Google email not provided");
+    }
+    return {
+      id: data.id,
+      email: data.email,
+      name: data.name || data.email.split("@")[0],
+      // Fallback to email prefix
+      picture: data.picture,
+      verified_email: data.verified_email || false
+    };
+  } catch (error) {
+    console.error("[GoogleOAuth] Failed to get user info:", error);
+    if (error.message?.includes("timeout")) {
+      throw new Error("Google API request timed out");
+    } else if (error.message?.includes("401")) {
+      throw new Error("Invalid or expired access token");
+    } else if (error.message?.includes("403")) {
+      throw new Error("Insufficient permissions for Google API");
+    } else if (error.message?.includes("network")) {
+      throw new Error("Network error connecting to Google API");
+    } else {
+      throw new Error(`Failed to get user info: ${error.message}`);
+    }
   }
-  const data = await response.json();
-  return {
-    id: data.id,
-    email: data.email,
-    name: data.name,
-    picture: data.picture,
-    verified_email: data.verified_email
-  };
 }
 
 // shared/const.ts

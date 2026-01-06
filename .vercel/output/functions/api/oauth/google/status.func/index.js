@@ -18771,7 +18771,11 @@ var ENV = {
 
 // server/_core/googleOAuth.ts
 function isGoogleOAuthConfigured() {
-  return Boolean(ENV.googleClientId && ENV.googleClientSecret);
+  const configured = Boolean(ENV.googleClientId && ENV.googleClientSecret);
+  if (!configured) {
+    console.warn("[GoogleOAuth] Google OAuth not configured - missing client ID or secret");
+  }
+  return configured;
 }
 
 // api/oauth/google/status.ts
