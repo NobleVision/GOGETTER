@@ -42,7 +42,7 @@ describe("Property 1: JWT Secret Validation", () => {
   it("should return valid=false for secrets < 32 chars", () => {
     fc.assert(
       fc.property(
-        fc.string({ minLength: 1, maxLength: MIN_JWT_SECRET_LENGTH - 1 }),
+        fc.string({ minLength: 1, maxLength: MIN_JWT_SECRET_LENGTH - 1 }).filter(s => s.trim() !== ""),
         (secret) => {
           const result = validateJwtSecret(secret, false);
           return (

@@ -51,7 +51,15 @@ export function validateJwtSecret(
   jwtSecret: string | undefined,
   isProduction: boolean
 ): { valid: boolean; error?: string; warning?: string } {
-  if (!jwtSecret || jwtSecret.trim() === "") {
+  if (!jwtSecret) {
+    return {
+      valid: false,
+      error: "JWT_SECRET environment variable is not configured",
+    };
+  }
+
+  // Check for empty or whitespace-only strings
+  if (jwtSecret.trim() === "") {
     return {
       valid: false,
       error: "JWT_SECRET environment variable is not configured",

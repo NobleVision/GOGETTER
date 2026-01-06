@@ -1,6 +1,5 @@
 import { COOKIE_NAME } from "@shared/const";
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const cookie = require("cookie") as { serialize: (name: string, value: string, options?: Record<string, unknown>) => string };
+import * as cookie from "cookie";
 import { z } from "zod";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
