@@ -4,6 +4,9 @@ import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
+import { MediaProvider } from "./contexts/MediaContext";
+import BackgroundVideo from "./components/BackgroundVideo";
+import BackgroundMusic from "./components/BackgroundMusic";
 import Home from "./pages/Home";
 import Wizard from "./pages/Wizard";
 import Catalog from "./pages/Catalog";
@@ -50,10 +53,16 @@ function App() {
         defaultTheme="dark"
         // switchable
       >
-        <TooltipProvider>
-          <Toaster />
-          <Router />
-        </TooltipProvider>
+        <MediaProvider>
+          <TooltipProvider>
+            {/* Global background media - renders behind everything */}
+            <BackgroundVideo />
+            <BackgroundMusic />
+
+            <Toaster />
+            <Router />
+          </TooltipProvider>
+        </MediaProvider>
       </ThemeProvider>
     </ErrorBoundary>
   );

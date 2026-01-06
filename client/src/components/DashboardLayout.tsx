@@ -21,10 +21,10 @@ import {
 } from "@/components/ui/sidebar";
 import { getGoogleLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { 
-  LayoutDashboard, 
-  LogOut, 
-  PanelLeft, 
+import {
+  LayoutDashboard,
+  LogOut,
+  PanelLeft,
   Compass,
   Store,
   Activity,
@@ -39,6 +39,7 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import { trpc } from "@/lib/trpc";
+import MediaControls from "./MediaControls";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
@@ -101,8 +102,13 @@ export default function DashboardLayout({
     const errorMessage = getErrorMessage(authError);
     
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900">
-        <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full">
+      <div className="relative flex items-center justify-center min-h-screen">
+        {/* Media controls in top-right corner */}
+        <div className="absolute top-4 right-4 z-10">
+          <MediaControls showVolumeSlider />
+        </div>
+
+        <div className="flex flex-col items-center gap-8 p-8 max-w-md w-full bg-slate-900/70 backdrop-blur-sm rounded-2xl border border-slate-800/50">
           <div className="flex flex-col items-center gap-6">
             <div className="flex items-center gap-3">
               <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
@@ -117,13 +123,13 @@ export default function DashboardLayout({
               Discover, deploy, and manage AI-powered micro-businesses that run 24/7 with minimal oversight.
             </p>
           </div>
-          
+
           {errorMessage && (
             <div className="w-full p-3 bg-red-500/10 border border-red-500/20 rounded-lg">
               <p className="text-sm text-red-400 text-center">{errorMessage}</p>
             </div>
           )}
-          
+
           <div className="flex flex-col gap-3 w-full">
             <Button
               onClick={() => {
@@ -246,14 +252,17 @@ function DashboardLayoutContent({
                 <PanelLeft className="h-4 w-4 text-slate-400" />
               </button>
               {!isCollapsed ? (
-                <div className="flex items-center gap-2 min-w-0">
-                  <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-                    <Zap className="h-4 w-4 text-white" />
+                <>
+                  <div className="flex items-center gap-2 min-w-0 flex-1">
+                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0">
+                      <Zap className="h-4 w-4 text-white" />
+                    </div>
+                    <span className="font-bold tracking-tight truncate text-white">
+                      GO-GETTER
+                    </span>
                   </div>
-                  <span className="font-bold tracking-tight truncate text-white">
-                    GO-GETTER
-                  </span>
-                </div>
+                  <MediaControls compact showVolumeSlider />
+                </>
               ) : null}
             </div>
           </SidebarHeader>
@@ -329,7 +338,7 @@ function DashboardLayoutContent({
         />
       </div>
 
-      <SidebarInset className="bg-slate-950">
+      <SidebarInset className="bg-slate-950/80">
         {isMobile && (
           <div className="flex border-b border-slate-800 h-14 items-center justify-between bg-slate-900/95 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
             <div className="flex items-center gap-2">
@@ -342,6 +351,7 @@ function DashboardLayoutContent({
                 </div>
               </div>
             </div>
+            <MediaControls compact showVolumeSlider />
           </div>
         )}
         <main className="flex-1 p-4 md:p-6">{children}</main>

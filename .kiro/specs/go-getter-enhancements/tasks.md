@@ -144,7 +144,7 @@ This implementation plan breaks down the GO-GETTER OS enhancements into discrete
   - Ask the user if questions arise
 
 - [ ] 8. Enhanced Monitoring Dashboard with Time-Series Charts
-  - [ ] 8.1 Add time-series aggregation API
+  - [x] 8.1 Add time-series aggregation API
     - Create `events.timeSeries` tRPC procedure
     - Implement SQL aggregation by hour, day, week
     - Support time range filtering (24h, 7d, 30d, 90d)

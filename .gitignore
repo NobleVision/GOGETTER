@@ -2,6 +2,8 @@
 **/node_modules
 .pnpm-store/
 .env
+node_modules/
+.git/
 
 # Build outputs
 dist/

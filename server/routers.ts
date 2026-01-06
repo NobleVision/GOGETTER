@@ -205,6 +205,16 @@ export const appRouter = router({
     pendingInterventions: protectedProcedure.query(async ({ ctx }) => {
       return db.getPendingInterventions(ctx.user.id);
     }),
+
+    timeSeries: protectedProcedure
+      .input(z.object({
+        userBusinessId: z.number(),
+        timeRange: z.enum(["24h", "7d", "30d", "90d"]),
+        grouping: z.enum(["hour", "day", "week"]),
+      }))
+      .query(async ({ input }) => {
+        return db.getAggregatedEvents(input.userBusinessId, input.timeRange, input.grouping);
+      }),
   }),
 
   // API Configuration

@@ -411,6 +411,120 @@ export async function getPendingInterventions(userId: number) {
   return result.map(r => ({ ...r.business_events, userBusiness: r.user_businesses }));
 }
 
+/**
+ * Time-series aggregation for business events
+ * Requirements 7.3, 7.4: Support time range filtering and aggregation by time period
+ */
+export async function getAggregatedEvents(
+  userBusinessId: number, 
+  timeRange: '24h' | '7d' | '30d' | '90d',
+  grouping: 'hour' | 'day' | 'week'
+) {
+  const db = await getDb();
+  if (!db) return { revenue: [], costs: [], profit: [] };
+
+  // Calculate the start time based on time range
+  const now = new Date();
+  let startTime: Date;
+  
+  switch (timeRange) {
+    case '24h':
+      startTime = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      break;
+    case '7d':
+      startTime = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case '30d':
+      startTime = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case '90d':
+      startTime = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+      break;
+  }
+
+  // Determine the SQL date truncation function based on grouping
+  let dateTrunc: string;
+  switch (grouping) {
+    case 'hour':
+      dateTrunc = "date_trunc('hour', timestamp)";
+      break;
+    case 'day':
+      dateTrunc = "date_trunc('day', timestamp)";
+      break;
+    case 'week':
+      dateTrunc = "date_trunc('week', timestamp)";
+      break;
+  }
+
+  // Query for revenue events
+  const revenueQuery = await db.select({
+    timestamp: sql<Date>`${sql.raw(dateTrunc)}`,
+    value: sql<string>`COALESCE(SUM(${businessEvents.amount}), 0)`,
+  })
+  .from(businessEvents)
+  .where(and(
+    eq(businessEvents.userBusinessId, userBusinessId),
+    eq(businessEvents.eventType, 'revenue'),
+    sql`${businessEvents.timestamp} >= ${startTime.toISOString()}`
+  ))
+  .groupBy(sql.raw(dateTrunc))
+  .orderBy(sql.raw(dateTrunc));
+
+  // Query for cost events
+  const costQuery = await db.select({
+    timestamp: sql<Date>`${sql.raw(dateTrunc)}`,
+    value: sql<string>`COALESCE(SUM(${businessEvents.amount}), 0)`,
+  })
+  .from(businessEvents)
+  .where(and(
+    eq(businessEvents.userBusinessId, userBusinessId),
+    eq(businessEvents.eventType, 'cost'),
+    sql`${businessEvents.timestamp} >= ${startTime.toISOString()}`
+  ))
+  .groupBy(sql.raw(dateTrunc))
+  .orderBy(sql.raw(dateTrunc));
+
+  // Convert to the expected format
+  const revenue = revenueQuery.map(row => ({
+    timestamp: row.timestamp,
+    value: parseFloat(row.value),
+  }));
+
+  const costs = costQuery.map(row => ({
+    timestamp: row.timestamp,
+    value: parseFloat(row.value),
+  }));
+
+  // Calculate profit by combining revenue and costs
+  const profitMap = new Map<string, number>();
+  
+  // Add revenue (positive contribution to profit)
+  revenue.forEach(point => {
+    const key = point.timestamp.toISOString();
+    profitMap.set(key, (profitMap.get(key) || 0) + point.value);
+  });
+
+  // Subtract costs (negative contribution to profit)
+  costs.forEach(point => {
+    const key = point.timestamp.toISOString();
+    profitMap.set(key, (profitMap.get(key) || 0) - point.value);
+  });
+
+  // Convert profit map to array and sort by timestamp
+  const profit = Array.from(profitMap.entries())
+    .map(([timestamp, value]) => ({
+      timestamp: new Date(timestamp),
+      value,
+    }))
+    .sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+  return {
+    revenue,
+    costs,
+    profit,
+  };
+}
+
 // ============ API CONFIG OPERATIONS ============
 
 export async function getApiConfigs(userId: number) {
