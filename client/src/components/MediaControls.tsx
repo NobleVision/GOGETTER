@@ -11,13 +11,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { 
-  Video, 
-  VideoOff, 
-  Volume2, 
-  VolumeX, 
-  Music, 
-  Music2
+import {
+  Video,
+  VideoOff,
+  Volume2,
+  VolumeX,
+  Music2,
+  SkipForward
 } from "lucide-react";
 
 interface MediaControlsProps {
@@ -42,6 +42,7 @@ export default function MediaControls({
     musicVolume,
     setMusicVolume,
     isMusicPage,
+    skipTrack,
   } = useMedia();
 
   const buttonSize = compact ? "sm" : "default";
@@ -126,22 +127,35 @@ export default function MediaControls({
                   </Button>
                 </div>
                 {musicEnabled && (
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-xs text-muted-foreground">
-                      <span>Volume</span>
-                      <span>{Math.round(musicVolume * 100)}%</span>
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <span>Volume</span>
+                        <span>{Math.round(musicVolume * 100)}%</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <VolumeX className="h-3 w-3 text-muted-foreground" />
+                        <Slider
+                          value={[musicVolume]}
+                          onValueChange={([value]) => setMusicVolume(value)}
+                          min={0}
+                          max={1}
+                          step={0.05}
+                          className="flex-1"
+                        />
+                        <Volume2 className="h-3 w-3 text-muted-foreground" />
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <VolumeX className="h-3 w-3 text-muted-foreground" />
-                      <Slider
-                        value={[musicVolume]}
-                        onValueChange={([value]) => setMusicVolume(value)}
-                        min={0}
-                        max={1}
-                        step={0.05}
-                        className="flex-1"
-                      />
-                      <Volume2 className="h-3 w-3 text-muted-foreground" />
+                    <div className="pt-2 border-t border-slate-700">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={skipTrack}
+                        className="w-full h-8 text-muted-foreground hover:text-white hover:bg-slate-800"
+                      >
+                        <SkipForward className="h-4 w-4 mr-2" />
+                        Skip Track
+                      </Button>
                     </div>
                   </div>
                 )}

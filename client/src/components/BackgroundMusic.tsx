@@ -47,8 +47,8 @@ const FADE_DURATION = 1000; // ms
 
 export default function BackgroundMusic() {
   const [location] = useLocation();
-  const { musicEnabled, musicVolume, setIsMusicPage } = useMedia();
-  
+  const { musicEnabled, musicVolume, setIsMusicPage, setSkipTrackCallback } = useMedia();
+
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playlist, setPlaylist] = useState<string[]>(() => shuffleArray(MUSIC_FILES));
   const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
@@ -130,6 +130,11 @@ export default function BackgroundMusic() {
     }
     setCurrentTrackIndex(nextIndex);
   }, [currentTrackIndex, playlist.length]);
+
+  // Register skip track callback with the context
+  useEffect(() => {
+    setSkipTrackCallback(handleTrackEnded);
+  }, [setSkipTrackCallback, handleTrackEnded]);
 
   // Update volume when preference changes
   useEffect(() => {

@@ -46,7 +46,7 @@ interface MediaContextType {
   toggleVideo: () => void;
   currentVideoCategory: VideoCategory;
   setCurrentVideoCategory: (category: VideoCategory) => void;
-  
+
   // Music state
   musicEnabled: boolean;
   setMusicEnabled: (enabled: boolean) => void;
@@ -55,6 +55,10 @@ interface MediaContextType {
   setMusicVolume: (volume: number) => void;
   isMusicPage: boolean;
   setIsMusicPage: (isPage: boolean) => void;
+
+  // Music skip track callback (set by BackgroundMusic component)
+  skipTrack: () => void;
+  setSkipTrackCallback: (callback: () => void) => void;
 }
 
 const MediaContext = createContext<MediaContextType | undefined>(undefined);
@@ -78,11 +82,22 @@ export function MediaProvider({ children }: MediaProviderProps) {
 
   const [musicVolume, setMusicVolumeState] = useState(() => {
     const stored = localStorage.getItem(STORAGE_KEYS.musicVolume);
-    return stored !== null ? parseFloat(stored) : 0.3; // Default 30% volume
+    return stored !== null ? parseFloat(stored) : 0.5; // Default 50% volume
   });
 
   const [currentVideoCategory, setCurrentVideoCategory] = useState<VideoCategory>("dashboard");
   const [isMusicPage, setIsMusicPage] = useState(false);
+
+  // Skip track callback - set by BackgroundMusic component
+  const [skipTrackCallback, setSkipTrackCallbackState] = useState<() => void>(() => () => {});
+
+  const setSkipTrackCallback = useCallback((callback: () => void) => {
+    setSkipTrackCallbackState(() => callback);
+  }, []);
+
+  const skipTrack = useCallback(() => {
+    skipTrackCallback();
+  }, [skipTrackCallback]);
 
   // Persist video preference
   const setVideoEnabled = useCallback((enabled: boolean) => {
@@ -126,6 +141,8 @@ export function MediaProvider({ children }: MediaProviderProps) {
         setMusicVolume,
         isMusicPage,
         setIsMusicPage,
+        skipTrack,
+        setSkipTrackCallback,
       }}
     >
       {children}
