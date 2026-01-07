@@ -1,0 +1,50 @@
+modules = ["nodejs-20", "web"]
+[agent]
+expertMode = true
+
+[nix]
+channel = "stable-25_05"
+
+[userenv]
+
+[userenv.shared]
+JWT_SECRET = "472e4278e254792eaa046023577533680be4fc1211f04efc5d2bfdbc252172c9"
+DATABASE_URL = "postgresql://neondb_owner:npg_PSW9MXEih3va@ep-broad-paper-a4dounvq-pooler.us-east-1.aws.neon.tech/neondb?sslmode=re"
+MANUS_API = "sk-eRMR7rAbSraIg-T9m4JHOxtBdVj6ErJ__sCbtIu6T4YQcPINoGKBjCJP4X_i_xxtM1oFcu6KgP3cA4Y"
+PERPLEXITY_API = "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"
+GOOGLE_CLIENT_ID = "673352466146-3d4g7ksnjpugu2odt4j0gd1r6nbtq9f6.apps.googleusercontent.com"
+GOOGLE_CLIENT_SECRET = "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"
+VITE_APP_ID = "100"
+
+[workflows]
+runButton = "Project"
+
+[[workflows.workflow]]
+name = "Project"
+mode = "parallel"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Start application"
+
+[[workflows.workflow]]
+name = "Start application"
+author = "agent"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "pnpm run dev"
+waitForPort = 5000
+
+[workflows.workflow.metadata]
+outputType = "webview"
+
+[[ports]]
+localPort = 5000
+externalPort = 80
+
+[deployment]
+deploymentTarget = "autoscale"
+run = ["pnpm", "run", "start"]
+build = ["pnpm", "run", "build"]
