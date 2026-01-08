@@ -842,3 +842,153 @@ function getScoreTier(score: number): 'prime' | 'stable' | 'experimental' | 'arc
   if (score >= 50) return 'experimental';
   return 'archived';
 }
+
+function calculateProfitTimeDimensions(business: Partial<InsertBusiness>): {
+  estimatedRevenuePerDay: string;
+  estimatedRevenuePerWeek: string;
+  estimatedTokenCostPerDay: string;
+  estimatedTokenCostPerWeek: string;
+  estimatedInfraCostPerWeek: string;
+  estimatedProfitPerHour: string;
+  estimatedProfitPerDay: string;
+  estimatedProfitPerWeek: string;
+} {
+  const revenuePerHour = parseFloat(business.estimatedRevenuePerHour || '0');
+  const tokenCostPerHour = parseFloat(business.estimatedTokenCostPerHour || '0');
+  const infraCostPerDay = parseFloat(business.estimatedInfraCostPerDay || '0');
+  
+  const revenuePerDay = revenuePerHour * 24;
+  const revenuePerWeek = revenuePerDay * 7;
+  const tokenCostPerDay = tokenCostPerHour * 24;
+  const tokenCostPerWeek = tokenCostPerDay * 7;
+  const infraCostPerWeek = infraCostPerDay * 7;
+  
+  const profitPerHour = revenuePerHour - tokenCostPerHour - (infraCostPerDay / 24);
+  const profitPerDay = revenuePerDay - tokenCostPerDay - infraCostPerDay;
+  const profitPerWeek = revenuePerWeek - tokenCostPerWeek - infraCostPerWeek;
+  
+  return {
+    estimatedRevenuePerDay: revenuePerDay.toFixed(2),
+    estimatedRevenuePerWeek: revenuePerWeek.toFixed(2),
+    estimatedTokenCostPerDay: tokenCostPerDay.toFixed(2),
+    estimatedTokenCostPerWeek: tokenCostPerWeek.toFixed(2),
+    estimatedInfraCostPerWeek: infraCostPerWeek.toFixed(2),
+    estimatedProfitPerHour: profitPerHour.toFixed(4),
+    estimatedProfitPerDay: profitPerDay.toFixed(2),
+    estimatedProfitPerWeek: profitPerWeek.toFixed(2),
+  };
+}
+
+// ============ SAVE AI-DISCOVERED BUSINESS TO CATALOG ============
+
+export async function saveDiscoveredBusiness(
+  userId: number,
+  opportunity: {
+    name: string;
+    description: string;
+    vertical: string;
+    scores: {
+      guaranteedDemand: number;
+      automationLevel: number;
+      tokenEfficiency: number;
+      profitMargin: number;
+      maintenanceCost: number;
+      legalRisk: number;
+      competitionSaturation: number;
+      compositeScore: number;
+    };
+    estimatedRevenue: number;
+    estimatedCosts: number;
+    implementationGuide?: string;
+    requiredApis?: string[];
+    infraRequirements?: string[];
+    setupTimeHours?: number;
+    minAgentsRequired?: number;
+    recommendedModels?: string[];
+    agentPrompt?: string;
+  }
+): Promise<Business | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const compositeScore = opportunity.scores.compositeScore;
+  const scoreTier = getScoreTier(compositeScore);
+  
+  const revenuePerHour = opportunity.estimatedRevenue / (24 * 30);
+  const costPerHour = opportunity.estimatedCosts / (24 * 30);
+  const infraCostPerDay = opportunity.estimatedCosts * 0.3 / 30;
+  
+  const businessData: InsertBusiness = {
+    name: opportunity.name,
+    description: opportunity.description,
+    vertical: opportunity.vertical as any,
+    guaranteedDemand: opportunity.scores.guaranteedDemand,
+    automationLevel: opportunity.scores.automationLevel,
+    tokenEfficiency: opportunity.scores.tokenEfficiency,
+    profitMargin: opportunity.scores.profitMargin,
+    maintenanceCost: opportunity.scores.maintenanceCost,
+    legalRisk: opportunity.scores.legalRisk,
+    competitionSaturation: opportunity.scores.competitionSaturation,
+    compositeScore,
+    scoreTier,
+    estimatedRevenuePerHour: revenuePerHour.toFixed(4),
+    estimatedTokenCostPerHour: costPerHour.toFixed(4),
+    estimatedInfraCostPerDay: infraCostPerDay.toFixed(2),
+    setupTimeHours: opportunity.setupTimeHours || 2,
+    minAgentsRequired: opportunity.minAgentsRequired || 1,
+    recommendedModels: opportunity.recommendedModels || [],
+    implementationGuide: opportunity.implementationGuide || '',
+    requiredApis: opportunity.requiredApis || [],
+    infraRequirements: opportunity.infraRequirements || [],
+    agentPrompt: opportunity.agentPrompt || '',
+    source: 'ai_discovered',
+    discoveredByUserId: userId,
+    discoveredAt: new Date(),
+    isActive: true,
+  };
+  
+  const profitDimensions = calculateProfitTimeDimensions(businessData);
+  
+  const result = await db.insert(businesses).values({
+    ...businessData,
+    ...profitDimensions,
+  }).returning();
+  
+  return result[0];
+}
+
+// ============ REFRESH BUSINESS DETAILS ============
+
+export async function updateBusinessDetails(
+  id: number,
+  updates: Partial<InsertBusiness>
+): Promise<Business | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+  
+  const compositeScore = updates.guaranteedDemand ? calculateCompositeScore(updates) : undefined;
+  const scoreTier = compositeScore ? getScoreTier(compositeScore) : undefined;
+  const profitDimensions = updates.estimatedRevenuePerHour ? calculateProfitTimeDimensions(updates) : {};
+  
+  await db.update(businesses).set({
+    ...updates,
+    ...(compositeScore && { compositeScore, scoreTier }),
+    ...profitDimensions,
+    lastRefreshedAt: new Date(),
+    updatedAt: new Date(),
+  }).where(eq(businesses.id, id));
+  
+  return getBusinessById(id);
+}
+
+// ============ UPDATE DEPLOY TRACKING ============
+
+export async function updateBusinessLastDeployed(businessId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  
+  await db.update(businesses).set({
+    lastDeployedAt: new Date(),
+    updatedAt: new Date(),
+  }).where(eq(businesses.id, businessId));
+}

@@ -28,6 +28,9 @@ export const users = pgTable("users", {
   googleId: varchar("google_id", { length: 64 }),
   pictureUrl: varchar("picture_url", { length: 500 }),
   authProviders: json("auth_providers").$type<string[]>().default([]),
+  // Session and consent tracking
+  termsAcceptedAt: timestamp("terms_accepted_at"),
+  privacyPolicyAcceptedAt: timestamp("privacy_policy_accepted_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   lastSignedIn: timestamp("last_signed_in").defaultNow().notNull(),
@@ -80,10 +83,18 @@ export const businesses = pgTable("businesses", {
   compositeScore: integer("composite_score").default(50).notNull(),
   scoreTier: scoreTierEnum("score_tier").default("experimental").notNull(),
   
-  // Financial projections
+  // Financial projections - Multi-time dimension support
   estimatedRevenuePerHour: decimal("estimated_revenue_per_hour", { precision: 10, scale: 4 }).default("0"),
+  estimatedRevenuePerDay: decimal("estimated_revenue_per_day", { precision: 10, scale: 2 }).default("0"),
+  estimatedRevenuePerWeek: decimal("estimated_revenue_per_week", { precision: 12, scale: 2 }).default("0"),
   estimatedTokenCostPerHour: decimal("estimated_token_cost_per_hour", { precision: 10, scale: 4 }).default("0"),
+  estimatedTokenCostPerDay: decimal("estimated_token_cost_per_day", { precision: 10, scale: 2 }).default("0"),
+  estimatedTokenCostPerWeek: decimal("estimated_token_cost_per_week", { precision: 12, scale: 2 }).default("0"),
   estimatedInfraCostPerDay: decimal("estimated_infra_cost_per_day", { precision: 10, scale: 2 }).default("0"),
+  estimatedInfraCostPerWeek: decimal("estimated_infra_cost_per_week", { precision: 12, scale: 2 }).default("0"),
+  estimatedProfitPerHour: decimal("estimated_profit_per_hour", { precision: 10, scale: 4 }).default("0"),
+  estimatedProfitPerDay: decimal("estimated_profit_per_day", { precision: 10, scale: 2 }).default("0"),
+  estimatedProfitPerWeek: decimal("estimated_profit_per_week", { precision: 12, scale: 2 }).default("0"),
   setupCost: decimal("setup_cost", { precision: 10, scale: 2 }).default("0"),
   setupTimeHours: integer("setup_time_hours").default(1).notNull(),
   
@@ -96,6 +107,18 @@ export const businesses = pgTable("businesses", {
   requiredApis: json("required_apis").$type<string[]>(),
   infraRequirements: json("infra_requirements").$type<string[]>(),
   codeTemplateUrl: varchar("code_template_url", { length: 500 }),
+  
+  // Production-ready agent execution prompt
+  agentPrompt: text("agent_prompt"),
+  
+  // Business source tracking
+  source: varchar("source", { length: 32 }).default("static"),
+  discoveredByUserId: integer("discovered_by_user_id").references(() => users.id),
+  
+  // Lifecycle tracking dates
+  discoveredAt: timestamp("discovered_at"),
+  lastRefreshedAt: timestamp("last_refreshed_at"),
+  lastDeployedAt: timestamp("last_deployed_at"),
   
   isActive: boolean("is_active").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
