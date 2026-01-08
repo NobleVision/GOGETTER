@@ -1,0 +1,66 @@
+n 08 01:17:34.88
+GET
+200
+gogetter.noblevision.com
+/api/trpc/dashboard.stats
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:17:33.17
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,userBusinesses.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:17:25.03
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,businesses.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:17:23.10
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,presets.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:17:13.13
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,dashboard.stats,userBusinesses.list,events.pendingInterventions
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:17:09.58
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,presets.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:17:05.63
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:17:02.44
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,businesses.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:16:59.36
+GET
+200
+gogetter.noblevision.com
+/api/trpc/businesses.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:16:55.09
+GET
+207
+gogetter-9c6aqe0zp-noble-visions-projects.vercel.app
+/api/trpc/auth.me,dashboard.stats,userBusinesses.list,events.pendingInterventions
+[Auth] Missing session cookie
+Jan 08 01:16:54.88
+GET
+207
+gogetter-9c6aqe0zp-noble-visions-projects.vercel.app
+/api/trpc/auth.me,dashboard.stats,userBusinesses.list,events.pendingInterventions
+[Auth] Missing session cookie

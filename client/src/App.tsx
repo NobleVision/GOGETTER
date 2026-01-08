@@ -30,6 +30,7 @@ function Router() {
       <Route path="/my-businesses" component={MyBusinesses} />
       <Route path="/monitoring" component={Monitoring} />
       <Route path="/token-usage" component={TokenUsage} />
+      <Route path="/tokens" component={TokenUsage} />
       <Route path="/api-config" component={ApiConfig} />
       <Route path="/webhooks" component={Webhooks} />
       <Route path="/blueprints" component={Blueprints} />
