@@ -46,8 +46,16 @@ type Business = {
   legalRisk: number;
   competitionSaturation: number;
   estimatedRevenuePerHour: string | null;
+  estimatedRevenuePerDay: string | null;
+  estimatedRevenuePerWeek: string | null;
   estimatedTokenCostPerHour: string | null;
+  estimatedTokenCostPerDay: string | null;
+  estimatedTokenCostPerWeek: string | null;
   estimatedInfraCostPerDay: string | null;
+  estimatedInfraCostPerWeek: string | null;
+  estimatedProfitPerHour: string | null;
+  estimatedProfitPerDay: string | null;
+  estimatedProfitPerWeek: string | null;
   setupCost: string | null;
   setupTimeHours: number | null;
   minAgentsRequired: number | null;
@@ -55,6 +63,11 @@ type Business = {
   requiredApis: string[] | null;
   infraRequirements: string[] | null;
   implementationGuide: string | null;
+  agentPrompt: string | null;
+  source: string | null;
+  discoveredAt: string | null;
+  lastRefreshedAt: string | null;
+  lastDeployedAt: string | null;
 };
 
 type AIOpportunity = {
@@ -281,11 +294,26 @@ function AIOpportunityCard({ opportunity, onDismiss, onSave }: { opportunity: AI
 function BusinessCard({ business, onDeploy }: { business: Business; onDeploy: () => void }) {
   const tier = TIER_STYLES[business.scoreTier as keyof typeof TIER_STYLES] || TIER_STYLES.experimental;
   const [showDetails, setShowDetails] = useState(false);
+  const [timeView, setTimeView] = useState<'hour' | 'day' | 'week'>('day');
 
   const formatCurrency = (value: string | null) => {
     if (!value) return '-';
-    return `${parseFloat(value).toFixed(2)}`;
+    const num = parseFloat(value);
+    if (num >= 1000) return `$${(num / 1000).toFixed(1)}k`;
+    return `$${num.toFixed(2)}`;
   };
+
+  const getProfitByTime = () => {
+    switch (timeView) {
+      case 'hour': return { profit: business.estimatedProfitPerHour, revenue: business.estimatedRevenuePerHour, cost: business.estimatedTokenCostPerHour, label: '/hr' };
+      case 'day': return { profit: business.estimatedProfitPerDay, revenue: business.estimatedRevenuePerDay, cost: business.estimatedTokenCostPerDay, label: '/day' };
+      case 'week': return { profit: business.estimatedProfitPerWeek, revenue: business.estimatedRevenuePerWeek, cost: business.estimatedTokenCostPerWeek, label: '/wk' };
+    }
+  };
+
+  const profitData = getProfitByTime();
+  const profitValue = parseFloat(profitData.profit || '0');
+  const isProfitable = profitValue > 0;
 
   return (
     <Card className="bg-card border-border hover:border-emerald-500/30 transition-all group">
@@ -299,6 +327,12 @@ function BusinessCard({ business, onDeploy }: { business: Business; onDeploy: ()
               <Badge variant="outline" className="text-xs capitalize">
                 {business.vertical.replace('_', ' ')}
               </Badge>
+              {business.source === 'ai_discovered' && (
+                <Badge variant="outline" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-xs">
+                  <Sparkles className="mr-1 h-3 w-3" />
+                  AI
+                </Badge>
+              )}
             </div>
             <CardTitle className="text-lg text-white group-hover:text-emerald-400 transition-colors">
               {business.name}
@@ -312,17 +346,42 @@ function BusinessCard({ business, onDeploy }: { business: Business; onDeploy: ()
         <CardDescription className="line-clamp-2">{business.description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Time Toggle */}
+        <div className="flex justify-center gap-1 p-1 bg-secondary/30 rounded-lg">
+          {(['hour', 'day', 'week'] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => setTimeView(t)}
+              className={`px-3 py-1 text-xs rounded-md transition-colors ${
+                timeView === t 
+                  ? 'bg-emerald-500/20 text-emerald-400' 
+                  : 'text-muted-foreground hover:text-white'
+              }`}
+            >
+              {t === 'hour' ? 'Hourly' : t === 'day' ? 'Daily' : 'Weekly'}
+            </button>
+          ))}
+        </div>
+
+        {/* Profit Highlight */}
+        <div className={`p-3 rounded-lg text-center ${isProfitable ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-red-500/10 border border-red-500/20'}`}>
+          <div className="text-xs text-muted-foreground mb-1">Est. Profit {profitData.label}</div>
+          <div className={`text-xl font-bold ${isProfitable ? 'text-emerald-400' : 'text-red-400'}`}>
+            {formatCurrency(profitData.profit)}
+          </div>
+        </div>
+
         {/* Quick Stats */}
         <div className="grid grid-cols-3 gap-3 text-center">
           <div className="p-2 rounded-lg bg-secondary/50">
             <DollarSign className="h-4 w-4 mx-auto text-emerald-400 mb-1" />
-            <div className="text-sm font-medium text-white">{formatCurrency(business.estimatedRevenuePerHour)}/hr</div>
+            <div className="text-sm font-medium text-white">{formatCurrency(profitData.revenue)}</div>
             <div className="text-xs text-muted-foreground">Revenue</div>
           </div>
           <div className="p-2 rounded-lg bg-secondary/50">
             <Cpu className="h-4 w-4 mx-auto text-amber-400 mb-1" />
-            <div className="text-sm font-medium text-white">{formatCurrency(business.estimatedTokenCostPerHour)}/hr</div>
-            <div className="text-xs text-muted-foreground">Token Cost</div>
+            <div className="text-sm font-medium text-white">{formatCurrency(profitData.cost)}</div>
+            <div className="text-xs text-muted-foreground">Cost</div>
           </div>
           <div className="p-2 rounded-lg bg-secondary/50">
             <Clock className="h-4 w-4 mx-auto text-blue-400 mb-1" />

@@ -2,6 +2,21 @@
 
 ## ✅ Recently Completed (January 2026)
 
+### 📈 Multi-Time Profit Dimensions & Business Lifecycle Tracking
+- [x] Add profit time dimensions to database schema (hourly/daily/weekly revenue, cost, profit)
+- [x] Implement calculateProfitTimeDimensions utility for automated calculations
+- [x] Add business lifecycle tracking fields (discoveredAt, lastRefreshedAt, lastDeployedAt)
+- [x] Add agentPrompt field for production-ready AI agent execution prompts
+- [x] Add source tracking (static vs ai_discovered) for business origin
+- [x] Implement "Save to Catalog" button for AI-discovered opportunities
+- [x] Create saveDiscoveredBusiness function to persist AI discoveries to database
+- [x] Add refresh endpoint to update business details with current market data
+- [x] Update deploy tracking to record lastDeployedAt timestamps
+- [x] Add time toggle UI (Hourly/Daily/Weekly) to Business Cards
+- [x] Display profit prominently with color-coded positive/negative indicators
+- [x] Add AI-discovered badge to businesses from discovery wizard
+- [x] Refetch catalog data after saving AI-discovered opportunities
+
 ### 🔐 Enhanced Security & Environment Validation
 - [x] Implement comprehensive environment validation system
 - [x] Add JWT_SECRET length validation (minimum 32 characters)
