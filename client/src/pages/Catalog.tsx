@@ -399,10 +399,94 @@ function BusinessCard({ business, onDeploy }: { business: Business; onDeploy: ()
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">
-          <Button variant="outline" className="flex-1 border-border">
-            Details
-            <ChevronRight className="ml-1 h-4 w-4" />
-          </Button>
+          <Dialog open={showDetails} onOpenChange={setShowDetails}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="flex-1 border-border">
+                Details
+                <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="text-xl">{business.name}</DialogTitle>
+                <DialogDescription>{business.description}</DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 rounded-lg bg-secondary/50">
+                    <div className="text-sm text-muted-foreground">Composite Score</div>
+                    <div className="text-2xl font-bold text-emerald-400">{business.compositeScore}</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-secondary/50">
+                    <div className="text-sm text-muted-foreground">Daily Profit</div>
+                    <div className={`text-2xl font-bold ${parseFloat(business.estimatedProfitPerDay || '0') > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                      {formatCurrency(business.estimatedProfitPerDay)}
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Score Breakdown</h4>
+                  <div className="space-y-2">
+                    <ScoreBar label="Guaranteed Demand" value={business.guaranteedDemand} />
+                    <ScoreBar label="Automation Level" value={business.automationLevel} />
+                    <ScoreBar label="Token Efficiency" value={business.tokenEfficiency} />
+                    <ScoreBar label="Profit Margin" value={business.profitMargin} />
+                    <ScoreBar label="Maintenance Cost" value={100 - business.maintenanceCost} />
+                    <ScoreBar label="Legal Risk" value={100 - business.legalRisk} />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-3 text-center">
+                  <div className="p-3 rounded-lg bg-emerald-500/10">
+                    <div className="text-lg font-bold text-white">{formatCurrency(business.estimatedRevenuePerDay)}</div>
+                    <div className="text-xs text-muted-foreground">Daily Revenue</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-amber-500/10">
+                    <div className="text-lg font-bold text-white">{formatCurrency(business.estimatedTokenCostPerDay)}</div>
+                    <div className="text-xs text-muted-foreground">Token Cost/Day</div>
+                  </div>
+                  <div className="p-3 rounded-lg bg-blue-500/10">
+                    <div className="text-lg font-bold text-white">{formatCurrency(business.setupCost)}</div>
+                    <div className="text-xs text-muted-foreground">Setup Cost</div>
+                  </div>
+                </div>
+
+                {business.implementationGuide && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Implementation Guide</h4>
+                    <div className="p-3 rounded-lg bg-secondary/50 text-sm whitespace-pre-line">
+                      {business.implementationGuide}
+                    </div>
+                  </div>
+                )}
+
+                {business.requiredApis && business.requiredApis.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Required APIs</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {business.requiredApis.map((api, i) => (
+                        <Badge key={i} variant="outline">{api}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-2">
+                  <Button variant="outline" onClick={() => setShowDetails(false)} className="flex-1">
+                    Close
+                  </Button>
+                  <Button 
+                    onClick={() => { setShowDetails(false); onDeploy(); }}
+                    className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0"
+                  >
+                    <Rocket className="mr-2 h-4 w-4" />
+                    Deploy Now
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
           <Button 
             onClick={onDeploy}
             className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0"
