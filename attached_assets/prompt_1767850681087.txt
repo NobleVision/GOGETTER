@@ -1,0 +1,41 @@
+Review and implement enhancements to the GO-GETTER application based on the suggestion files attached (*-suggestions-*.md/.txt) to prepare for production deployment with real data (no mock data). The goal is to make GO-GETTER the first autonomous business platform.  Please review the attached suggestions and add your own tasks, suggestions, etc. and update the TODO.md in the codebase where we may not be able to achieve all of the suggestiosn today.
+
+**Core Requirements:**
+
+1. **Profit Time Dimension Enhancement:**
+   - Extend the current hourly profit tracking to include daily and weekly profit calculations
+   - This should expose more business opportunities in the catalog by reducing the aggressiveness requirement
+   - Update the business scoring algorithm to consider longer-term profitability windows
+   - Modify the UI to display profit metrics across multiple time dimensions (hourly/daily/weekly)
+
+2. **Business Catalog Details Enhancement:**
+   - Ensure the "Details" section in the Business Catalog provides comprehensive information suitable for use as agent prompts
+   - Include detailed setup instructions, revenue projections, token usage estimates, and deployment logic
+   - Maintain the deployment functionality accessible from the dashboard
+   - Each business detail should be production-ready and actionable
+
+3. **Discovery Wizard Fixes:**
+   - Fix the failing end-of-wizard process that should add discovered businesses to the catalog
+   - Implement business discovery date tracking to identify older vs newer opportunities
+   - Add a "Refresh Businesses" button in the Business Catalog to update all business details including:
+     - Revenue projections
+     - Token count estimates
+     - Setup requirements
+     - Market viability scores
+
+4. **Business Lifecycle Tracking:**
+   - Add multiple date fields for each business:
+     - Discovery date (when first found)
+     - Last updated (when details were refreshed)
+     - Last deployed (when actually implemented)
+     - Created date, modified date
+   - Display these dates in the catalog for better business management
+
+5. **Session Management Fix:**
+   - Resolve Google OAuth login repeatedly showing terms and conditions
+   - Extend session duration to remain active for at least 30 days
+   - Implement proper session refresh to prevent timeout issues
+   - Ensure seamless authentication experience
+
+**Implementation Priority:**
+Focus on production readiness with real autonomous business deployment capabilities, leveraging the Manus API integration and fallback chain architecture outlined in the suggestion documents.
