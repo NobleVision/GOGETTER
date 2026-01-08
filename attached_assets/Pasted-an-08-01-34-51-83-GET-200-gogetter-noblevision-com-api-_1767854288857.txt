@@ -1,0 +1,196 @@
+an 08 01:34:51.83
+GET
+200
+gogetter.noblevision.com
+/api/trpc/businesses.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:33:25.52
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,businesses.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:33:03.69
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:33:03.46
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,dashboard.stats,userBusinesses.list,events.pendingInterventions
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:33:02.41
+GET
+302
+gogetter.noblevision.com
+/api/oauth/google/callback
+Jan 08 01:32:56.63
+GET
+302
+gogetter.noblevision.com
+/api/oauth/google/init
+Jan 08 01:32:44.73
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me
+[Auth] Missing session cookie
+Jan 08 01:32:44.44
+POST
+200
+gogetter.noblevision.com
+/api/trpc/auth.logout
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:30:29.25
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,profile.get
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:27:36.83
+GET
+200
+gogetter.noblevision.com
+/api/trpc/webhooks.list,userBusinesses.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:27:35.62
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,apiConfig.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:27:25.05
+GET
+200
+gogetter.noblevision.com
+/api/trpc/tokenUsage.history,tokenUsage.summary,tokenUsage.timeSeries,profile.get
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:27:22.20
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:27:18.76
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,businesses.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:27:14.99
+GET
+200
+gogetter.noblevision.com
+/api/trpc/businesses.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:27:02.71
+GET
+207
+gogetter-1pi6ids3e-noble-visions-projects.vercel.app
+/api/trpc/auth.me,dashboard.stats,userBusinesses.list,events.pendingInterventions
+[Auth] Missing session cookie
+Jan 08 01:27:02.69
+GET
+207
+gogetter-1pi6ids3e-noble-visions-projects.vercel.app
+/api/trpc/auth.me,dashboard.stats,userBusinesses.list,events.pendingInterventions
+[Auth] Missing session cookie
+Jan 08 01:22:45.67
+GET
+207
+gogetter-fd3eqeoxv-noble-visions-projects.vercel.app
+/api/trpc/auth.me,dashboard.stats,userBusinesses.list,events.pendingInterventions
+[Auth] Missing session cookie
+Jan 08 01:22:45.66
+GET
+207
+gogetter-fd3eqeoxv-noble-visions-projects.vercel.app
+/api/trpc/auth.me,dashboard.stats,userBusinesses.list,events.pendingInterventions
+[Auth] Missing session cookie
+Jan 08 01:19:37.76
+GET
+200
+gogetter.noblevision.com
+/api/trpc/businesses.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:19:36.30
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,presets.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:19:34.60
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,userBusinesses.list,dashboard.stats
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:17:34.88
+GET
+200
+gogetter.noblevision.com
+/api/trpc/dashboard.stats
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:17:33.17
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,userBusinesses.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:17:25.03
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,businesses.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:17:23.10
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,presets.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:17:13.13
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,dashboard.stats,userBusinesses.list,events.pendingInterventions
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:17:09.58
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,presets.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:17:05.63
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:17:02.44
+GET
+200
+gogetter.noblevision.com
+/api/trpc/auth.me,businesses.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:16:59.36
+GET
+200
+gogetter.noblevision.com
+/api/trpc/businesses.list
+[Auth] Found Google user by googleId, openId mismatch: session=google_108379797244045410684, db=aCmUFDVJzasV9Abxth4vmf
+Jan 08 01:16:55.09
+GET
+207
+gogetter-9c6aqe0zp-noble-visions-projects.vercel.app
+/api/trpc/auth.me,dashboard.stats,userBusinesses.list,events.pendingInterventions
+[Auth] Missing session cookie
+Jan 08 01:16:54.88
+GET
+207
+gogetter-9c6aqe0zp-noble-visions-projects.vercel.app
+/api/trpc/auth.me,dashboard.stats,userBusinesses.list,events.pendingInterventions
+[Auth] Missing session cookie
