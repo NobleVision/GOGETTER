@@ -406,10 +406,10 @@ function BusinessCard({ business, onDeploy }: { business: Business; onDeploy: ()
                 <ChevronRight className="ml-1 h-4 w-4" />
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto bg-card border-border">
               <DialogHeader>
-                <DialogTitle className="text-xl">{business.name}</DialogTitle>
-                <DialogDescription>{business.description}</DialogDescription>
+                <DialogTitle className="text-xl text-white">{business.name}</DialogTitle>
+                <DialogDescription className="text-muted-foreground">{business.description}</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 pt-4">
                 <div className="grid grid-cols-2 gap-4">
