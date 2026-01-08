@@ -43,6 +43,15 @@ pnpm run dev
 - `GOOGLE_CLIENT_SECRET` - Google OAuth client secret (optional)
 
 ## Recent Changes
+- 2026-01-08: Added multi-time profit dimensions and business lifecycle tracking
+  - Database schema updated with hourly/daily/weekly revenue, cost, and profit fields
+  - Added business lifecycle fields: discoveredAt, lastRefreshedAt, lastDeployedAt
+  - Added agentPrompt field for production-ready AI agent execution
+  - Added source tracking (static vs ai_discovered) for business origin
+  - Implemented "Save to Catalog" button to persist AI-discovered businesses
+  - Added time toggle UI (Hourly/Daily/Weekly) in Business Catalog cards
+  - Profit displayed prominently with color-coded positive/negative indicators
+  - Added AI-discovered badge to businesses from discovery wizard
 - 2026-01-07: Configured for Replit environment
   - Updated Vite config to allow all hosts for proxy
   - Changed default port to 5000
