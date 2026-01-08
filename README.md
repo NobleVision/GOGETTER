@@ -653,4 +653,4 @@ The system automatically routes requests to the most appropriate and cost-effect
 
 ## License
 
-MIT
+MIT 2026
