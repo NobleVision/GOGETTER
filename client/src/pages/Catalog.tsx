@@ -293,7 +293,6 @@ function AIOpportunityCard({ opportunity, onDismiss, onSave }: { opportunity: AI
 
 function BusinessCard({ business, onDeploy }: { business: Business; onDeploy: () => void }) {
   const tier = TIER_STYLES[business.scoreTier as keyof typeof TIER_STYLES] || TIER_STYLES.experimental;
-  const [showDetails, setShowDetails] = useState(false);
   const [timeView, setTimeView] = useState<'hour' | 'day' | 'week'>('day');
 
   const formatCurrency = (value: string | null) => {
@@ -399,7 +398,7 @@ function BusinessCard({ business, onDeploy }: { business: Business; onDeploy: ()
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">
-          <Dialog open={showDetails} onOpenChange={setShowDetails}>
+          <Dialog>
             <DialogTrigger asChild>
               <Button variant="outline" className="flex-1 border-border">
                 Details
@@ -426,7 +425,7 @@ function BusinessCard({ business, onDeploy }: { business: Business; onDeploy: ()
                 </div>
                 
                 <div>
-                  <h4 className="text-sm font-medium mb-2">Score Breakdown</h4>
+                  <h4 className="text-sm font-medium mb-2 text-white">Score Breakdown</h4>
                   <div className="space-y-2">
                     <ScoreBar label="Guaranteed Demand" value={business.guaranteedDemand} />
                     <ScoreBar label="Automation Level" value={business.automationLevel} />
@@ -454,8 +453,8 @@ function BusinessCard({ business, onDeploy }: { business: Business; onDeploy: ()
 
                 {business.implementationGuide && (
                   <div>
-                    <h4 className="text-sm font-medium mb-2">Implementation Guide</h4>
-                    <div className="p-3 rounded-lg bg-secondary/50 text-sm whitespace-pre-line">
+                    <h4 className="text-sm font-medium mb-2 text-white">Implementation Guide</h4>
+                    <div className="p-3 rounded-lg bg-secondary/50 text-sm whitespace-pre-line text-muted-foreground">
                       {business.implementationGuide}
                     </div>
                   </div>
@@ -463,7 +462,7 @@ function BusinessCard({ business, onDeploy }: { business: Business; onDeploy: ()
 
                 {business.requiredApis && business.requiredApis.length > 0 && (
                   <div>
-                    <h4 className="text-sm font-medium mb-2">Required APIs</h4>
+                    <h4 className="text-sm font-medium mb-2 text-white">Required APIs</h4>
                     <div className="flex flex-wrap gap-2">
                       {business.requiredApis.map((api, i) => (
                         <Badge key={i} variant="outline">{api}</Badge>
@@ -473,11 +472,13 @@ function BusinessCard({ business, onDeploy }: { business: Business; onDeploy: ()
                 )}
 
                 <div className="flex gap-2 pt-2">
-                  <Button variant="outline" onClick={() => setShowDetails(false)} className="flex-1">
-                    Close
-                  </Button>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" className="flex-1">
+                      Close
+                    </Button>
+                  </DialogTrigger>
                   <Button 
-                    onClick={() => { setShowDetails(false); onDeploy(); }}
+                    onClick={onDeploy}
                     className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0"
                   >
                     <Rocket className="mr-2 h-4 w-4" />
