@@ -1,5 +1,5 @@
 import { COOKIE_NAME } from "@shared/const";
-import * as cookie from "cookie";
+import cookie from "cookie";
 import { z } from "zod";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -98,6 +98,56 @@ export const appRouter = router({
       .mutation(async ({ input }) => {
         return db.createBusiness(input);
       }),
+
+    saveDiscovered: protectedProcedure
+      .input(z.object({
+        name: z.string(),
+        description: z.string(),
+        vertical: z.string(),
+        scores: z.object({
+          guaranteedDemand: z.number(),
+          automationLevel: z.number(),
+          tokenEfficiency: z.number(),
+          profitMargin: z.number(),
+          maintenanceCost: z.number(),
+          legalRisk: z.number(),
+          competitionSaturation: z.number(),
+          compositeScore: z.number(),
+        }),
+        estimatedRevenue: z.number(),
+        estimatedCosts: z.number(),
+        implementationGuide: z.string().optional(),
+        requiredApis: z.array(z.string()).optional(),
+        infraRequirements: z.array(z.string()).optional(),
+        setupTimeHours: z.number().optional(),
+        minAgentsRequired: z.number().optional(),
+        recommendedModels: z.array(z.string()).optional(),
+        agentPrompt: z.string().optional(),
+      }))
+      .mutation(async ({ ctx, input }) => {
+        return db.saveDiscoveredBusiness(ctx.user.id, input);
+      }),
+
+    refresh: protectedProcedure
+      .input(z.object({
+        id: z.number(),
+        estimatedRevenuePerHour: z.string().optional(),
+        estimatedTokenCostPerHour: z.string().optional(),
+        estimatedInfraCostPerDay: z.string().optional(),
+        guaranteedDemand: z.number().optional(),
+        automationLevel: z.number().optional(),
+        tokenEfficiency: z.number().optional(),
+        profitMargin: z.number().optional(),
+        maintenanceCost: z.number().optional(),
+        legalRisk: z.number().optional(),
+        competitionSaturation: z.number().optional(),
+        implementationGuide: z.string().optional(),
+        agentPrompt: z.string().optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const { id, ...updates } = input;
+        return db.updateBusinessDetails(id, updates);
+      }),
   }),
 
   // User's Deployed Businesses
@@ -115,6 +165,7 @@ export const appRouter = router({
     deploy: protectedProcedure
       .input(z.object({ businessId: z.number() }))
       .mutation(async ({ ctx, input }) => {
+        await db.updateBusinessLastDeployed(input.businessId);
         return db.deployBusiness(ctx.user.id, input.businessId);
       }),
     

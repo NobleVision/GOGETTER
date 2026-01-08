@@ -108,8 +108,11 @@ function ScoreBar({ label, value, color = "emerald" }: { label: string; value: n
   );
 }
 
-function AIOpportunityCard({ opportunity, onDismiss }: { opportunity: AIOpportunity; onDismiss: () => void }) {
+function AIOpportunityCard({ opportunity, onDismiss, onSave }: { opportunity: AIOpportunity; onDismiss: () => void; onSave: () => void }) {
   const [showDetails, setShowDetails] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  const saveDiscovered = trpc.businesses.saveDiscovered.useMutation();
   
   const getScoreTier = (score: number) => {
     if (score >= 90) return TIER_STYLES.prime;
@@ -119,6 +122,19 @@ function AIOpportunityCard({ opportunity, onDismiss }: { opportunity: AIOpportun
   };
 
   const tier = getScoreTier(opportunity.scores.compositeScore);
+  
+  const handleSave = async () => {
+    setIsSaving(true);
+    try {
+      await saveDiscovered.mutateAsync(opportunity);
+      toast.success("Business saved to catalog!");
+      onSave();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to save business");
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   return (
     <Card className="bg-gradient-to-br from-emerald-500/10 to-teal-600/10 border-emerald-500/30 hover:border-emerald-400 transition-all group">
@@ -240,11 +256,21 @@ function AIOpportunityCard({ opportunity, onDismiss }: { opportunity: AIOpportun
             </DialogContent>
           </Dialog>
           <Button 
-            disabled
-            className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0 opacity-50"
+            onClick={handleSave}
+            disabled={isSaving}
+            className="flex-1 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0"
           >
-            <Rocket className="mr-2 h-4 w-4" />
-            Coming Soon
+            {isSaving ? (
+              <>
+                <Zap className="mr-2 h-4 w-4 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Star className="mr-2 h-4 w-4" />
+                Save to Catalog
+              </>
+            )}
           </Button>
         </div>
       </CardContent>
@@ -360,7 +386,7 @@ export default function Catalog() {
     }
   };
 
-  const { data: businesses, isLoading } = trpc.businesses.list.useQuery({
+  const { data: businesses, isLoading, refetch } = trpc.businesses.list.useQuery({
     vertical: vertical === "all" ? undefined : vertical as any,
   });
 
@@ -463,6 +489,10 @@ export default function Catalog() {
                   key={index}
                   opportunity={opportunity}
                   onDismiss={() => dismissAiOpportunity(index)}
+                  onSave={() => {
+                    dismissAiOpportunity(index);
+                    refetch();
+                  }}
                 />
               ))}
             </div>

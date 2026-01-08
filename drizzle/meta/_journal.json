@@ -22,6 +22,13 @@
       "when": 1767600490156,
       "tag": "0002_wandering_falcon",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1767850954971,
+      "tag": "0003_mute_pepper_potts",
+      "breakpoints": true
     }
   ]
 }
