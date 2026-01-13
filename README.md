@@ -4,11 +4,14 @@ An autonomous business development platform powered by AI. Discover, evaluate, a
 
 ## Executive Summary
 
+![GO-GETTER OS Executive Summary - Platform overview showing the AI-powered autonomous business development system](docs/images/GoGetter01-Executive%20Summary.jfif)
+
 GO-GETTER OS is a revolutionary platform that democratizes entrepreneurship by leveraging artificial intelligence to identify, evaluate, and execute autonomous micro-business opportunities. In an era where traditional employment is increasingly uncertain and the gig economy demands constant personal involvement, GO-GETTER OS offers a third path: **truly passive income through AI-powered business automation**.
 
 ### The Problem We Solve
 
 Most people want financial independence but face significant barriers:
+
 - **Lack of business expertise** - Don't know what opportunities exist or how to evaluate them
 - **Limited time and resources** - Can't dedicate full-time effort to research and execution
 - **Risk aversion** - Fear of losing money on unproven business ideas
@@ -24,17 +27,21 @@ graph TD
     A[User Completes Discovery Wizard] --> B[AI Agent Analyzes Profile]
     B --> C[Personalized Business Recommendations]
     C --> D[User Selects Opportunities]
-    D --> E[Automated Deployment & Setup]
+    D --> E[Automated Deployment and Setup]
     E --> F[AI Agents Execute Business Operations]
-    F --> G[Real-time Monitoring & Optimization]
-    G --> H[Revenue Generation & Reporting]
-    H --> I[Continuous Learning & Improvement]
+    F --> G[Real-time Monitoring and Optimization]
+    G --> H[Revenue Generation and Reporting]
+    H --> I[Continuous Learning and Improvement]
     I --> C
-    
+
     style A fill:#e1f5fe
     style F fill:#c8e6c9
     style H fill:#fff3e0
 ```
+
+![AI-Powered Autonomous Business Development workflow visualization](docs/images/GoGetter02-OurSolutionAI-PoweredAutonomousBusinessDevelopment.jfif)
+
+*The complete business development lifecycle from user onboarding through continuous optimization and revenue generation.*
 
 ### How It Works
 
@@ -64,6 +71,7 @@ graph TD
 The traditional path to financial independence—climbing the corporate ladder or starting a traditional business—is increasingly unreliable. Meanwhile, the digital economy offers unprecedented opportunities for automation and scale, but most people lack the technical expertise to capitalize on them.
 
 GO-GETTER OS bridges this gap by:
+
 - **Democratizing access** to sophisticated business intelligence and automation tools
 - **Reducing barriers to entry** through AI-powered guidance and execution
 - **Minimizing risk** through data-driven opportunity evaluation and diversification
@@ -72,18 +80,21 @@ GO-GETTER OS bridges this gap by:
 ### How It Helps People
 
 **For Aspiring Entrepreneurs:**
+
 - Discover viable business opportunities without extensive market research
 - Launch businesses without deep technical knowledge
 - Reduce financial risk through intelligent opportunity scoring
 - Scale operations without proportional time investment
 
 **For Busy Professionals:**
+
 - Generate passive income streams that don't require constant attention
 - Diversify income sources to reduce career risk
 - Build wealth while maintaining primary career focus
 - Learn entrepreneurship through guided, low-risk experiences
 
 **For Experienced Business Owners:**
+
 - Identify new market opportunities using AI-powered analysis
 - Automate routine business operations to focus on strategy
 - Optimize existing businesses through advanced analytics
@@ -102,48 +113,56 @@ GO-GETTER OS leverages cutting-edge AI technologies to provide capabilities that
 ## Core Features
 
 ### 🧭 Intelligent Business Discovery
+
 - **AI-Powered Wizard** - Multi-step onboarding that captures risk tolerance, capital, interests, and goals
 - **Personalized Recommendations** - Custom-tailored business opportunities based on your unique profile
 - **Discovery Presets** - Save and reuse wizard configurations for different scenarios
 - **Market Intelligence** - Real-time analysis of market conditions and opportunities
 
 ### 📊 Advanced Business Catalog
+
 - **20+ Curated Opportunities** - Pre-vetted micro-business opportunities across 4 key verticals
 - **Composite Scoring System** - Sophisticated 0-100 scoring based on 7 critical success factors
 - **Smart Filtering & Sorting** - Find opportunities by vertical, risk level, capital requirements, and profitability
 - **Detailed Analytics** - Comprehensive business analysis including setup time, revenue potential, and automation level
 
 ### 🤖 Go-Getter AI Agent
+
 - **Real AI Execution** - Powered by multiple leading AI models (OpenAI, Anthropic, Gemini, Perplexity, Grok)
 - **Intelligent Model Routing** - Automatically selects the most cost-effective model for each task
 - **Personalized Strategy** - Adapts recommendations based on your preferences and risk tolerance
 - **Fallback Protection** - Graceful degradation to static catalog when AI services are unavailable
 
 ### 📈 Real-Time Monitoring Dashboard
+
 - **Live Performance Metrics** - Track active businesses, revenue, costs, and profitability in real-time
 - **Interactive Time-Series Charts** - Visualize trends with customizable time ranges (24h, 7d, 30d, 90d)
 - **Business Health Indicators** - Monitor agent status, intervention requests, and system alerts
 - **Revenue & Cost Tracking** - Detailed breakdown of income streams and operational expenses
 
 ### 💰 Comprehensive Token Management
+
 - **Multi-Model Cost Tracking** - Monitor AI usage across all integrated models
 - **Budget Controls** - Set spending limits and receive alerts when approaching thresholds
 - **Cost Optimization** - Automatic model selection to minimize expenses while maintaining quality
 - **Usage Analytics** - Detailed breakdowns by provider, model, and time period
 
 ### 🔐 Enterprise-Grade Security
+
 - **Google OAuth 2.0** - Secure, industry-standard authentication
 - **Multi-Provider Support** - Account linking across different OAuth providers
 - **JWT Session Management** - Secure, stateless session handling
 - **Environment Validation** - Comprehensive security checks and configuration validation
 
 ### ⚙️ Multi-Model API Configuration
+
 - **Universal AI Integration** - Support for OpenAI, Anthropic, Perplexity, Gemini, Grok, and Manus
 - **Flexible Configuration** - Easy setup and management of multiple AI service providers
 - **Health Monitoring** - Real-time status checking for all configured services
 - **Webhook Integration** - Custom endpoints for business event monitoring and automation
 
 ### 🎨 Premium User Experience
+
 - **Modern Dark Theme** - Professional, data-driven design optimized for extended use
 - **Responsive Layout** - Seamless experience across desktop, tablet, and mobile devices
 - **Smart Loading States** - Skeleton loaders and progress indicators for smooth interactions
@@ -156,26 +175,26 @@ GO-GETTER OS leverages cutting-edge AI technologies to provide capabilities that
 
 ```mermaid
 graph TB
-    subgraph "Client Layer"
+    subgraph ClientLayer[Client Layer]
         UI[React 19 Frontend]
         Auth[Authentication State]
         Charts[Real-time Charts]
     end
-    
-    subgraph "API Layer"
+
+    subgraph APILayer[API Layer]
         tRPC[tRPC API Gateway]
         OAuth[OAuth Endpoints]
         Webhooks[Webhook Handlers]
     end
-    
-    subgraph "Business Logic"
+
+    subgraph BusinessLogic[Business Logic]
         Agent[Go-Getter AI Agent]
         Router[Model Router]
         Scoring[Scoring Engine]
         Monitor[Monitoring System]
     end
-    
-    subgraph "AI Services"
+
+    subgraph AIServices[AI Services]
         OpenAI[OpenAI GPT]
         Anthropic[Claude]
         Gemini[Google Gemini]
@@ -183,22 +202,22 @@ graph TB
         Grok[xAI Grok]
         Manus[Manus AI]
     end
-    
-    subgraph "Data Layer"
+
+    subgraph DataLayer[Data Layer]
         DB[(PostgreSQL)]
         Cache[Session Cache]
         Logs[Event Logs]
     end
-    
+
     UI --> tRPC
     UI --> OAuth
     Auth --> OAuth
     Charts --> tRPC
-    
+
     tRPC --> Agent
     tRPC --> Scoring
     tRPC --> Monitor
-    
+
     Agent --> Router
     Router --> OpenAI
     Router --> Anthropic
@@ -206,20 +225,24 @@ graph TB
     Router --> Perplexity
     Router --> Grok
     Router --> Manus
-    
+
     Agent --> DB
     Scoring --> DB
     Monitor --> DB
     OAuth --> DB
-    
+
     Monitor --> Logs
     OAuth --> Cache
-    
+
     style UI fill:#e3f2fd
     style Agent fill:#e8f5e8
     style DB fill:#fff3e0
     style Router fill:#f3e5f5
 ```
+
+![High-Level Architecture Overview diagram showing Client, API, Business Logic, AI Services, and Data layers](docs/images/GoGetter03-HighLevelArchitectureOverview.jfif)
+
+*System architecture showing the layered design from React frontend through tRPC API to multi-model AI services and PostgreSQL data storage.*
 
 ### AI Agent Workflow
 
@@ -227,65 +250,73 @@ graph TB
 flowchart TD
     Start([User Completes Wizard]) --> Profile[Create User Profile]
     Profile --> Analyze[AI Agent Analyzes Profile]
-    
+
     Analyze --> Discover[Discover Opportunities]
     Discover --> Score[Calculate Composite Scores]
     Score --> Rank[Rank by User Preferences]
     Rank --> Present[Present Recommendations]
-    
-    Present --> Select{User Selects Business?}
+
+    Present --> Select{User Selects Business}
     Select -->|Yes| Deploy[Deploy Business]
     Select -->|No| Refine[Refine Preferences]
     Refine --> Discover
-    
-    Deploy --> Monitor[Monitor Performance]
-    Monitor --> Optimize[Optimize Operations]
+
+    Deploy --> MonitorNode[Monitor Performance]
+    MonitorNode --> Optimize[Optimize Operations]
     Optimize --> Revenue[Generate Revenue]
     Revenue --> Report[Report Results]
-    Report --> Learn[Learn & Improve]
+    Report --> Learn[Learn and Improve]
     Learn --> Discover
-    
+
     style Start fill:#e1f5fe
     style Analyze fill:#e8f5e8
     style Deploy fill:#fff3e0
     style Revenue fill:#e0f2f1
 ```
 
+![AI Agent Workflow showing the complete discovery to revenue generation process](docs/images/GoGetter04-AIagentWorkflow.jfif)
+
+*The AI agent workflow from user profile creation through business deployment, monitoring, and continuous learning.*
+
 ### Model Router Intelligence
 
 ```mermaid
 graph TD
-    Request[Incoming AI Request] --> Analyze[Analyze Task Type]
-    Analyze --> Route{Route Decision}
-    
+    Request[Incoming AI Request] --> AnalyzeTask[Analyze Task Type]
+    AnalyzeTask --> Route{Route Decision}
+
     Route -->|Creative Writing| OpenAI[OpenAI GPT-4]
-    Route -->|Analysis & Reasoning| Anthropic[Claude 3.5]
-    Route -->|Research & Facts| Perplexity[Perplexity AI]
+    Route -->|Analysis and Reasoning| Anthropic[Claude 3.5]
+    Route -->|Research and Facts| Perplexity[Perplexity AI]
     Route -->|Code Generation| Gemini[Google Gemini]
     Route -->|Real-time Data| Grok[xAI Grok]
     Route -->|Specialized Tasks| Manus[Manus AI]
-    
+
     OpenAI --> Cost[Calculate Cost]
     Anthropic --> Cost
     Perplexity --> Cost
     Gemini --> Cost
     Grok --> Cost
     Manus --> Cost
-    
+
     Cost --> Log[Log Usage]
     Log --> Response[Return Response]
-    
-    Response --> Fallback{Request Failed?}
+
+    Response --> Fallback{Request Failed}
     Fallback -->|Yes| Retry[Try Alternative Model]
     Fallback -->|No| Success[Success]
-    
+
     Retry --> Route
-    
+
     style Request fill:#e3f2fd
     style Route fill:#f3e5f5
     style Cost fill:#fff3e0
     style Success fill:#e8f5e8
 ```
+
+![Model Router Intelligence showing task-based AI model selection and fallback handling](docs/images/GoGetter05-ModelRouterIntelligence.jfif)
+
+*Intelligent routing system that selects the optimal AI model for each task type with automatic fallback and cost tracking.*
 
 ## Authentication & Security
 
@@ -296,89 +327,101 @@ GO-GETTER OS implements enterprise-grade security with **Google OAuth 2.0** for 
 ```mermaid
 sequenceDiagram
     participant User
-    participant Client as Client (React)
-    participant Server as Server (Express/Vercel)
+    participant Client as React Client
+    participant Server as Express Server
     participant Google as Google OAuth
     participant DB as Database
 
-    User->>Client: Click "Sign in with Google"
+    User->>Client: Click Sign in with Google
     Client->>Server: GET /api/oauth/google/init
     Server->>Server: Generate secure state token
     Server->>Server: Store state in session cache
-    Server->>Google: Redirect to Google consent screen
+    Server->>Google: Redirect to consent screen
     Google->>User: Display consent screen
     User->>Google: Grant permission
-    Google->>Server: Redirect to /api/oauth/google/callback?code=...&state=...
-    Server->>Server: Validate state token (CSRF protection)
+    Google->>Server: Redirect with code and state
+    Server->>Server: Validate state token
     Server->>Google: Exchange code for tokens
-    Google->>Server: Return access_token, id_token
-    Server->>Google: GET /userinfo (with access_token)
-    Google->>Server: Return user profile (email, name, picture)
+    Google->>Server: Return access and id tokens
+    Server->>Google: GET /userinfo
+    Google->>Server: Return user profile
     Server->>DB: Upsert user record
     DB->>Server: Return user data
-    Server->>Server: Generate JWT session token (HS256)
-    Server->>Client: Set secure session cookie & redirect
+    Server->>Server: Generate JWT session token
+    Server->>Client: Set session cookie and redirect
     Client->>User: Show authenticated dashboard
 ```
+
+![Enhanced Google OAuth Flow sequence diagram](docs/images/GoGetter06-EnhancedGoogleOauthFlow.jfif)
+
+*Complete OAuth 2.0 authentication flow from user click through token exchange to session establishment.*
 
 ### Multi-Provider Account Linking
 
 ```mermaid
 graph TD
-    NewUser[New OAuth Login] --> CheckEmail{Email Exists?}
+    NewUser[New OAuth Login] --> CheckEmail{Email Exists}
     CheckEmail -->|No| CreateUser[Create New User]
     CheckEmail -->|Yes| LinkAccount[Link to Existing Account]
-    
+
     CreateUser --> SetPrimary[Set as Primary Provider]
-    LinkAccount --> UpdateProviders[Update auth_providers Array]
-    
+    LinkAccount --> UpdateProviders[Update auth providers Array]
+
     SetPrimary --> GenerateSession[Generate JWT Session]
     UpdateProviders --> GenerateSession
-    
+
     GenerateSession --> SetCookie[Set Secure Cookie]
     SetCookie --> Success[Authentication Complete]
-    
+
     style NewUser fill:#e3f2fd
     style LinkAccount fill:#fff3e0
     style Success fill:#e8f5e8
 ```
 
-### Session Verification & Security
+![Multi-Provider Account Linking flow diagram](docs/images/GoGetter07-Multi-ProviderAccountLinking.jfif)
+
+*Account linking logic that automatically merges OAuth providers based on email matching.*
+
+### Session Verification and Security
 
 ```mermaid
 sequenceDiagram
-    participant Client as Client (React)
+    participant Client as React Client
     participant Server as tRPC Server
     participant JWT as JWT Validator
     participant DB as Database
     participant Cache as Session Cache
 
     Client->>Server: API Request with session cookie
-    Server->>JWT: Extract & verify JWT signature
-    
-    alt JWT Invalid/Expired
+    Server->>JWT: Extract and verify JWT signature
+
+    alt JWT Invalid or Expired
         JWT->>Server: Validation failed
         Server->>Client: 401 Unauthorized
         Client->>Client: Redirect to OAuth login
     else JWT Valid
         JWT->>Server: Extract openId from payload
         Server->>Cache: Check session cache
-        
+
         alt Cache Hit
             Cache->>Server: Return cached user data
         else Cache Miss
-            Server->>DB: getUserByOpenId(openId)
+            Server->>DB: getUserByOpenId
             alt User Not Found
-                Server->>DB: Try getUserByGoogleId (account linking)
+                Server->>DB: Try getUserByGoogleId
             end
             DB->>Server: Return user record
-            Server->>Cache: Cache user data (5min TTL)
+            Server->>Cache: Cache user data
         end
-        
+
         Server->>DB: Update lastSignedIn timestamp
         Server->>Client: Return API response with user context
     end
 ```
+
+![Session Verification and Security flow diagram](docs/images/GoGetter08-SessionVerificationAndSecurity.jfif)
+
+*JWT validation workflow with cache optimization and graceful error handling.*
 
 ### Security Features
 
@@ -393,34 +436,38 @@ sequenceDiagram
 
 ```mermaid
 graph TD
-    subgraph Client
-        A[client/src/const.ts] --> |getGoogleLoginUrl| B[DashboardLayout.tsx]
-        B --> |Login button| C[/api/oauth/google/init]
-        D[useAuth.ts] --> |Session check| E[tRPC auth.me]
+    subgraph ClientFiles[Client]
+        A[client/src/const.ts] -->|getGoogleLoginUrl| B[DashboardLayout.tsx]
+        B -->|Login button| C[oauth/google/init]
+        D[useAuth.ts] -->|Session check| E[tRPC auth.me]
     end
 
-    subgraph Server
+    subgraph ServerFiles[Server]
         C --> F[server/_core/oauth.ts]
-        F --> |registerOAuthRoutes| G[/api/oauth/google/callback]
+        F -->|registerOAuthRoutes| G[oauth/google/callback]
         G --> H[server/_core/googleOAuth.ts]
-        H --> |exchangeCodeForTokens| I[Google API]
-        H --> |getGoogleUserInfo| I
+        H -->|exchangeCodeForTokens| I[Google API]
+        H -->|getGoogleUserInfo| I
         G --> J[server/_core/sdk.ts]
-        J --> |createSessionToken| K[JWT Session]
-        J --> |verifySession| K
+        J -->|createSessionToken| K[JWT Session]
+        J -->|verifySession| K
     end
 
-    subgraph Database
+    subgraph DatabaseFiles[Database]
         G --> L[server/db.ts]
-        L --> |upsertUserWithGoogle| M[(PostgreSQL)]
+        L -->|upsertUserWithGoogle| M[(PostgreSQL)]
     end
 
-    subgraph "Vercel Serverless"
+    subgraph VercelFiles[Vercel Serverless]
         N[api/oauth/google/init.ts]
         O[api/oauth/google/callback.ts]
         P[api/oauth/google/status.ts]
     end
 ```
+
+![Key Authentication Files architecture diagram](docs/images/GoGetter09-KeyAuthenticationFiles.jfif)
+
+*File structure and data flow for the complete authentication system across client, server, and database layers.*
 
 ### Setting Up Google OAuth
 
@@ -446,11 +493,13 @@ graph TD
 ### Installation
 
 1. **Clone or extract the project:**
+
    ```bash
    cd go-getter-os
    ```
 
 2. **Install dependencies:**
+
    ```bash
    pnpm install
    ```
@@ -458,6 +507,7 @@ graph TD
 3. **Set up environment variables:**
 
    Create a `.env` file in the root directory with the following variables:
+
    ```env
    # Database (Required)
    DATABASE_URL=postgresql://user:password@host:5432/database?sslmode=require
@@ -477,16 +527,19 @@ graph TD
    ```
 
 4. **Push the database schema:**
+
    ```bash
    pnpm db:push
    ```
 
 5. **Seed the business catalog (optional):**
+
    ```bash
    node scripts/seed-businesses.mjs
    ```
 
 6. **Start the development server:**
+
    ```bash
    pnpm dev
    ```
@@ -547,12 +600,14 @@ go-getter-os/
 ## Recent Major Enhancements (January 2026)
 
 ### 🔐 Enhanced Security & Authentication
+
 - **Environment Validation**: Comprehensive security checks for JWT secrets, database URLs, and API configurations
 - **Multi-Provider OAuth**: Support for linking multiple OAuth providers to a single account
 - **Account Linking**: Automatic account merging based on email addresses
 - **Secure Session Management**: Enhanced JWT handling with proper validation and error boundaries
 
 ### 🤖 Real AI-Powered Agent System
+
 - **Go-Getter AI Agent**: Fully functional AI agent that analyzes user profiles and discovers personalized business opportunities
 - **Intelligent Model Router**: Automatically selects the most cost-effective AI model for each task type
 - **Multi-Model Integration**: Support for OpenAI, Anthropic, Gemini, Perplexity, Grok, and Manus APIs
@@ -560,36 +615,42 @@ go-getter-os/
 - **Cost Optimization**: Smart model selection to minimize token costs while maintaining quality
 
 ### 💾 Discovery Presets System
+
 - **Save Wizard Configurations**: Users can save their discovery wizard settings as reusable presets
 - **Preset Management**: Create, load, and delete up to 10 named presets per user
 - **Quick Discovery**: Rapidly explore different scenarios without re-entering preferences
 - **Preset Validation**: Ensures preset data integrity and handles edge cases
 
 ### 📊 Advanced Monitoring & Analytics
+
 - **Real-Time Time-Series Charts**: Interactive charts with customizable time ranges (24h, 7d, 30d, 90d)
 - **Event Aggregation**: Sophisticated SQL-based aggregation of revenue, costs, and profit data
 - **Chart Data Filtering**: Advanced filtering by time periods with proper data validation
 - **Live Dashboard Updates**: Real-time data synchronization without page refreshes
 
 ### 💰 Comprehensive Token Management
+
 - **Multi-Provider Tracking**: Monitor token usage across all integrated AI services
 - **Time-Series Analytics**: Detailed usage breakdowns by provider, model, and time period
 - **Budget Controls**: Set spending limits and receive alerts when approaching thresholds
 - **Cost Optimization Insights**: Recommendations for reducing AI costs while maintaining performance
 
 ### 🎨 Premium User Experience
+
 - **Smart Loading States**: Skeleton loaders for charts, AI processing indicators, and progress feedback
 - **Error Boundaries**: Comprehensive error handling with user-friendly recovery options
 - **Responsive Design**: Optimized layouts for desktop, tablet, and mobile devices
 - **Dark Theme Polish**: Professional, data-driven design with consistent styling
 
 ### 🔧 Developer Experience
+
 - **Comprehensive Testing**: 60+ tests covering all major functionality with property-based testing
 - **Type Safety**: Full TypeScript coverage with strict type checking
 - **Code Quality**: Consistent code formatting and linting rules
 - **Documentation**: Detailed inline documentation and API specifications
 
 ### 📈 Multi-Time Profit Dimensions & Business Lifecycle
+
 - **Profit Time Dimensions**: Database schema supports hourly, daily, and weekly revenue, cost, and profit tracking with automated calculations
 - **Time Toggle UI**: Business cards display profit metrics with interactive Hourly/Daily/Weekly toggle for granular financial analysis
 - **Color-Coded Profit Indicators**: Positive profits shown in green, negative in red for instant visual feedback
@@ -619,22 +680,22 @@ go-getter-os/
 
 ## Environment Variables Reference
 
-| Variable | Required | Description | Example |
-|----------|----------|-------------|---------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string | `postgresql://user:pass@host:5432/db?sslmode=require` |
-| `JWT_SECRET` | Yes | Secret for signing JWT tokens (32+ chars) | `your-super-secure-random-secret-key-here-32-chars-min` |
-| `GOOGLE_CLIENT_ID` | Yes | Google OAuth client ID | `123456789.apps.googleusercontent.com` |
-| `GOOGLE_CLIENT_SECRET` | Yes | Google OAuth client secret | `GOCSPX-abcdef123456` |
-| `OPENAI_API_KEY` | No | OpenAI API key for GPT models | `sk-proj-abc123...` |
-| `ANTHROPIC_API_KEY` | No | Anthropic API key for Claude | `sk-ant-api03-abc123...` |
-| `GEMINI_API_KEY` | No | Google Gemini API key | `AIzaSyAbc123...` |
-| `PERPLEXITY_API_KEY` | No | Perplexity AI API key | `pplx-abc123...` |
-| `GROK_API_KEY` | No | xAI Grok API key | `xai-abc123...` |
-| `MANUS_API_KEY` | No | Manus AI API key | `manus-abc123...` |
-| `VITE_APP_ID` | No | Application identifier | `go-getter-os` |
-| `OWNER_OPEN_ID` | No | Admin user's Open ID | `google-oauth2\|123456789` |
-| `NODE_ENV` | No | Environment (development/production) | `development` |
-| `PORT` | No | Server port (default: 3000) | `3000` |
+| Variable               | Required | Description                               | Example                                                 |
+| ---------------------- | -------- | ----------------------------------------- | ------------------------------------------------------- |
+| `DATABASE_URL`         | Yes      | PostgreSQL connection string              | `postgresql://user:pass@host:5432/db?sslmode=require`   |
+| `JWT_SECRET`           | Yes      | Secret for signing JWT tokens (32+ chars) | `your-super-secure-random-secret-key-here-32-chars-min` |
+| `GOOGLE_CLIENT_ID`     | Yes      | Google OAuth client ID                    | `123456789.apps.googleusercontent.com`                  |
+| `GOOGLE_CLIENT_SECRET` | Yes      | Google OAuth client secret                | `GOCSPX-abcdef123456`                                   |
+| `OPENAI_API_KEY`       | No       | OpenAI API key for GPT models             | `sk-proj-abc123...`                                     |
+| `ANTHROPIC_API_KEY`    | No       | Anthropic API key for Claude              | `sk-ant-api03-abc123...`                                |
+| `GEMINI_API_KEY`       | No       | Google Gemini API key                     | `AIzaSyAbc123...`                                       |
+| `PERPLEXITY_API_KEY`   | No       | Perplexity AI API key                     | `pplx-abc123...`                                        |
+| `GROK_API_KEY`         | No       | xAI Grok API key                          | `xai-abc123...`                                         |
+| `MANUS_API_KEY`        | No       | Manus AI API key                          | `manus-abc123...`                                       |
+| `VITE_APP_ID`          | No       | Application identifier                    | `go-getter-os`                                          |
+| `OWNER_OPEN_ID`        | No       | Admin user's Open ID                      | `google-oauth2\|123456789`                              |
+| `NODE_ENV`             | No       | Environment (development/production)      | `development`                                           |
+| `PORT`                 | No       | Server port (default: 3000)               | `3000`                                                  |
 
 ### Security Requirements
 
