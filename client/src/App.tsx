@@ -19,6 +19,12 @@ import Webhooks from "./pages/Webhooks";
 import Blueprints from "./pages/Blueprints";
 import Resources from "./pages/Resources";
 import Settings from "./pages/Settings";
+// Admin pages (hidden, accessed via /admin directly)
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminPipeline from "./pages/admin/AdminPipeline";
+import AdminPipelineDetail from "./pages/admin/AdminPipelineDetail";
+import AdminManagement from "./pages/admin/AdminManagement";
+import AdminAnalytics from "./pages/admin/AdminAnalytics";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -36,6 +42,15 @@ function Router() {
       <Route path="/blueprints" component={Blueprints} />
       <Route path="/resources" component={Resources} />
       <Route path="/settings" component={Settings} />
+      {/* Admin routes (no links from main UI) */}
+      <Route path="/admin" component={AdminDashboard} />
+      <Route path="/admin/pipeline" component={AdminPipeline} />
+      <Route
+        path="/admin/pipeline/:id"
+        component={AdminPipelineDetail}
+      />
+      <Route path="/admin/admins" component={AdminManagement} />
+      <Route path="/admin/analytics" component={AdminAnalytics} />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

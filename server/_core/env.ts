@@ -9,4 +9,10 @@ export const ENV = {
   // Google OAuth configuration
   googleClientId: process.env.GOOGLE_CLIENT_ID ?? "",
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
+  // Cloudinary for artifact storage
+  cloudinaryUrl: process.env.CLOUDINARY_URL ?? "",
+  // Z.ai GLM-5.1 API key
+  zaiApiKey: process.env.ZAI_API_KEY ?? "",
+  // Master admin email (can manage other admins)
+  masterAdminEmail: process.env.MASTER_ADMIN_EMAIL ?? "nobviz@gmail.com",
 };

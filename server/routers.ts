@@ -3,7 +3,13 @@ import cookie from "cookie";
 import { z } from "zod";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
-import { publicProcedure, protectedProcedure, router } from "./_core/trpc";
+import {
+  publicProcedure,
+  protectedProcedure,
+  adminProcedure,
+  masterAdminProcedure,
+  router,
+} from "./_core/trpc";
 import * as db from "./db";
 import { goGetterAgent } from "./services/goGetterAgent";
 
@@ -385,6 +391,238 @@ export const appRouter = router({
       }),
   }),
 
+  // User Subscription
+  subscription: router({
+    get: protectedProcedure.query(async ({ ctx }) => {
+      return db.getOrCreateSubscription(ctx.user.id);
+    }),
+  }),
+
+  // ============ ADMIN ROUTES ============
+
+  admin: router({
+    stats: adminProcedure.query(async () => {
+      return db.getPipelineStats();
+    }),
+
+    recentEvents: adminProcedure
+      .input(
+        z
+          .object({ limit: z.number().min(1).max(100).optional() })
+          .optional()
+      )
+      .query(async ({ input }) => {
+        return db.getRecentPipelineEvents(input?.limit);
+      }),
+
+    // Pipeline CRUD
+    pipeline: router({
+      list: adminProcedure
+        .input(
+          z
+            .object({
+              phase: z.number().min(0).max(6).optional(),
+              status: z
+                .enum([
+                  "active",
+                  "suspended",
+                  "completed",
+                  "cancelled",
+                ])
+                .optional(),
+              adminId: z.number().optional(),
+              search: z.string().optional(),
+            })
+            .optional()
+        )
+        .query(async ({ input }) => {
+          return db.getPipelineProjects(input ?? undefined);
+        }),
+
+      get: adminProcedure
+        .input(z.object({ id: z.number() }))
+        .query(async ({ input }) => {
+          return db.getPipelineProjectById(input.id);
+        }),
+
+      create: adminProcedure
+        .input(
+          z.object({
+            businessName: z.string().min(1).max(255),
+            pocName: z.string().min(1).max(255),
+            pocEmail: z.string().email().optional().or(z.literal("")),
+            pocPhone: z.string().max(100).optional(),
+            referralSource: z.string().max(100).optional(),
+            description: z.string().optional(),
+            userId: z.number().optional(),
+          })
+        )
+        .mutation(async ({ ctx, input }) => {
+          return db.createPipelineProject({
+            ...input,
+            pocEmail: input.pocEmail || null,
+            adminId: ctx.user.id,
+          });
+        }),
+
+      update: adminProcedure
+        .input(
+          z.object({
+            id: z.number(),
+            businessName: z.string().min(1).max(255).optional(),
+            pocName: z.string().min(1).max(255).optional(),
+            pocEmail: z
+              .string()
+              .email()
+              .optional()
+              .or(z.literal("")),
+            pocPhone: z.string().max(100).optional(),
+            referralSource: z.string().max(100).optional(),
+            description: z.string().optional(),
+            status: z
+              .enum([
+                "active",
+                "suspended",
+                "completed",
+                "cancelled",
+              ])
+              .optional(),
+            metadata: z
+              .record(z.string(), z.unknown())
+              .optional(),
+            retainerPaid: z.boolean().optional(),
+            retainerAmount: z.string().optional(),
+            profitSharePercentage: z.string().optional(),
+            isGrandfathered: z.boolean().optional(),
+            subscriptionTier: z
+              .enum(["free", "starter", "pro", "unlimited"])
+              .optional(),
+            mvpUrl: z.string().optional(),
+            addOns: z
+              .object({
+                customerAcquisition: z.boolean().optional(),
+                openClawAdmin: z.boolean().optional(),
+                infrastructure: z.boolean().optional(),
+                businessArtifacts: z.boolean().optional(),
+              })
+              .optional(),
+          })
+        )
+        .mutation(async ({ input }) => {
+          const { id, ...updates } = input;
+          return db.updatePipelineProject(id, updates as any);
+        }),
+
+      advancePhase: adminProcedure
+        .input(
+          z.object({
+            id: z.number(),
+            notes: z.string().optional(),
+          })
+        )
+        .mutation(async ({ ctx, input }) => {
+          return db.advancePipelinePhase(
+            input.id,
+            ctx.user.id,
+            input.notes
+          );
+        }),
+
+      regressPhase: adminProcedure
+        .input(
+          z.object({
+            id: z.number(),
+            notes: z.string().optional(),
+          })
+        )
+        .mutation(async ({ ctx, input }) => {
+          return db.regressPipelinePhase(
+            input.id,
+            ctx.user.id,
+            input.notes
+          );
+        }),
+
+      events: adminProcedure
+        .input(
+          z.object({
+            projectId: z.number(),
+            limit: z.number().min(1).max(200).optional(),
+          })
+        )
+        .query(async ({ input }) => {
+          return db.getPipelineEvents(
+            input.projectId,
+            input.limit
+          );
+        }),
+
+      delete: adminProcedure
+        .input(z.object({ id: z.number() }))
+        .mutation(async ({ input }) => {
+          await db.deletePipelineProject(input.id);
+          return { success: true };
+        }),
+    }),
+
+    // Admin User Management
+    admins: router({
+      list: adminProcedure.query(async () => {
+        return db.getAllAdmins();
+      }),
+
+      searchUsers: adminProcedure
+        .input(
+          z.object({
+            search: z.string().min(1),
+            limit: z.number().min(1).max(50).optional(),
+          })
+        )
+        .query(async ({ input }) => {
+          return db.searchUsers(input.search, input.limit);
+        }),
+
+      promote: masterAdminProcedure
+        .input(z.object({ userId: z.number() }))
+        .mutation(async ({ input }) => {
+          await db.promoteToAdmin(input.userId);
+          return { success: true };
+        }),
+
+      demote: masterAdminProcedure
+        .input(z.object({ userId: z.number() }))
+        .mutation(async ({ input }) => {
+          await db.demoteFromAdmin(input.userId);
+          return { success: true };
+        }),
+    }),
+
+    // Subscription Management (admin view)
+    subscriptions: router({
+      get: adminProcedure
+        .input(z.object({ userId: z.number() }))
+        .query(async ({ input }) => {
+          return db.getOrCreateSubscription(input.userId);
+        }),
+
+      update: adminProcedure
+        .input(
+          z.object({
+            userId: z.number(),
+            tier: z.enum([
+              "free",
+              "starter",
+              "pro",
+              "unlimited",
+            ]),
+          })
+        )
+        .mutation(async ({ input }) => {
+          return db.updateSubscription(input.userId, input.tier);
+        }),
+    }),
+  }),
+
   // Go-Getter Agent
   agent: router({
     discover: protectedProcedure
@@ -398,6 +636,14 @@ export const appRouter = router({
         }),
       }))
       .mutation(async ({ ctx, input }) => {
+        // Check subscription wizard usage limit
+        const wizardCheck = await db.checkWizardLimit(ctx.user.id);
+        if (!wizardCheck.allowed) {
+          throw new Error(
+            `Wizard usage limit reached (${wizardCheck.limit}/month). Upgrade your subscription for more usages.`
+          );
+        }
+
         // Get user's API configurations
         const userConfigs = await db.getApiConfigs(ctx.user.id);
         const activeConfigs = userConfigs.filter(config => config.isActive && config.apiKey);
@@ -441,7 +687,10 @@ export const appRouter = router({
             activeConfigs,
             ctx.user.id
           );
-          
+
+          // Increment wizard usage on success
+          await db.incrementWizardUsage(ctx.user.id);
+
           return opportunities;
         } catch (error) {
           console.error('Agent discovery failed, falling back to static catalog:', error);

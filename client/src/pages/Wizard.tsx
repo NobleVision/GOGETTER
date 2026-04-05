@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import SubscriptionBanner from "@/components/SubscriptionBanner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -275,6 +276,9 @@ export default function Wizard() {
   return (
     <DashboardLayout>
       <div className="max-w-3xl mx-auto space-y-6">
+        {/* Subscription Usage Banner */}
+        <SubscriptionBanner />
+
         {/* Header */}
         <div className="text-center">
           <h1 className="text-2xl font-bold text-white">Business Discovery Wizard</h1>

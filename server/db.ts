@@ -1,8 +1,8 @@
 import { eq, desc, and, sql } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
-import { 
-  InsertUser, users, 
+import {
+  InsertUser, users,
   userProfiles, InsertUserProfile, UserProfile,
   businesses, InsertBusiness, Business,
   userBusinesses, InsertUserBusiness, UserBusiness,
@@ -10,9 +10,20 @@ import {
   businessEvents, InsertBusinessEvent,
   apiConfigs, InsertApiConfig,
   webhooks, InsertWebhook,
-  discoveryPresets, InsertDiscoveryPreset, DiscoveryPreset, UserPreferences
+  discoveryPresets, InsertDiscoveryPreset, DiscoveryPreset, UserPreferences,
+  subscriptions, InsertSubscription, Subscription,
+  pipelineProjects, InsertPipelineProject, PipelineProject,
+  pipelineEvents, InsertPipelineEvent, PipelineEvent,
+  type PipelineMetadata,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
+import {
+  SUBSCRIPTION_TIERS,
+  MVP_EXPIRY_DAYS,
+  STAGING_EXPIRY_DAYS,
+  RETAINER_MINIMUM,
+} from "@shared/const";
+import { ilike, or } from "drizzle-orm";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _pool: pg.Pool | null = null;
@@ -180,7 +191,9 @@ export async function upsertUserWithGoogle(user: {
     }
 
     // Create new user with Google data
-    const role = user.openId === ENV.ownerOpenId ? 'admin' : 'user';
+    const isMaster = user.email === ENV.masterAdminEmail;
+    const role =
+      isMaster || user.openId === ENV.ownerOpenId ? "admin" : "user";
     await db.insert(users).values({
       openId: user.openId,
       googleId: user.googleId,
@@ -190,6 +203,7 @@ export async function upsertUserWithGoogle(user: {
       loginMethod: user.loginMethod,
       authProviders: ["google"],
       role: role,
+      isMasterAdmin: isMaster,
       lastSignedIn: user.lastSignedIn,
     });
   } catch (error) {
@@ -986,9 +1000,576 @@ export async function updateBusinessDetails(
 export async function updateBusinessLastDeployed(businessId: number): Promise<void> {
   const db = await getDb();
   if (!db) return;
-  
+
   await db.update(businesses).set({
     lastDeployedAt: new Date(),
     updatedAt: new Date(),
   }).where(eq(businesses.id, businessId));
+}
+
+// ============ ADMIN MANAGEMENT OPERATIONS ============
+
+export async function getAllAdmins() {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      pictureUrl: users.pictureUrl,
+      isMasterAdmin: users.isMasterAdmin,
+      lastSignedIn: users.lastSignedIn,
+    })
+    .from(users)
+    .where(eq(users.role, "admin"))
+    .orderBy(desc(users.isMasterAdmin), desc(users.lastSignedIn));
+}
+
+export async function searchUsers(
+  search: string,
+  limit: number = 20
+) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      pictureUrl: users.pictureUrl,
+      role: users.role,
+    })
+    .from(users)
+    .where(
+      or(
+        ilike(users.name, `%${search}%`),
+        ilike(users.email, `%${search}%`)
+      )
+    )
+    .limit(limit);
+}
+
+export async function promoteToAdmin(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(users)
+    .set({ role: "admin", updatedAt: new Date() })
+    .where(eq(users.id, userId));
+}
+
+export async function demoteFromAdmin(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Guard: cannot demote master admin
+  const user = await getUserById(userId);
+  if (user?.isMasterAdmin) {
+    throw new Error("Cannot demote the master admin");
+  }
+
+  await db
+    .update(users)
+    .set({ role: "user", updatedAt: new Date() })
+    .where(eq(users.id, userId));
+}
+
+// ============ PIPELINE PROJECT OPERATIONS ============
+
+export async function createPipelineProject(
+  project: InsertPipelineProject
+): Promise<PipelineProject> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .insert(pipelineProjects)
+    .values(project)
+    .returning();
+
+  // Log creation event
+  await logPipelineEvent({
+    projectId: result[0].id,
+    adminId: project.adminId,
+    eventType: "project_created",
+    toPhase: 0,
+    notes: `Project "${project.businessName}" created`,
+  });
+
+  return result[0];
+}
+
+export async function getPipelineProjects(
+  filters?: {
+    phase?: number;
+    status?: string;
+    adminId?: number;
+    search?: string;
+  }
+) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const conditions = [];
+  if (filters?.phase !== undefined) {
+    conditions.push(eq(pipelineProjects.phase, filters.phase));
+  }
+  if (filters?.status) {
+    conditions.push(
+      eq(pipelineProjects.status, filters.status as any)
+    );
+  }
+  if (filters?.adminId) {
+    conditions.push(eq(pipelineProjects.adminId, filters.adminId));
+  }
+  if (filters?.search) {
+    conditions.push(
+      or(
+        ilike(pipelineProjects.businessName, `%${filters.search}%`),
+        ilike(pipelineProjects.pocName, `%${filters.search}%`),
+        ilike(pipelineProjects.pocEmail, `%${filters.search}%`)
+      )!
+    );
+  }
+
+  const where =
+    conditions.length > 0 ? and(...conditions) : undefined;
+
+  return db
+    .select({
+      id: pipelineProjects.id,
+      userId: pipelineProjects.userId,
+      adminId: pipelineProjects.adminId,
+      businessName: pipelineProjects.businessName,
+      pocName: pipelineProjects.pocName,
+      pocEmail: pipelineProjects.pocEmail,
+      pocPhone: pipelineProjects.pocPhone,
+      referralSource: pipelineProjects.referralSource,
+      phase: pipelineProjects.phase,
+      status: pipelineProjects.status,
+      description: pipelineProjects.description,
+      retainerPaid: pipelineProjects.retainerPaid,
+      retainerAmount: pipelineProjects.retainerAmount,
+      profitSharePercentage: pipelineProjects.profitSharePercentage,
+      isGrandfathered: pipelineProjects.isGrandfathered,
+      subscriptionTier: pipelineProjects.subscriptionTier,
+      mvpUrl: pipelineProjects.mvpUrl,
+      mvpExpiresAt: pipelineProjects.mvpExpiresAt,
+      stagingExpiresAt: pipelineProjects.stagingExpiresAt,
+      addOns: pipelineProjects.addOns,
+      startedAt: pipelineProjects.startedAt,
+      createdAt: pipelineProjects.createdAt,
+      updatedAt: pipelineProjects.updatedAt,
+      adminName: users.name,
+      adminEmail: users.email,
+    })
+    .from(pipelineProjects)
+    .leftJoin(users, eq(pipelineProjects.adminId, users.id))
+    .where(where)
+    .orderBy(desc(pipelineProjects.updatedAt));
+}
+
+export async function getPipelineProjectById(
+  id: number
+): Promise<
+  | (PipelineProject & { adminName: string | null; adminEmail: string | null })
+  | undefined
+> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select({
+      id: pipelineProjects.id,
+      userId: pipelineProjects.userId,
+      adminId: pipelineProjects.adminId,
+      businessName: pipelineProjects.businessName,
+      pocName: pipelineProjects.pocName,
+      pocEmail: pipelineProjects.pocEmail,
+      pocPhone: pipelineProjects.pocPhone,
+      referralSource: pipelineProjects.referralSource,
+      phase: pipelineProjects.phase,
+      status: pipelineProjects.status,
+      description: pipelineProjects.description,
+      cloudinaryFolder: pipelineProjects.cloudinaryFolder,
+      startedAt: pipelineProjects.startedAt,
+      metadata: pipelineProjects.metadata,
+      subscriptionTier: pipelineProjects.subscriptionTier,
+      retainerPaid: pipelineProjects.retainerPaid,
+      retainerAmount: pipelineProjects.retainerAmount,
+      agreementsSigned: pipelineProjects.agreementsSigned,
+      profitSharePercentage: pipelineProjects.profitSharePercentage,
+      isGrandfathered: pipelineProjects.isGrandfathered,
+      mvpUrl: pipelineProjects.mvpUrl,
+      mvpExpiresAt: pipelineProjects.mvpExpiresAt,
+      stagingExpiresAt: pipelineProjects.stagingExpiresAt,
+      addOns: pipelineProjects.addOns,
+      createdAt: pipelineProjects.createdAt,
+      updatedAt: pipelineProjects.updatedAt,
+      adminName: users.name,
+      adminEmail: users.email,
+    })
+    .from(pipelineProjects)
+    .leftJoin(users, eq(pipelineProjects.adminId, users.id))
+    .where(eq(pipelineProjects.id, id))
+    .limit(1);
+
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function updatePipelineProject(
+  id: number,
+  updates: Partial<InsertPipelineProject>
+): Promise<PipelineProject | undefined> {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  await db
+    .update(pipelineProjects)
+    .set({ ...updates, updatedAt: new Date() })
+    .where(eq(pipelineProjects.id, id));
+
+  const result = await db
+    .select()
+    .from(pipelineProjects)
+    .where(eq(pipelineProjects.id, id))
+    .limit(1);
+  return result[0];
+}
+
+export async function advancePipelinePhase(
+  id: number,
+  adminId: number,
+  notes?: string
+): Promise<PipelineProject> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const project = await db
+    .select()
+    .from(pipelineProjects)
+    .where(eq(pipelineProjects.id, id))
+    .limit(1);
+  if (!project.length) throw new Error("Project not found");
+
+  const current = project[0];
+  if (current.phase >= 6) throw new Error("Already at final phase");
+
+  const nextPhase = current.phase + 1;
+
+  // Business rule enforcement
+  if (nextPhase === 1 && !current.pocName) {
+    throw new Error("POC name is required to advance to IDEA phase");
+  }
+
+  if (nextPhase === 4) {
+    if (!current.retainerPaid) {
+      throw new Error(
+        "Retainer must be paid to advance to ACTIVATE phase"
+      );
+    }
+    if (
+      parseFloat(current.retainerAmount ?? "0") < RETAINER_MINIMUM
+    ) {
+      throw new Error(
+        `Minimum retainer of $${RETAINER_MINIMUM.toLocaleString()} required`
+      );
+    }
+  }
+
+  const updateData: Partial<InsertPipelineProject> = {
+    phase: nextPhase,
+    updatedAt: new Date(),
+  };
+
+  // Set expiration dates
+  if (nextPhase === 3) {
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate() + MVP_EXPIRY_DAYS);
+    updateData.mvpExpiresAt = expiry;
+  }
+  if (nextPhase === 4) {
+    const expiry = new Date();
+    expiry.setDate(expiry.getDate() + STAGING_EXPIRY_DAYS);
+    updateData.stagingExpiresAt = expiry;
+  }
+
+  await db
+    .update(pipelineProjects)
+    .set(updateData)
+    .where(eq(pipelineProjects.id, id));
+
+  await logPipelineEvent({
+    projectId: id,
+    adminId,
+    eventType: "phase_advance",
+    fromPhase: current.phase,
+    toPhase: nextPhase,
+    notes,
+  });
+
+  const updated = await db
+    .select()
+    .from(pipelineProjects)
+    .where(eq(pipelineProjects.id, id))
+    .limit(1);
+  return updated[0];
+}
+
+export async function regressPipelinePhase(
+  id: number,
+  adminId: number,
+  notes?: string
+): Promise<PipelineProject> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const project = await db
+    .select()
+    .from(pipelineProjects)
+    .where(eq(pipelineProjects.id, id))
+    .limit(1);
+  if (!project.length) throw new Error("Project not found");
+
+  const current = project[0];
+  if (current.phase <= 0)
+    throw new Error("Already at initial phase");
+
+  const prevPhase = current.phase - 1;
+
+  await db
+    .update(pipelineProjects)
+    .set({ phase: prevPhase, updatedAt: new Date() })
+    .where(eq(pipelineProjects.id, id));
+
+  await logPipelineEvent({
+    projectId: id,
+    adminId,
+    eventType: "phase_regress",
+    fromPhase: current.phase,
+    toPhase: prevPhase,
+    notes,
+  });
+
+  const updated = await db
+    .select()
+    .from(pipelineProjects)
+    .where(eq(pipelineProjects.id, id))
+    .limit(1);
+  return updated[0];
+}
+
+export async function deletePipelineProject(
+  id: number
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db
+    .update(pipelineProjects)
+    .set({ status: "cancelled", updatedAt: new Date() })
+    .where(eq(pipelineProjects.id, id));
+}
+
+// ============ PIPELINE EVENTS OPERATIONS ============
+
+export async function logPipelineEvent(
+  event: InsertPipelineEvent
+): Promise<PipelineEvent> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .insert(pipelineEvents)
+    .values(event)
+    .returning();
+  return result[0];
+}
+
+export async function getPipelineEvents(
+  projectId: number,
+  limit: number = 50
+): Promise<PipelineEvent[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select()
+    .from(pipelineEvents)
+    .where(eq(pipelineEvents.projectId, projectId))
+    .orderBy(desc(pipelineEvents.createdAt))
+    .limit(limit);
+}
+
+export async function getRecentPipelineEvents(
+  limit: number = 20
+) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select({
+      id: pipelineEvents.id,
+      projectId: pipelineEvents.projectId,
+      adminId: pipelineEvents.adminId,
+      eventType: pipelineEvents.eventType,
+      fromPhase: pipelineEvents.fromPhase,
+      toPhase: pipelineEvents.toPhase,
+      notes: pipelineEvents.notes,
+      createdAt: pipelineEvents.createdAt,
+      businessName: pipelineProjects.businessName,
+      adminName: users.name,
+    })
+    .from(pipelineEvents)
+    .leftJoin(
+      pipelineProjects,
+      eq(pipelineEvents.projectId, pipelineProjects.id)
+    )
+    .leftJoin(users, eq(pipelineEvents.adminId, users.id))
+    .orderBy(desc(pipelineEvents.createdAt))
+    .limit(limit);
+}
+
+// ============ PIPELINE STATS ============
+
+export async function getPipelineStats() {
+  const db = await getDb();
+  if (!db)
+    return {
+      total: 0,
+      byPhase: [],
+      byStatus: [],
+    };
+
+  const allProjects = await db
+    .select()
+    .from(pipelineProjects);
+
+  const byPhase = [0, 1, 2, 3, 4, 5, 6].map((phase) => ({
+    phase,
+    count: allProjects.filter((p) => p.phase === phase).length,
+  }));
+
+  const statuses = ["active", "suspended", "completed", "cancelled"];
+  const byStatus = statuses.map((status) => ({
+    status,
+    count: allProjects.filter((p) => p.status === status).length,
+  }));
+
+  const activeProjects = allProjects.filter(
+    (p) => p.status === "active"
+  );
+  const totalRetainers = activeProjects.reduce(
+    (sum, p) =>
+      sum + (p.retainerPaid ? parseFloat(p.retainerAmount ?? "0") : 0),
+    0
+  );
+
+  return {
+    total: allProjects.length,
+    active: activeProjects.length,
+    byPhase,
+    byStatus,
+    totalRetainers,
+  };
+}
+
+// ============ SUBSCRIPTION OPERATIONS ============
+
+export async function getOrCreateSubscription(
+  userId: number
+): Promise<Subscription> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const existing = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.userId, userId))
+    .limit(1);
+
+  if (existing.length > 0) return existing[0];
+
+  const tier = SUBSCRIPTION_TIERS.free;
+  const result = await db
+    .insert(subscriptions)
+    .values({
+      userId,
+      tier: "free",
+      monthlyPrice: String(tier.price),
+      wizardUsesLimit: tier.wizardUses,
+      tokenRateLimit: tier.tokenRateLimit,
+      currentPeriodStart: new Date(),
+      currentPeriodEnd: new Date(
+        Date.now() + 30 * 24 * 60 * 60 * 1000
+      ),
+    })
+    .returning();
+
+  return result[0];
+}
+
+export async function updateSubscription(
+  userId: number,
+  tierKey: keyof typeof SUBSCRIPTION_TIERS
+): Promise<Subscription> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const tier = SUBSCRIPTION_TIERS[tierKey];
+
+  // Ensure subscription exists
+  await getOrCreateSubscription(userId);
+
+  await db
+    .update(subscriptions)
+    .set({
+      tier: tierKey,
+      monthlyPrice: String(tier.price),
+      wizardUsesLimit: tier.wizardUses,
+      tokenRateLimit: tier.tokenRateLimit,
+      updatedAt: new Date(),
+    })
+    .where(eq(subscriptions.userId, userId));
+
+  const result = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.userId, userId))
+    .limit(1);
+  return result[0];
+}
+
+export async function checkWizardLimit(
+  userId: number
+): Promise<{ allowed: boolean; remaining: number; limit: number }> {
+  const sub = await getOrCreateSubscription(userId);
+  const remaining = sub.wizardUsesLimit - sub.wizardUsesThisMonth;
+  return {
+    allowed: remaining > 0,
+    remaining: Math.max(0, remaining),
+    limit: sub.wizardUsesLimit,
+  };
+}
+
+export async function incrementWizardUsage(
+  userId: number
+): Promise<{ remaining: number }> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(subscriptions)
+    .set({
+      wizardUsesThisMonth: sql`${subscriptions.wizardUsesThisMonth} + 1`,
+      updatedAt: new Date(),
+    })
+    .where(eq(subscriptions.userId, userId));
+
+  const check = await checkWizardLimit(userId);
+  return { remaining: check.remaining };
 }

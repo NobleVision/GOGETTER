@@ -1,27 +1,99 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { SUBSCRIPTION_TIERS } from "@shared/const";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
-import { 
-  User, 
-  Shield, 
-  Bell, 
+import {
+  User,
+  Shield,
+  Bell,
   DollarSign,
   Save,
   RefreshCw,
   Link,
-  CheckCircle
+  CheckCircle,
+  Crown
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+
+function SubscriptionCard() {
+  const { data: sub } = trpc.subscription.get.useQuery();
+
+  if (!sub) return null;
+
+  const tier =
+    SUBSCRIPTION_TIERS[sub.tier as keyof typeof SUBSCRIPTION_TIERS];
+  const usedPercent =
+    sub.wizardUsesLimit > 0
+      ? Math.min(
+          100,
+          (sub.wizardUsesThisMonth / sub.wizardUsesLimit) * 100
+        )
+      : 0;
+
+  return (
+    <Card className="bg-card border-border">
+      <CardHeader>
+        <CardTitle className="text-white flex items-center gap-2">
+          <Crown className="h-5 w-5 text-amber-400" />
+          Subscription
+        </CardTitle>
+        <CardDescription>
+          Your current plan and usage
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <Badge
+              variant="outline"
+              className="text-sm capitalize"
+            >
+              {tier?.name ?? sub.tier} Plan
+            </Badge>
+            {tier?.price > 0 && (
+              <span className="text-sm text-slate-400 ml-2">
+                ${tier.price}/month
+              </span>
+            )}
+          </div>
+        </div>
+        {sub.tier !== "unlimited" && (
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-slate-400">
+                Wizard Usage This Month
+              </span>
+              <span className="text-white">
+                {sub.wizardUsesThisMonth} / {sub.wizardUsesLimit}
+              </span>
+            </div>
+            <Progress value={usedPercent} className="h-2" />
+          </div>
+        )}
+        {sub.tier === "unlimited" && (
+          <p className="text-sm text-amber-300">
+            Unlimited wizard usages with token rate limits
+          </p>
+        )}
+        <p className="text-xs text-slate-500">
+          Contact admin to change your subscription tier
+        </p>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Settings() {
   const { user } = useAuth();
@@ -130,6 +202,9 @@ export default function Settings() {
           <h1 className="text-2xl font-bold text-white">Settings</h1>
           <p className="text-muted-foreground">Manage your profile and preferences</p>
         </div>
+
+        {/* Subscription Info */}
+        <SubscriptionCard />
 
         {/* Profile Info */}
         <Card className="bg-card border-border">

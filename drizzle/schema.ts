@@ -13,6 +13,8 @@ export const scoreTierEnum = pgEnum("score_tier", ["prime", "stable", "experimen
 export const businessStatusEnum = pgEnum("business_status", ["setup", "running", "paused", "stopped", "failed"]);
 export const eventTypeEnum = pgEnum("event_type", ["revenue", "cost", "error", "intervention", "status_change", "agent_activity"]);
 export const apiProviderEnum = pgEnum("api_provider", ["manus", "perplexity", "openai", "anthropic", "gemini", "grok"]);
+export const pipelineStatusEnum = pgEnum("pipeline_status", ["active", "suspended", "completed", "cancelled"]);
+export const subscriptionTierEnum = pgEnum("subscription_tier", ["free", "starter", "pro", "unlimited"]);
 
 /**
  * Core user table backing auth flow.
@@ -28,6 +30,8 @@ export const users = pgTable("users", {
   googleId: varchar("google_id", { length: 64 }),
   pictureUrl: varchar("picture_url", { length: 500 }),
   authProviders: json("auth_providers").$type<string[]>().default([]),
+  // Admin management
+  isMasterAdmin: boolean("is_master_admin").default(false).notNull(),
   // Session and consent tracking
   termsAcceptedAt: timestamp("terms_accepted_at"),
   privacyPolicyAcceptedAt: timestamp("privacy_policy_accepted_at"),
@@ -263,3 +267,151 @@ export const discoveryPresets = pgTable("discovery_presets", {
 
 export type DiscoveryPreset = typeof discoveryPresets.$inferSelect;
 export type InsertDiscoveryPreset = typeof discoveryPresets.$inferInsert;
+
+// ============ SUBSCRIPTION & PIPELINE TABLES ============
+
+/**
+ * User subscription tiers for Business Wizard usage gating
+ */
+export const subscriptions = pgTable("subscriptions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id)
+    .unique(),
+  tier: subscriptionTierEnum("tier").default("free").notNull(),
+  monthlyPrice: decimal("monthly_price", { precision: 10, scale: 2 }).default(
+    "0"
+  ),
+  wizardUsesThisMonth: integer("wizard_uses_this_month")
+    .default(0)
+    .notNull(),
+  wizardUsesLimit: integer("wizard_uses_limit").default(1).notNull(),
+  tokenRateLimit: integer("token_rate_limit").default(1000).notNull(),
+  isActive: boolean("is_active").default(true).notNull(),
+  currentPeriodStart: timestamp("current_period_start"),
+  currentPeriodEnd: timestamp("current_period_end"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type Subscription = typeof subscriptions.$inferSelect;
+export type InsertSubscription = typeof subscriptions.$inferInsert;
+
+/**
+ * Pipeline metadata type for JSONB column
+ */
+export interface PipelineMetadata {
+  notes?: Array<{
+    text: string;
+    adminName: string;
+    adminId: number;
+    createdAt: string;
+  }>;
+  transcripts?: Array<{
+    title: string;
+    content: string;
+    source: string;
+    createdAt: string;
+  }>;
+  aiOutputs?: Array<{
+    model: string;
+    prompt: string;
+    output: string;
+    createdAt: string;
+  }>;
+  artifacts?: Array<{
+    name: string;
+    url: string;
+    type: string;
+    createdAt: string;
+  }>;
+}
+
+/**
+ * Pipeline add-ons type for JSONB column
+ */
+export interface PipelineAddOns {
+  customerAcquisition?: boolean;
+  openClawAdmin?: boolean;
+  infrastructure?: boolean;
+  businessArtifacts?: boolean;
+}
+
+/**
+ * Agreements signed type for JSONB column
+ */
+export interface PipelineAgreements {
+  mvpAgreement?: { signedAt: string; version: string };
+  eulaAgreement?: { signedAt: string; version: string };
+  profitShareAgreement?: { signedAt: string; version: string };
+}
+
+/**
+ * ZERO to HERO pipeline projects
+ */
+export const pipelineProjects = pgTable("pipeline_projects", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  adminId: integer("admin_id")
+    .notNull()
+    .references(() => users.id),
+  businessName: varchar("business_name", { length: 255 }).notNull(),
+  pocName: varchar("poc_name", { length: 255 }).notNull(),
+  pocEmail: varchar("poc_email", { length: 320 }),
+  pocPhone: varchar("poc_phone", { length: 100 }),
+  referralSource: varchar("referral_source", { length: 100 }),
+  phase: integer("phase").default(0).notNull(),
+  status: pipelineStatusEnum("status").default("active").notNull(),
+  description: text("description"),
+  cloudinaryFolder: varchar("cloudinary_folder", { length: 500 }),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  metadata: json("metadata").$type<PipelineMetadata>().default({}),
+  subscriptionTier: subscriptionTierEnum("subscription_tier").default(
+    "free"
+  ),
+  retainerPaid: boolean("retainer_paid").default(false).notNull(),
+  retainerAmount: decimal("retainer_amount", {
+    precision: 10,
+    scale: 2,
+  }).default("0"),
+  agreementsSigned: json("agreements_signed")
+    .$type<PipelineAgreements>()
+    .default({}),
+  profitSharePercentage: decimal("profit_share_percentage", {
+    precision: 5,
+    scale: 2,
+  }).default("40"),
+  isGrandfathered: boolean("is_grandfathered").default(false).notNull(),
+  mvpUrl: varchar("mvp_url", { length: 500 }),
+  mvpExpiresAt: timestamp("mvp_expires_at"),
+  stagingExpiresAt: timestamp("staging_expires_at"),
+  addOns: json("add_ons").$type<PipelineAddOns>().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type PipelineProject = typeof pipelineProjects.$inferSelect;
+export type InsertPipelineProject = typeof pipelineProjects.$inferInsert;
+
+/**
+ * Pipeline audit events for phase transitions and actions
+ */
+export const pipelineEvents = pgTable("pipeline_events", {
+  id: serial("id").primaryKey(),
+  projectId: integer("project_id")
+    .notNull()
+    .references(() => pipelineProjects.id),
+  adminId: integer("admin_id")
+    .notNull()
+    .references(() => users.id),
+  eventType: varchar("event_type", { length: 64 }).notNull(),
+  fromPhase: integer("from_phase"),
+  toPhase: integer("to_phase"),
+  notes: text("notes"),
+  metadata: json("metadata").$type<Record<string, unknown>>().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type PipelineEvent = typeof pipelineEvents.$inferSelect;
+export type InsertPipelineEvent = typeof pipelineEvents.$inferInsert;

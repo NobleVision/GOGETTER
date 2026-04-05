@@ -43,3 +43,23 @@ export const adminProcedure = t.procedure.use(
     });
   }),
 );
+
+export const masterAdminProcedure = t.procedure.use(
+  t.middleware(async opts => {
+    const { ctx, next } = opts;
+
+    if (!ctx.user || !ctx.user.isMasterAdmin) {
+      throw new TRPCError({
+        code: "FORBIDDEN",
+        message: "Master admin access required (10003)",
+      });
+    }
+
+    return next({
+      ctx: {
+        ...ctx,
+        user: ctx.user,
+      },
+    });
+  }),
+);
