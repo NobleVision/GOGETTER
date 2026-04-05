@@ -155,13 +155,18 @@ export async function upsertUserWithGoogle(user: {
     const existingByGoogleId = await getUserByGoogleId(user.googleId);
     
     if (existingByGoogleId) {
-      // Update existing Google user
+      // Update existing Google user + ensure master admin flag
+      const isMaster = user.email === ENV.masterAdminEmail;
       await db.update(users).set({
         name: user.name,
         email: user.email,
         pictureUrl: user.pictureUrl,
         lastSignedIn: user.lastSignedIn,
         updatedAt: new Date(),
+        ...(isMaster && {
+          isMasterAdmin: true,
+          role: "admin" as const,
+        }),
       }).where(eq(users.googleId, user.googleId));
       return;
     }
