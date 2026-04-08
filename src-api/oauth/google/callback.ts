@@ -45,9 +45,9 @@ function parseQueryParams(req: VercelRequest): Record<string, string> {
   const queryString = url.slice(queryIndex + 1);
   const params = new URLSearchParams(queryString);
   const result: Record<string, string> = {};
-  for (const [key, value] of params.entries()) {
+  params.forEach((value, key) => {
     result[key] = value;
-  }
+  });
   return result;
 }
 

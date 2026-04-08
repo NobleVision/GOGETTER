@@ -1,4 +1,6 @@
+import AccessRestricted from "@/components/AccessRestricted";
 import DashboardLayout from "@/components/DashboardLayout";
+import { usePermissions } from "@/_core/hooks/usePermissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -502,6 +504,20 @@ function BusinessCard({ business, onDeploy }: { business: Business; onDeploy: ()
 }
 
 export default function Catalog() {
+  const { can } = usePermissions();
+
+  if (!can("businessCatalog")) {
+    return (
+      <DashboardLayout>
+        <AccessRestricted featureName="Business Catalog" />
+      </DashboardLayout>
+    );
+  }
+
+  return <CatalogContent />;
+}
+
+function CatalogContent() {
   const [search, setSearch] = useState("");
   const [vertical, setVertical] = useState("all");
   const [sortBy, setSortBy] = useState("score");

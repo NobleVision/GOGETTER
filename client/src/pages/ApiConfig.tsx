@@ -1,4 +1,6 @@
+import AccessRestricted from "@/components/AccessRestricted";
 import DashboardLayout from "@/components/DashboardLayout";
+import { usePermissions } from "@/_core/hooks/usePermissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,6 +68,18 @@ const API_PROVIDERS = [
 ];
 
 export default function ApiConfig() {
+  const { can } = usePermissions();
+  if (!can("apiConfig")) {
+    return (
+      <DashboardLayout>
+        <AccessRestricted featureName="API Config" />
+      </DashboardLayout>
+    );
+  }
+  return <ApiConfigContent />;
+}
+
+function ApiConfigContent() {
   const utils = trpc.useUtils();
   const { data: configs, isLoading } = trpc.apiConfig.list.useQuery();
   

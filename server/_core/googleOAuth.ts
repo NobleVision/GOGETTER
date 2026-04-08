@@ -118,7 +118,7 @@ export async function getGoogleUserInfo(accessToken: string): Promise<GoogleUser
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
-        timeout: 10000, // 10 second timeout
+        signal: AbortSignal.timeout(10000), // 10 second timeout
       }
     );
     

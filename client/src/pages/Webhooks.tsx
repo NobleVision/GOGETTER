@@ -1,4 +1,6 @@
+import AccessRestricted from "@/components/AccessRestricted";
 import DashboardLayout from "@/components/DashboardLayout";
+import { usePermissions } from "@/_core/hooks/usePermissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +34,18 @@ const EVENT_TYPES = [
 ];
 
 export default function Webhooks() {
+  const { can } = usePermissions();
+  if (!can("webhooks")) {
+    return (
+      <DashboardLayout>
+        <AccessRestricted featureName="Webhooks" />
+      </DashboardLayout>
+    );
+  }
+  return <WebhooksContent />;
+}
+
+function WebhooksContent() {
   const utils = trpc.useUtils();
   const { data: webhooks, isLoading } = trpc.webhooks.list.useQuery();
   const { data: userBusinesses } = trpc.userBusinesses.list.useQuery();

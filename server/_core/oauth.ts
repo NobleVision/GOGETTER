@@ -283,8 +283,8 @@ export function registerOAuthRoutes(app: Express) {
           throw new Error("Email not verified by Google");
         }
 
-        // Get the current user
-        const currentUser = await db.getUserById(storedState.userId);
+        // Get the current user (userId guaranteed by check above)
+        const currentUser = await db.getUserById(storedState.userId!);
         if (!currentUser) {
           throw new Error("Current user not found");
         }

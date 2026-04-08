@@ -1,4 +1,6 @@
+import AccessRestricted from "@/components/AccessRestricted";
 import DashboardLayout from "@/components/DashboardLayout";
+import { usePermissions } from "@/_core/hooks/usePermissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -32,6 +34,18 @@ const MODEL_COLORS: Record<string, string> = {
 };
 
 export default function TokenUsage() {
+  const { can } = usePermissions();
+  if (!can("tokenUsage")) {
+    return (
+      <DashboardLayout>
+        <AccessRestricted featureName="Token Usage" />
+      </DashboardLayout>
+    );
+  }
+  return <TokenUsageContent />;
+}
+
+function TokenUsageContent() {
   const [timeRange, setTimeRange] = useState<'7d' | '30d' | '90d'>('30d');
   
   const { data: usageHistory, isLoading: historyLoading } = trpc.tokenUsage.history.useQuery({ limit: 100 });

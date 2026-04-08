@@ -1,4 +1,6 @@
+import AccessRestricted from "@/components/AccessRestricted";
 import DashboardLayout from "@/components/DashboardLayout";
+import { usePermissions } from "@/_core/hooks/usePermissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,6 +36,18 @@ const EVENT_STYLES = {
 };
 
 export default function Monitoring() {
+  const { can } = usePermissions();
+  if (!can("monitoring")) {
+    return (
+      <DashboardLayout>
+        <AccessRestricted featureName="Monitoring" />
+      </DashboardLayout>
+    );
+  }
+  return <MonitoringContent />;
+}
+
+function MonitoringContent() {
   const searchString = useSearch();
   const params = new URLSearchParams(searchString);
   const selectedIdParam = params.get('id');

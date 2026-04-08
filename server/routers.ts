@@ -1,5 +1,6 @@
 import { COOKIE_NAME } from "@shared/const";
-import cookie from "cookie";
+// @ts-expect-error — cookie v1.x types resolve correctly at runtime
+import { serialize as cookieSerialize } from "cookie";
 import { z } from "zod";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { systemRouter } from "./_core/systemRouter";
@@ -8,8 +9,18 @@ import {
   protectedProcedure,
   adminProcedure,
   masterAdminProcedure,
+  createPermissionProcedure,
   router,
 } from "./_core/trpc";
+
+// Permission-gated procedures
+const businessCatalogProcedure = createPermissionProcedure("businessCatalog");
+const myBusinessesProcedure = createPermissionProcedure("myBusinesses");
+const monitoringProcedure = createPermissionProcedure("monitoring");
+const tokenUsageProcedure = createPermissionProcedure("tokenUsage");
+const apiConfigProcedure = createPermissionProcedure("apiConfig");
+const webhooksProcedure = createPermissionProcedure("webhooks");
+const settingsProcedure = createPermissionProcedure("settings");
 import * as db from "./db";
 import { goGetterAgent } from "./services/goGetterAgent";
 import { sendOtpEmail } from "./services/email";
@@ -24,7 +35,7 @@ export const appRouter = router({
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req as any);
       // Use setHeader instead of clearCookie for compatibility with Vercel serverless
-      const clearCookie = cookie.serialize(COOKIE_NAME, "", {
+      const clearCookie = cookieSerialize(COOKIE_NAME, "", {
         ...cookieOptions,
         maxAge: 0,
         expires: new Date(0),
@@ -101,7 +112,7 @@ export const appRouter = router({
           name: user.name || "",
         });
         const cookieOptions = getSessionCookieOptions(ctx.req as any);
-        const sessionCookie = cookie.serialize(COOKIE_NAME, sessionToken, cookieOptions);
+        const sessionCookie = cookieSerialize(COOKIE_NAME, sessionToken, cookieOptions);
         (ctx.res as any).setHeader("Set-Cookie", sessionCookie);
 
         await db.upsertUser({ openId: user.openId, lastSignedIn: new Date() });
@@ -140,7 +151,7 @@ export const appRouter = router({
           name: user.name || "",
         });
         const cookieOptions = getSessionCookieOptions(ctx.req as any);
-        const sessionCookie = cookie.serialize(COOKIE_NAME, sessionToken, cookieOptions);
+        const sessionCookie = cookieSerialize(COOKIE_NAME, sessionToken, cookieOptions);
         (ctx.res as any).setHeader("Set-Cookie", sessionCookie);
 
         await db.upsertUser({ openId: user.openId, lastSignedIn: new Date() });
@@ -192,9 +203,9 @@ export const appRouter = router({
       }),
   }),
 
-  // Business Catalog
+  // Business Catalog (permission-gated)
   businesses: router({
-    list: publicProcedure
+    list: businessCatalogProcedure
       .input(z.object({
         vertical: z.enum(["content_media", "digital_services", "ecommerce", "data_insights"]).optional(),
         activeOnly: z.boolean().optional().default(true),
@@ -205,14 +216,14 @@ export const appRouter = router({
         }
         return db.getAllBusinesses(input?.activeOnly ?? true);
       }),
-    
-    get: publicProcedure
+
+    get: businessCatalogProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         return db.getBusinessById(input.id);
       }),
-    
-    create: protectedProcedure
+
+    create: businessCatalogProcedure
       .input(z.object({
         name: z.string(),
         description: z.string(),
@@ -240,7 +251,7 @@ export const appRouter = router({
         return db.createBusiness(input);
       }),
 
-    saveDiscovered: protectedProcedure
+    saveDiscovered: businessCatalogProcedure
       .input(z.object({
         name: z.string(),
         description: z.string(),
@@ -269,7 +280,7 @@ export const appRouter = router({
         return db.saveDiscoveredBusiness(ctx.user.id, input);
       }),
 
-    refresh: protectedProcedure
+    refresh: businessCatalogProcedure
       .input(z.object({
         id: z.number(),
         estimatedRevenuePerHour: z.string().optional(),
@@ -291,26 +302,26 @@ export const appRouter = router({
       }),
   }),
 
-  // User's Deployed Businesses
+  // User's Deployed Businesses (permission-gated)
   userBusinesses: router({
-    list: protectedProcedure.query(async ({ ctx }) => {
+    list: myBusinessesProcedure.query(async ({ ctx }) => {
       return db.getUserBusinesses(ctx.user.id);
     }),
-    
-    get: protectedProcedure
+
+    get: myBusinessesProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {
         return db.getUserBusinessById(input.id);
       }),
-    
-    deploy: protectedProcedure
+
+    deploy: myBusinessesProcedure
       .input(z.object({ businessId: z.number() }))
       .mutation(async ({ ctx, input }) => {
         await db.updateBusinessLastDeployed(input.businessId);
         return db.deployBusiness(ctx.user.id, input.businessId);
       }),
-    
-    updateStatus: protectedProcedure
+
+    updateStatus: myBusinessesProcedure
       .input(z.object({
         id: z.number(),
         status: z.enum(["setup", "running", "paused", "stopped", "failed"]),
@@ -319,8 +330,8 @@ export const appRouter = router({
         await db.updateUserBusinessStatus(input.id, input.status);
         return { success: true };
       }),
-    
-    updateMetrics: protectedProcedure
+
+    updateMetrics: myBusinessesProcedure
       .input(z.object({
         id: z.number(),
         totalRevenue: z.string().optional(),
@@ -338,9 +349,9 @@ export const appRouter = router({
       }),
   }),
 
-  // Token Usage Tracking
+  // Token Usage Tracking (permission-gated)
   tokenUsage: router({
-    log: protectedProcedure
+    log: tokenUsageProcedure
       .input(z.object({
         userBusinessId: z.number().optional(),
         modelProvider: z.string(),
@@ -357,17 +368,17 @@ export const appRouter = router({
         return { success: true };
       }),
     
-    history: protectedProcedure
+    history: tokenUsageProcedure
       .input(z.object({ limit: z.number().optional() }).optional())
       .query(async ({ ctx, input }) => {
         return db.getTokenUsageByUser(ctx.user.id, input?.limit);
       }),
-    
-    summary: protectedProcedure.query(async ({ ctx }) => {
+
+    summary: tokenUsageProcedure.query(async ({ ctx }) => {
       return db.getTokenUsageSummary(ctx.user.id);
     }),
 
-    timeSeries: protectedProcedure
+    timeSeries: tokenUsageProcedure
       .input(z.object({
         timeRange: z.enum(['7d', '30d', '90d']),
         grouping: z.enum(['day', 'week', 'month']),
@@ -377,9 +388,9 @@ export const appRouter = router({
       }),
   }),
 
-  // Business Events & Monitoring
+  // Business Events & Monitoring (permission-gated)
   events: router({
-    log: protectedProcedure
+    log: monitoringProcedure
       .input(z.object({
         userBusinessId: z.number(),
         eventType: z.enum(["revenue", "cost", "error", "intervention", "status_change", "agent_activity"]),
@@ -392,8 +403,8 @@ export const appRouter = router({
         await db.logBusinessEvent(input);
         return { success: true };
       }),
-    
-    list: protectedProcedure
+
+    list: monitoringProcedure
       .input(z.object({
         userBusinessId: z.number(),
         limit: z.number().optional(),
@@ -401,12 +412,12 @@ export const appRouter = router({
       .query(async ({ input }) => {
         return db.getBusinessEvents(input.userBusinessId, input.limit);
       }),
-    
-    pendingInterventions: protectedProcedure.query(async ({ ctx }) => {
+
+    pendingInterventions: monitoringProcedure.query(async ({ ctx }) => {
       return db.getPendingInterventions(ctx.user.id);
     }),
 
-    timeSeries: protectedProcedure
+    timeSeries: monitoringProcedure
       .input(z.object({
         userBusinessId: z.number(),
         timeRange: z.enum(["24h", "7d", "30d", "90d"]),
@@ -417,13 +428,13 @@ export const appRouter = router({
       }),
   }),
 
-  // API Configuration
+  // API Configuration (permission-gated)
   apiConfig: router({
-    list: protectedProcedure.query(async ({ ctx }) => {
+    list: apiConfigProcedure.query(async ({ ctx }) => {
       return db.getApiConfigs(ctx.user.id);
     }),
-    
-    upsert: protectedProcedure
+
+    upsert: apiConfigProcedure
       .input(z.object({
         provider: z.enum(["manus", "perplexity", "openai", "anthropic", "gemini", "grok"]),
         apiKey: z.string().optional(),
@@ -439,13 +450,13 @@ export const appRouter = router({
       }),
   }),
 
-  // Webhooks
+  // Webhooks (permission-gated)
   webhooks: router({
-    list: protectedProcedure.query(async ({ ctx }) => {
+    list: webhooksProcedure.query(async ({ ctx }) => {
       return db.getWebhooks(ctx.user.id);
     }),
-    
-    create: protectedProcedure
+
+    create: webhooksProcedure
       .input(z.object({
         userBusinessId: z.number().optional(),
         name: z.string(),
@@ -459,8 +470,8 @@ export const appRouter = router({
           ...input,
         });
       }),
-    
-    delete: protectedProcedure
+
+    delete: webhooksProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
         const deleted = await db.deleteWebhook(input.id, ctx.user.id);
@@ -468,9 +479,9 @@ export const appRouter = router({
       }),
   }),
 
-  // Dashboard Stats
+  // Dashboard Stats (permission-gated)
   dashboard: router({
-    stats: protectedProcedure.query(async ({ ctx }) => {
+    stats: monitoringProcedure.query(async ({ ctx }) => {
       return db.getDashboardStats(ctx.user.id);
     }),
   }),
@@ -728,6 +739,60 @@ export const appRouter = router({
         .input(z.object({ userId: z.number() }))
         .mutation(async ({ input }) => {
           await db.demoteFromAdmin(input.userId);
+          return { success: true };
+        }),
+    }),
+
+    // Unified User Administration
+    users: router({
+      list: adminProcedure
+        .input(
+          z
+            .object({
+              search: z.string().optional(),
+              role: z.enum(["user", "admin"]).optional(),
+              limit: z.number().min(1).max(100).optional(),
+              offset: z.number().min(0).optional(),
+            })
+            .optional()
+        )
+        .query(async ({ input }) => {
+          return db.getAllUsersForAdmin(input);
+        }),
+
+      updatePermissions: adminProcedure
+        .input(
+          z.object({
+            userId: z.number(),
+            permissions: z.object({
+              businessCatalog: z.boolean().optional(),
+              myBusinesses: z.boolean().optional(),
+              monitoring: z.boolean().optional(),
+              tokenUsage: z.boolean().optional(),
+              apiConfig: z.boolean().optional(),
+              webhooks: z.boolean().optional(),
+              settings: z.boolean().optional(),
+            }),
+          })
+        )
+        .mutation(async ({ input }) => {
+          await db.updateUserPermissions(input.userId, input.permissions);
+          return { success: true };
+        }),
+
+      updateRole: masterAdminProcedure
+        .input(
+          z.object({
+            userId: z.number(),
+            role: z.enum(["user", "admin"]),
+          })
+        )
+        .mutation(async ({ input }) => {
+          if (input.role === "admin") {
+            await db.promoteToAdmin(input.userId);
+          } else {
+            await db.demoteFromAdmin(input.userId);
+          }
           return { success: true };
         }),
     }),

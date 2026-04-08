@@ -31,15 +31,20 @@ export function useAuth(options?: UseAuthOptions) {
       // Retry up to 3 times for other errors
       return failureCount < 3;
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    retryDelay: (attemptIndex: number) =>
+      Math.min(1000 * 2 ** attemptIndex, 30000),
     refetchOnWindowFocus: false,
-    onError: (error) => {
-      const errorInfo = handleError(error, 'Authentication check');
-      if (onAuthError && errorInfo.isAuthError) {
-        onAuthError(error);
-      }
-    },
   });
+
+  // Handle auth query errors (onError removed in React Query v5)
+  useEffect(() => {
+    if (meQuery.error) {
+      const errorInfo = handleError(meQuery.error, "Authentication check");
+      if (onAuthError && errorInfo.isAuthError) {
+        onAuthError(meQuery.error);
+      }
+    }
+  }, [meQuery.error, onAuthError]);
 
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {

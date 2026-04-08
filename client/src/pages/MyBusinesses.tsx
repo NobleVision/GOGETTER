@@ -1,4 +1,6 @@
+import AccessRestricted from "@/components/AccessRestricted";
 import DashboardLayout from "@/components/DashboardLayout";
+import { usePermissions } from "@/_core/hooks/usePermissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +38,18 @@ const STATUS_STYLES = {
 };
 
 export default function MyBusinesses() {
+  const { can } = usePermissions();
+  if (!can("myBusinesses")) {
+    return (
+      <DashboardLayout>
+        <AccessRestricted featureName="My Businesses" />
+      </DashboardLayout>
+    );
+  }
+  return <MyBusinessesContent />;
+}
+
+function MyBusinessesContent() {
   const [, setLocation] = useLocation();
   const utils = trpc.useUtils();
   

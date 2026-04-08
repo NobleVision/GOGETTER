@@ -1,4 +1,6 @@
+import AccessRestricted from "@/components/AccessRestricted";
 import DashboardLayout from "@/components/DashboardLayout";
+import { usePermissions } from "@/_core/hooks/usePermissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -96,6 +98,18 @@ function SubscriptionCard() {
 }
 
 export default function Settings() {
+  const { can } = usePermissions();
+  if (!can("settings")) {
+    return (
+      <DashboardLayout>
+        <AccessRestricted featureName="Settings" />
+      </DashboardLayout>
+    );
+  }
+  return <SettingsContent />;
+}
+
+function SettingsContent() {
   const { user } = useAuth();
   const { data: profile, isLoading } = trpc.profile.get.useQuery();
   const [location] = useLocation();

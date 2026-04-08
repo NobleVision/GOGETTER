@@ -50,7 +50,7 @@ const adminMenuItems = [
   },
   {
     icon: ShieldCheck,
-    label: "Admin Management",
+    label: "User Administration",
     path: "/admin/admins",
   },
   {

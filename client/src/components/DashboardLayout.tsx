@@ -20,6 +20,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useIsMobile } from "@/hooks/useMobile";
+import { usePermissions } from "@/_core/hooks/usePermissions";
 import {
   LayoutDashboard,
   LogOut,
@@ -144,7 +145,13 @@ function DashboardLayoutContent({
   const isCollapsed = state === "collapsed";
   const [isResizing, setIsResizing] = useState(false);
   const sidebarRef = useRef<HTMLDivElement>(null);
-  const activeMenuItem = menuItems.find(item => item.path === location);
+  const { canAccessRoute } = usePermissions();
+  const visibleMenuItems = menuItems.filter((item) =>
+    canAccessRoute(item.path)
+  );
+  const activeMenuItem = visibleMenuItems.find(
+    (item) => item.path === location
+  );
   const isMobile = useIsMobile();
 
   useEffect(() => {
@@ -216,7 +223,7 @@ function DashboardLayoutContent({
 
           <SidebarContent className="gap-0 bg-slate-900">
             <SidebarMenu className="px-2 py-2">
-              {menuItems.map(item => {
+              {visibleMenuItems.map(item => {
                 const isActive = location === item.path;
                 return (
                   <SidebarMenuItem key={item.path}>
