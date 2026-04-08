@@ -193,9 +193,7 @@ function DashboardLayoutContent({
               {!isCollapsed ? (
                 <>
                   <div className="flex items-center gap-2 min-w-0 flex-1">
-                    <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shrink-0">
-                      <Zap className="h-4 w-4 text-white" />
-                    </div>
+                    <img src="/logo-64x64.png" alt="GO-GETTER OS" className="h-7 w-7 rounded-lg shrink-0" />
                     <span className="font-bold tracking-tight truncate text-white">
                       GO-GETTER
                     </span>

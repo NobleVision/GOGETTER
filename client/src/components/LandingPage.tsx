@@ -3,7 +3,6 @@ import { Badge } from "@/components/ui/badge";
 import { getGoogleLoginUrl } from "@/const";
 import MediaControls from "./MediaControls";
 import {
-  Zap,
   Rocket,
   Bot,
   TrendingUp,
@@ -156,9 +155,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
         <div className="relative z-10 max-w-5xl mx-auto text-center">
           {/* Logo and Brand */}
           <div className="flex items-center justify-center gap-3 mb-6">
-            <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-xl shadow-emerald-500/25">
-              <Zap className="h-9 w-9 text-white" />
-            </div>
+            <img src="/logo-256x256.png" alt="GO-GETTER OS" className="h-16 w-16 rounded-2xl shadow-xl shadow-emerald-500/25" />
             <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
               GO-GETTER <span className="text-emerald-400">OS</span>
             </h1>
@@ -425,9 +422,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
       {/* Final CTA Section */}
       <section className="relative py-24 px-4 bg-gradient-to-b from-slate-900/80 to-slate-950/90 backdrop-blur-sm">
         <div className="max-w-3xl mx-auto text-center">
-          <div className="h-20 w-20 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center mx-auto mb-8 shadow-xl shadow-emerald-500/25">
-            <Zap className="h-10 w-10 text-white" />
-          </div>
+          <img src="/logo-256x256.png" alt="GO-GETTER OS" className="h-20 w-20 rounded-2xl mx-auto mb-8 shadow-xl shadow-emerald-500/25" />
 
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
             The Third Path to Financial Independence
@@ -463,9 +458,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
       <footer className="relative py-8 px-4 border-t border-slate-800 bg-slate-950/90 backdrop-blur-sm">
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center">
-              <Zap className="h-4 w-4 text-white" />
-            </div>
+            <img src="/logo-64x64.png" alt="GO-GETTER OS" className="h-8 w-8 rounded-lg" />
             <span className="font-bold text-white">GO-GETTER OS</span>
           </div>
           <p className="text-sm text-slate-500">

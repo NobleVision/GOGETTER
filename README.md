@@ -110,6 +110,55 @@ GO-GETTER OS leverages cutting-edge AI technologies to provide capabilities that
 - **Automated Quality Control**: Ensures consistent service delivery without human oversight
 - **Predictive Analytics**: Forecasts performance and identifies optimization opportunities before problems arise
 
+## ZERO to HERO Business Pipeline
+
+GO-GETTER OS includes a full-service business consultancy pipeline that takes customers from a raw idea to a live, profitable business. The pipeline is managed through a hidden admin dashboard at `/admin`.
+
+### Pipeline Phases
+
+| Phase | Name | Description |
+|-------|------|-------------|
+| **00** | **ZERO** | Lead generation & initialization. Create a database record, landing zone, and Cloudinary artifact folder. |
+| **01** | **IDEA** | Unstructured discovery & information gathering. Notes, web research, meeting transcripts, voice interviews. |
+| **02** | **PLAN** | AI-enhanced planning via multi-LLM synthesis (Grok, OpenAI, Anthropic, Perplexity) fed into Manus AI. |
+| **03** | **MVP** | Minimum Viable Product with published demo URL, mock data, executive summaries, and feasibility studies. |
+| **04** | **ACTIVATE** | $10k retainer required. Transition to real data in GoGetterOS staging/sandbox. Code reviews, security scans. |
+| **05** | **DEPLOY** | Production handover. Migrate from staging to client's own infrastructure (Vercel, domain, repo). |
+| **06** | **HERO** | Fully independent, profitable business. Special badge, convention access, and premium perks. |
+
+### Subscription Tiers
+
+| Tier | Price | Wizard Uses/Month | Description |
+|------|-------|--------------------|-------------|
+| **Free** | $0 | 1 | Try GoGetter OS with a single Business Wizard usage |
+| **Starter** | $100/mo | 5 | For early-stage business exploration |
+| **Pro** | $500/mo | 20 | For serious business builders |
+| **Unlimited** | $1,000/mo | Unlimited | Full platform access with token rate limits |
+
+Self-serve users (tiers 0-2) experience a trimmed-down version of phases 00-03. All paid tiers include token rate limits to prevent API oversubscription.
+
+### Business Rules & Profit Sharing
+
+- **MVP Expiration**: 90 days from Phase 03, with rights agreement
+- **Staging Limit**: 90 days in Phase 04 ($10k renewal retainer)
+- **Profit Sharing (Gross Revenue)**: 40% ($0-$10M), 30% ($10M-$50M), 25% ($50M+)
+- **Buyout**: $100k flat fee to exit profit-sharing agreement
+- **Grandfathered Accounts**: 70% share without retainer, 50% with $10k retainer
+- **A-la-carte Add-ons** ($10k each): Customer Acquisition, Open Claw Administrator, Infrastructure Setup, Business Artifacts
+- **Professional Services**: $250/hr for out-of-scope work
+
+### Admin Dashboard
+
+The admin interface is accessible at `/admin` (no links from the main UI). Access is restricted to users with the admin role.
+
+- **Master Admin**: `nobviz@gmail.com` (via Google OAuth) -- can add/remove other admins
+- **Dashboard Overview**: KPIs, phase distribution charts, recent activity feed
+- **Business Pipeline**: Filterable project table, create/manage pipeline projects, phase advancement with business rule enforcement
+- **Admin Management**: Promote/demote admin users (master admin only)
+- **Analytics**: Phase distribution, status breakdown, pipeline funnel charts
+- **Voice Assistant Console**: Coming soon (ElevenLabs + Twilio)
+- **Content Assistant Tools**: Coming soon (NotebookLM + Broll generation)
+
 ## Core Features
 
 ### 🧭 Intelligent Business Discovery
@@ -561,14 +610,23 @@ go-getter-os/
 │   └── src/
 │       ├── _core/hooks/    # Core hooks (useAuth)
 │       ├── components/     # UI components
+│       │   ├── AdminLayout.tsx          # Admin dashboard layout (violet theme)
+│       │   ├── SubscriptionBanner.tsx   # Wizard usage remaining banner
+│       │   ├── admin/                   # Admin-specific components
+│       │   │   ├── PhaseBadge.tsx       # Color-coded phase badges (00-06)
+│       │   │   ├── PhaseStepper.tsx     # Horizontal phase progress indicator
+│       │   │   └── NewProjectDialog.tsx # Create pipeline project dialog
 │       │   └── ui/         # shadcn/ui primitives + custom components
-│       │       ├── chart-skeleton.tsx    # Chart loading states
-│       │       ├── ai-loading.tsx        # AI processing indicators
-│       │       └── progress-feedback.tsx # Progress indicators
 │       ├── pages/          # Page components
+│       │   ├── admin/                   # Admin dashboard pages
+│       │   │   ├── AdminDashboard.tsx   # KPIs, charts, activity feed
+│       │   │   ├── AdminPipeline.tsx    # Pipeline list with filters
+│       │   │   ├── AdminPipelineDetail.tsx # Project detail with tabs
+│       │   │   ├── AdminManagement.tsx  # Admin user management
+│       │   │   └── AdminAnalytics.tsx   # Pipeline analytics & charts
 │       │   ├── Wizard.tsx      # Discovery wizard with presets
 │       │   ├── Monitoring.tsx  # Real-time dashboard
-│       │   └── Settings.tsx    # Account & provider management
+│       │   └── Settings.tsx    # Account, subscription & provider management
 │       ├── lib/            # Utilities
 │       │   └── errorHandling.ts # Error boundary logic
 │       └── const.ts        # Auth URLs and constants
@@ -576,6 +634,7 @@ go-getter-os/
 │   ├── _core/
 │   │   ├── oauth.ts        # OAuth route registration
 │   │   ├── googleOAuth.ts  # Google OAuth implementation
+│   │   ├── trpc.ts         # Procedure definitions (public, protected, admin, masterAdmin)
 │   │   ├── envValidation.ts # Environment security validation
 │   │   ├── sdk.ts          # Session management (JWT)
 │   │   ├── cookies.ts      # Cookie configuration
@@ -583,21 +642,47 @@ go-getter-os/
 │   ├── services/           # Business logic services
 │   │   ├── goGetterAgent.ts     # AI agent implementation
 │   │   ├── modelRouter.ts       # Multi-model AI routing
-│   │   └── *.test.ts            # Property-based tests (token usage, events, etc.)
-│   ├── db.ts               # Database queries, time-series aggregation, token logging
-│   └── routers.ts          # tRPC API routes
+│   │   └── *.test.ts            # Property-based tests
+│   ├── db.ts               # Database queries (users, businesses, pipeline, subscriptions)
+│   └── routers.ts          # tRPC API routes (user + admin routers)
 ├── drizzle/                # Database schema & migrations
-│   ├── schema.ts           # Table definitions
+│   ├── schema.ts           # Table definitions (12 tables)
 │   ├── relations.ts        # Table relationships
 │   └── migrations/         # Database migrations
-├── shared/                 # Shared types and constants
+├── shared/                 # Shared types, constants, and business rules
+│   ├── const.ts            # Subscription tiers, phase names, profit sharing rules
+│   └── types.ts            # Re-exported Drizzle types
 ├── scripts/                # Utility scripts
 │   └── seed-businesses.mjs # Business catalog seeding
 ├── vitest.config.ts        # Test configuration
 └── [Tests colocated with source files as *.test.ts - 60+ tests total]
 ```
 
-## Recent Major Enhancements (January 2026)
+## Recent Major Enhancements (April 2026)
+
+### Admin Dashboard & ZERO to HERO Pipeline
+- **Hidden Admin Interface** (`/admin`) with violet-themed layout, separate from user-facing UI
+- **Business Pipeline Management**: Full CRUD for pipeline projects with 7-phase stepper, filterable table, and detail views
+- **Phase Advancement**: Server-enforced business rules (retainer checks, expiration dates, POC validation)
+- **Admin User Management**: Master admin (nobviz@gmail.com) can promote/demote other admins with `masterAdminProcedure` guard
+- **Pipeline Analytics**: Phase distribution charts, status breakdown pie chart, pipeline funnel visualization (Recharts)
+- **Subscription Tier System**: Free/Starter/Pro/Unlimited tiers with wizard usage gating and token rate limits
+- **Wizard Usage Enforcement**: Discovery wizard checks subscription limits before executing, increments on success
+- **User-Facing Subscription Info**: Usage banner on wizard page, subscription card in settings
+
+### Database Additions
+- **`subscriptions` table**: Tier, pricing, wizard usage tracking, token rate limits
+- **`pipeline_projects` table**: 26 columns covering the full ZERO to HERO lifecycle with JSONB metadata
+- **`pipeline_events` table**: Audit log for phase transitions and pipeline actions
+- **`isMasterAdmin` column on `users`**: Identifies the master admin for role management
+
+### Business Rules Engine
+- Profit sharing tiers, grandfathered accounts, $100k buyout, $10k retainers, 90-day expirations
+- All constants centralized in `shared/const.ts` for single-source-of-truth
+
+---
+
+## Previous Enhancements (January 2026)
 
 ### 🔐 Enhanced Security & Authentication
 
@@ -694,6 +779,9 @@ go-getter-os/
 | `MANUS_API_KEY`        | No       | Manus AI API key                          | `manus-abc123...`                                       |
 | `VITE_APP_ID`          | No       | Application identifier                    | `go-getter-os`                                          |
 | `OWNER_OPEN_ID`        | No       | Admin user's Open ID                      | `google-oauth2\|123456789`                              |
+| `MASTER_ADMIN_EMAIL`   | No       | Master admin email (default: nobviz@gmail.com) | `nobviz@gmail.com`                                 |
+| `CLOUDINARY_URL`       | No       | Cloudinary URL for artifact storage       | `cloudinary://api_key:api_secret@cloud_name`            |
+| `ZAI_API_KEY`          | No       | Z.ai GLM-5.1 API key                     | `zai-abc123...`                                         |
 | `NODE_ENV`             | No       | Environment (development/production)      | `development`                                           |
 | `PORT`                 | No       | Server port (default: 3000)               | `3000`                                                  |
 

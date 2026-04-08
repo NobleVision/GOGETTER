@@ -1,187 +1,192 @@
 # GO-GETTER OS - Project Roadmap
 
-This document tracks future enhancements and planned work. For documentation of completed features, see [README.md](./README.md).
+This document tracks completed work, in-progress features, and planned enhancements. For feature documentation, see [README.md](./README.md).
 
 ---
 
-## 🚀 Future Enhancements & Roadmap
+## Completed (April 2026)
 
-### 🔐 Advanced Authentication & Security
-- [ ] **Additional OAuth Providers**
-  - [ ] GitHub OAuth integration
-  - [ ] Microsoft/Azure AD OAuth integration
-  - [ ] Apple Sign-In integration
-  - [ ] LinkedIn OAuth for professional networking
-  - [ ] Discord OAuth for community features
+### Admin Dashboard & ZERO to HERO Pipeline
+- [x] **Hidden Admin Dashboard** (`/admin`) with violet-themed layout, access control, and 403 page
+- [x] **Business Pipeline Management (Page 01)** - Full CRUD for pipeline projects with filterable table
+- [x] **7-Phase Pipeline Stepper** - Visual phase progression (ZERO through HERO) with tooltips
+- [x] **Phase Advancement with Business Rules** - Server-enforced retainer checks ($10k min for Phase 04), MVP/staging expiration (90 days), POC validation
+- [x] **Pipeline Detail View** - Tabbed interface (Overview, Notes, Voice Transcripts, AI Outputs, Retainer & Agreements) with activity timeline
+- [x] **Admin User Management** - Master admin (nobviz@gmail.com) can promote/demote other admins via `masterAdminProcedure`
+- [x] **Pipeline Analytics Page** - Phase distribution bar chart, status breakdown pie chart, pipeline funnel (Recharts)
+- [x] **Pipeline Events Audit Log** - Track phase advances, regressions, project creation, and all admin actions
 
-- [ ] **Enhanced Security Features**
-  - [ ] Two-factor authentication (2FA) with TOTP
-  - [ ] Hardware security key support (WebAuthn)
-  - [ ] Rate limiting on all OAuth endpoints
-  - [ ] IP-based session validation and geolocation tracking
-  - [ ] Suspicious login detection and automated alerts
-  - [ ] OAuth state token storage in Redis for production scaling
-  - [ ] Advanced CSRF protection and security headers
+### Subscription & Pricing System
+- [x] **Subscription Tiers** - Free (1 use), Starter $100/mo (5), Pro $500/mo (20), Unlimited $1000/mo
+- [x] **Wizard Usage Gating** - Discovery wizard checks subscription limits before executing AI agents
+- [x] **Subscription Banner** - Usage remaining indicator on wizard page
+- [x] **Subscription Card in Settings** - Current tier, usage progress bar, upgrade CTA
+- [x] **Token Rate Limits** - Per-tier token rate limit configuration
 
-- [ ] **Session Management Improvements**
-  - [ ] Session listing and management UI
-  - [ ] Force logout from all devices functionality
-  - [ ] Configurable session timeout settings
-  - [ ] Refresh token rotation for enhanced security
-  - [ ] "Remember this device" functionality
-  - [ ] Session analytics and security monitoring
+### Database & Schema
+- [x] **`subscriptions` table** - Tier management with wizard usage tracking and billing period
+- [x] **`pipeline_projects` table** - 26 columns: full lifecycle tracking, JSONB metadata, retainer/agreement fields, add-on packages
+- [x] **`pipeline_events` table** - Audit log for phase transitions and pipeline actions
+- [x] **`isMasterAdmin` column** - Master admin identification on users table
+- [x] **Pipeline/Subscription enums** - `pipeline_status`, `subscription_tier` PostgreSQL enums
 
-### 🤖 AI Agent Enhancements
-- [ ] **Advanced AI Capabilities**
-  - [ ] Multi-agent collaboration for complex tasks
-  - [ ] Cross-agent learning insights (anonymized data)
-  - [ ] Predictive analytics for business performance
-  - [ ] Automated A/B testing for optimization strategies
-  - [ ] Natural language business configuration
-  - [ ] Voice-activated agent interactions
+### Business Rules & Constants
+- [x] **Profit sharing tiers** - 40%/30%/25% based on revenue thresholds, centralized in `shared/const.ts`
+- [x] **Grandfathered account logic** - 70% without retainer, 50% with $10k retainer
+- [x] **A-la-carte add-ons** - Customer Acquisition, Open Claw Admin, Infrastructure, Business Artifacts ($10k each)
+- [x] **$100k buyout fee**, **$250/hr professional services rate**, **90-day expiration rules**
 
-- [ ] **Model Intelligence Improvements**
-  - [ ] Dynamic model performance tracking
-  - [ ] Automatic model selection based on historical performance
-  - [ ] Custom model fine-tuning for specific business types
-  - [ ] Edge case handling and error recovery
-  - [ ] Multi-modal AI integration (text, image, audio)
-  - [ ] Real-time model cost optimization
-
-### 📊 Advanced Analytics & Insights
-- [ ] **Business Intelligence Dashboard**
-  - [ ] Predictive revenue forecasting
-  - [ ] Market trend analysis and alerts
-  - [ ] Competitor analysis and positioning
-  - [ ] Customer behavior analytics
-  - [ ] Seasonal trend identification
-  - [ ] ROI optimization recommendations
-
-- [ ] **Advanced Reporting**
-  - [ ] Custom report builder with drag-and-drop interface
-  - [ ] Automated report generation and scheduling
-  - [ ] Export capabilities (PDF, Excel, CSV)
-  - [ ] White-label reporting for business clients
-  - [ ] Real-time alert system with custom triggers
-  - [ ] Integration with external analytics tools
-
-### 💼 Business Execution Enhancements
-- [ ] **Automated Business Operations**
-  - [ ] Intelligent customer service automation
-  - [ ] Dynamic pricing optimization
-  - [ ] Inventory management automation
-  - [ ] Marketing campaign automation
-  - [ ] Quality assurance and monitoring
-  - [ ] Compliance checking and reporting
-
-- [ ] **Integration Ecosystem**
-  - [ ] Zapier integration for workflow automation
-  - [ ] Slack/Discord notifications and controls
-  - [ ] CRM integration (Salesforce, HubSpot)
-  - [ ] Accounting software integration (QuickBooks, Xero)
-  - [ ] E-commerce platform integration (Shopify, WooCommerce)
-  - [ ] Social media automation (Twitter, LinkedIn, Instagram)
-
-### 🌐 Platform Scaling & Performance
-- [ ] **Infrastructure Improvements**
-  - [ ] Redis caching layer for improved performance
-  - [ ] CDN integration for global content delivery
-  - [ ] Database read replicas for scaling
-  - [ ] Microservices architecture migration
-  - [ ] Kubernetes deployment for container orchestration
-  - [ ] Real-time WebSocket connections for live updates
-
-- [ ] **Multi-tenancy & Enterprise Features**
-  - [ ] Team collaboration and workspace management
-  - [ ] Role-based access control (RBAC)
-  - [ ] Enterprise SSO integration
-  - [ ] White-label platform customization
-  - [ ] API rate limiting and usage analytics
-  - [ ] Custom domain support for enterprise clients
-
-### 💳 Financial & Legal Enhancements
-- [ ] **Payment Processing**
-  - [ ] Stripe Connect integration for marketplace payments
-  - [ ] PayPal integration for global payments
-  - [ ] Cryptocurrency payment processing
-  - [ ] Automated tax calculation and reporting
-  - [ ] Multi-currency support and conversion
-  - [ ] Subscription billing and recurring payments
-
-- [ ] **Legal & Compliance**
-  - [ ] Automated business registration assistance
-  - [ ] Tax optimization recommendations
-  - [ ] Legal document generation (contracts, terms)
-  - [ ] Compliance monitoring and alerts
-  - [ ] GDPR and privacy compliance tools
-  - [ ] International business formation support
-
-### 🎯 User Experience Innovations
-- [ ] **Mobile Applications**
-  - [ ] Native iOS app with full functionality
-  - [ ] Native Android app with offline capabilities
-  - [ ] Progressive Web App (PWA) enhancements
-  - [ ] Mobile-specific UI optimizations
-  - [ ] Push notifications for important alerts
-  - [ ] Biometric authentication support
-
-- [ ] **Accessibility & Internationalization**
-  - [ ] Full WCAG 2.1 AA compliance
-  - [ ] Screen reader optimization
-  - [ ] Keyboard navigation improvements
-  - [ ] Multi-language support (Spanish, French, German)
-  - [ ] Right-to-left (RTL) language support
-  - [ ] Cultural adaptation for different markets
-
-### 🔬 Research & Development
-- [ ] **Experimental Features**
-  - [ ] Blockchain integration for transparent business tracking
-  - [ ] NFT-based business ownership and trading
-  - [ ] Decentralized autonomous organization (DAO) features
-  - [ ] Virtual reality business visualization
-  - [ ] Augmented reality business monitoring
-  - [ ] Quantum computing optimization algorithms
-
-- [ ] **AI Research Initiatives**
-  - [ ] Custom large language model training
-  - [ ] Federated learning for privacy-preserving insights
-  - [ ] Reinforcement learning for business optimization
-  - [ ] Computer vision for market analysis
-  - [ ] Natural language processing for customer insights
-  - [ ] Automated business model generation
+### Environment & Integration
+- [x] **CLOUDINARY_URL** - Cloudinary integration for artifact storage (images, recordings, PPTs, etc.)
+- [x] **ZAI_API_KEY** - Z.ai GLM-5.1 integration for AI capabilities
+- [x] **MASTER_ADMIN_EMAIL** - Configurable master admin email (default: nobviz@gmail.com)
 
 ---
 
-## 🎯 Immediate Next Steps (Priority Order)
+## Completed (January 2026)
 
-### High Priority
-1. **Export Blueprint Feature** - Complete the deployment blueprint export functionality (PDF/document export)
-2. **Advanced Error Recovery** - Enhance error handling with automatic retry mechanisms
-3. **Performance Optimization** - Implement caching layer for improved response times
-4. **Mobile Responsiveness** - Fine-tune mobile experience and add PWA features
+### Authentication & Security
+- [x] Google OAuth 2.0 with CSRF-protected state tokens
+- [x] Multi-provider account linking by email
+- [x] JWT session management with secure cookies
+- [x] Environment validation (JWT secrets, DB URLs, API configs)
+- [x] Admin role auto-assignment via `OWNER_OPEN_ID`
 
-### Medium Priority
-1. **Additional OAuth Providers** - Add GitHub and Microsoft OAuth support
-2. **Advanced Analytics** - Implement predictive analytics and forecasting
-3. **API Rate Limiting** - Add comprehensive rate limiting and usage analytics
-4. **Team Collaboration** - Basic multi-user workspace functionality
+### AI Agent System
+- [x] Go-Getter AI Agent with personalized opportunity discovery
+- [x] Intelligent Model Router (OpenAI, Anthropic, Gemini, Perplexity, Grok, Manus)
+- [x] Fallback to static catalog when AI services unavailable
+- [x] Cost-optimized model selection per task type
 
-### Long-term Goals
-1. **Mobile Applications** - Native iOS and Android apps
-2. **Enterprise Features** - SSO, RBAC, and white-label customization
-3. **AI Model Training** - Custom model fine-tuning for specific business types
-4. **International Expansion** - Multi-language support and global compliance
+### Core Platform
+- [x] Discovery Wizard with save/load presets (max 10 per user)
+- [x] Business catalog with composite scoring (7-factor, 0-100 scale)
+- [x] Real-time monitoring dashboard with time-series charts
+- [x] Token usage tracking and analytics
+- [x] Multi-time profit dimensions (hourly/daily/weekly)
+- [x] Webhook integration for event monitoring
 
 ---
 
-## 📝 Development Notes
+## In Progress
+
+### Admin Dashboard Page 02 - Voice Assistant Console
+- [ ] ElevenLabs agent integration for automated customer interviews
+- [ ] Twilio/Zoom voice call integration (agent joins silently or calls directly)
+- [ ] Real-time transcription and summarization
+- [ ] Voice transcript storage in pipeline project metadata
+- [ ] Call controls and transcript viewer in admin sidebar
+- [ ] Voice-to-text for Phase 01 (IDEA) discovery sessions
+
+### Admin Dashboard Page 03 - Content Assistant Tools
+- [ ] NotebookLM integration for podcast-style business summaries
+- [ ] Broll Generator (interview transcript/codebase to Google Broll prompts)
+- [ ] Business artifact generation (PowerPoint presentations, infographics)
+- [ ] Media asset library connected to Cloudinary
+- [ ] Executive summary charts and documentation generation
+
+### Payment & Billing Integration
+- [ ] Stripe integration for subscription billing and recurring payments
+- [ ] Retainer payment processing ($10k minimum)
+- [ ] A-la-carte add-on purchase flow
+- [ ] Invoice generation and payment history
+
+---
+
+## Planned - High Priority
+
+### ZERO to HERO Pipeline Enhancements
+- [ ] **Open Claw AI Administrator** - Autonomous self-learning agent for Phase 06 businesses
+- [ ] **Manus AI Integration** - Phase 02 (PLAN) auto-generates applications from enhanced prompts
+- [ ] **MVP Auto-Publish** - Phase 03 automated deployment to staging with demo data
+- [ ] **Cloudinary Upload Integration** - Artifact upload/management within pipeline detail view
+- [ ] **Lead Generation Landing Pages** - Phase 00 referral-tracked landing page builder
+- [ ] **Agreement & EULA Management** - Digital signature flow for MVP/retainer/profit-share agreements
+- [ ] **Staging Environment Automation** - Phase 04 sandbox provisioning and code security scanning
+- [ ] **Customer Notification System** - Email/SMS delivery for MVP links, retainer reminders, phase updates
+
+### Additional OAuth Providers (Phase 00 Enhancement)
+- [ ] Microsoft OAuth integration
+- [ ] GitHub OAuth integration
+- [ ] Facebook OAuth integration
+- [ ] Richer lead data population from OAuth profile info
+
+### Self-Serve User Pipeline (Trimmed ZERO to HERO)
+- [ ] User-facing Phase 00-03 workflow in main UI
+- [ ] Wizard-to-pipeline conversion for self-serve users
+- [ ] MVP agreement signing and 90-day expiration management
+- [ ] Upgrade CTA from self-serve to retainer-based Phase 04
+
+---
+
+## Planned - Medium Priority
+
+### Admin Dashboard Enhancements
+- [ ] Pipeline Kanban board view (drag-and-drop phase advancement)
+- [ ] Bulk operations on pipeline projects (suspend, archive, reassign admin)
+- [ ] Advanced pipeline search with saved filters
+- [ ] Pipeline project export (PDF reports, CSV)
+- [ ] Admin activity dashboard (who did what, when)
+- [ ] "Switch to Customer View" impersonation for testing
+
+### Analytics & Reporting
+- [ ] Predictive revenue forecasting for pipeline projects
+- [ ] Conversion rate tracking between phases
+- [ ] Time-to-phase metrics (how long projects spend in each phase)
+- [ ] Revenue attribution by referral source
+- [ ] Customer lifetime value calculations
+- [ ] Automated weekly pipeline summary reports
+
+### Platform & Infrastructure
+- [ ] Redis caching layer for pipeline queries
+- [ ] Real-time WebSocket updates for admin dashboard
+- [ ] CDN integration for Cloudinary-hosted artifacts
+- [ ] API rate limiting per subscription tier
+- [ ] Automated staging environment provisioning
+
+---
+
+## Planned - Long Term
+
+### Enterprise & Scale
+- [ ] Multi-tenant workspace management
+- [ ] Enterprise SSO integration
+- [ ] White-label platform for partner resellers
+- [ ] Custom domain support for client businesses
+- [ ] International expansion (multi-language, multi-currency)
+
+### Mobile & Accessibility
+- [ ] Native iOS app
+- [ ] Native Android app
+- [ ] PWA enhancements with push notifications
+- [ ] WCAG 2.1 AA compliance
+- [ ] Multi-language support
+
+### Advanced AI
+- [ ] Multi-agent collaboration for complex Phase 02 planning
+- [ ] Custom model fine-tuning for business-specific tasks
+- [ ] Computer vision for market analysis
+- [ ] Reinforcement learning for business optimization
+- [ ] Predictive analytics for business performance
+
+### Financial & Legal
+- [ ] Automated tax calculation and reporting
+- [ ] Legal document generation (contracts, terms, EULAs)
+- [ ] Profit sharing dashboard with revenue tracking
+- [ ] Cryptocurrency payment processing
+- [ ] International compliance tools (GDPR, SOC 2)
+
+---
+
+## Development Notes
 
 ### Code Quality Standards
 - Maintain 90%+ test coverage with property-based testing
 - Follow TypeScript strict mode for all new code
-- Implement comprehensive error boundaries and fallback mechanisms
-- Use consistent naming conventions and documentation standards
-- Regular security audits and dependency updates
+- Use `adminProcedure` for all pipeline/dashboard operations
+- Use `masterAdminProcedure` only for admin role management
+- Pipeline metadata uses typed JSONB interfaces (`PipelineMetadata`, `PipelineAddOns`, `PipelineAgreements`)
+- All business rules centralized in `shared/const.ts`
 
 ### Performance Targets
 - Page load times under 2 seconds
@@ -195,4 +200,4 @@ This document tracks future enhancements and planned work. For documentation of 
 - Automated security scanning in CI/CD pipeline
 - Compliance with SOC 2 Type II standards
 - Regular backup and disaster recovery testing
-- Zero-trust security architecture implementation
+- No code access for customers in staging (Phase 04)
