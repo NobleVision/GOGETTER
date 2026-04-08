@@ -30,6 +30,19 @@ export const users = pgTable("users", {
   googleId: varchar("google_id", { length: 64 }),
   pictureUrl: varchar("picture_url", { length: 500 }),
   authProviders: json("auth_providers").$type<string[]>().default([]),
+  // Native email auth fields
+  passwordHash: varchar("password_hash", { length: 255 }),
+  emailVerified: boolean("email_verified").default(false).notNull(),
+  // RBAC granular permissions
+  permissions: json("permissions").$type<UserPermissions>().default({
+    businessCatalog: false,
+    myBusinesses: false,
+    monitoring: false,
+    tokenUsage: false,
+    apiConfig: false,
+    webhooks: false,
+    settings: false,
+  }),
   // Admin management
   isMasterAdmin: boolean("is_master_admin").default(false).notNull(),
   // Session and consent tracking
@@ -42,6 +55,35 @@ export const users = pgTable("users", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+/**
+ * Granular RBAC permissions for feature access
+ */
+export interface UserPermissions {
+  businessCatalog: boolean;
+  myBusinesses: boolean;
+  monitoring: boolean;
+  tokenUsage: boolean;
+  apiConfig: boolean;
+  webhooks: boolean;
+  settings: boolean;
+}
+
+/**
+ * Verification codes for email OTP
+ */
+export const verificationCodes = pgTable("verification_codes", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 320 }).notNull(),
+  code: varchar("code", { length: 8 }).notNull(),
+  type: varchar("type", { length: 32 }).notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  usedAt: timestamp("used_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type VerificationCode = typeof verificationCodes.$inferSelect;
+export type InsertVerificationCode = typeof verificationCodes.$inferInsert;
 
 /**
  * User profile for Go-Getter preferences and settings
