@@ -76,6 +76,16 @@ export default function DashboardLayout({
     return <DashboardLayoutSkeleton />
   }
 
+  // Email verification gate: redirect unverified users
+  if (user && (user as any).emailVerified === false) {
+    const email = (user as any).email;
+    if (email) {
+      sessionStorage.setItem("verify_email", email);
+    }
+    window.location.href = "/verify-email";
+    return <DashboardLayoutSkeleton />;
+  }
+
   if (!user) {
     // Check for auth errors in URL
     const urlParams = new URLSearchParams(window.location.search);

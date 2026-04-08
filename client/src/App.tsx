@@ -19,6 +19,7 @@ import Webhooks from "./pages/Webhooks";
 import Blueprints from "./pages/Blueprints";
 import Resources from "./pages/Resources";
 import Settings from "./pages/Settings";
+import VerifyEmail from "./pages/VerifyEmail";
 // Admin pages (hidden, accessed via /admin directly)
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminPipeline from "./pages/admin/AdminPipeline";
@@ -42,6 +43,7 @@ function Router() {
       <Route path="/blueprints" component={Blueprints} />
       <Route path="/resources" component={Resources} />
       <Route path="/settings" component={Settings} />
+      <Route path="/verify-email" component={VerifyEmail} />
       {/* Admin routes (no links from main UI) */}
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/pipeline" component={AdminPipeline} />
