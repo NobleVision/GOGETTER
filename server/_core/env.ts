@@ -13,6 +13,12 @@ export const ENV = {
   cloudinaryUrl: process.env.CLOUDINARY_URL ?? "",
   // Z.ai GLM-5.1 API key
   zaiApiKey: process.env.ZAI_API_KEY ?? "",
+  // SMTP email configuration
+  smtpHost: process.env.SMTP_HOST ?? "",
+  smtpPort: parseInt(process.env.SMTP_PORT_OUTGOING ?? "465", 10),
+  smtpUser: process.env.SMTP_USER ?? "",
+  smtpPass: process.env.SMTP_PASS ?? "",
+  smtpFrom: process.env.SMTP_FROM ?? process.env.SMTP_USER ?? "info@gogetteros.com",
   // Master admin email (can manage other admins)
   masterAdminEmail: process.env.MASTER_ADMIN_EMAIL ?? "nobviz@gmail.com",
 };

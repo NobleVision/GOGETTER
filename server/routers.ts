@@ -12,6 +12,9 @@ import {
 } from "./_core/trpc";
 import * as db from "./db";
 import { goGetterAgent } from "./services/goGetterAgent";
+import { sendOtpEmail } from "./services/email";
+import { hash as bcryptHash, compare as bcryptCompare } from "bcryptjs";
+import { sdk } from "./_core/sdk";
 
 export const appRouter = router({
   system: systemRouter,
@@ -29,6 +32,138 @@ export const appRouter = router({
       (ctx.res as any).setHeader("Set-Cookie", clearCookie);
       return { success: true } as const;
     }),
+
+    // ── Native Email Auth ──
+    register: publicProcedure
+      .input(
+        z.object({
+          name: z.string().min(1).max(255),
+          email: z.string().email().max(320),
+          password: z.string().min(8).max(128),
+        })
+      )
+      .mutation(async ({ input }) => {
+        const existing = await db.getUserByEmail(input.email);
+        if (existing) {
+          throw new (await import("@trpc/server")).TRPCError({
+            code: "CONFLICT",
+            message: "An account with this email already exists. Please sign in.",
+          });
+        }
+
+        const passwordHash = await bcryptHash(input.password, 12);
+        const user = await db.createNativeUser({
+          email: input.email,
+          passwordHash,
+          name: input.name,
+        });
+
+        // Generate and send OTP
+        const code = await db.createVerificationCode(input.email);
+        await sendOtpEmail(input.email, code);
+
+        return { success: true, requiresVerification: true, email: input.email };
+      }),
+
+    login: publicProcedure
+      .input(
+        z.object({
+          email: z.string().email(),
+          password: z.string().min(1),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const user = await db.getUserByEmail(input.email);
+        if (!user || !user.passwordHash) {
+          throw new (await import("@trpc/server")).TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Invalid email or password.",
+          });
+        }
+
+        const valid = await bcryptCompare(input.password, user.passwordHash);
+        if (!valid) {
+          throw new (await import("@trpc/server")).TRPCError({
+            code: "UNAUTHORIZED",
+            message: "Invalid email or password.",
+          });
+        }
+
+        if (!user.emailVerified) {
+          // Send a fresh OTP
+          const code = await db.createVerificationCode(input.email);
+          await sendOtpEmail(input.email, code);
+          return { success: true, requiresVerification: true, email: input.email };
+        }
+
+        // Create session
+        const sessionToken = await sdk.createSessionToken(user.openId, {
+          name: user.name || "",
+        });
+        const cookieOptions = getSessionCookieOptions(ctx.req as any);
+        const sessionCookie = cookie.serialize(COOKIE_NAME, sessionToken, cookieOptions);
+        (ctx.res as any).setHeader("Set-Cookie", sessionCookie);
+
+        await db.upsertUser({ openId: user.openId, lastSignedIn: new Date() });
+
+        return { success: true, requiresVerification: false };
+      }),
+
+    verifyEmail: publicProcedure
+      .input(
+        z.object({
+          email: z.string().email(),
+          code: z.string().length(6),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const valid = await db.verifyCode(input.email, input.code);
+        if (!valid) {
+          throw new (await import("@trpc/server")).TRPCError({
+            code: "BAD_REQUEST",
+            message: "Invalid or expired verification code.",
+          });
+        }
+
+        const user = await db.getUserByEmail(input.email);
+        if (!user) {
+          throw new (await import("@trpc/server")).TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found.",
+          });
+        }
+
+        await db.setEmailVerified(user.id);
+
+        // Create session
+        const sessionToken = await sdk.createSessionToken(user.openId, {
+          name: user.name || "",
+        });
+        const cookieOptions = getSessionCookieOptions(ctx.req as any);
+        const sessionCookie = cookie.serialize(COOKIE_NAME, sessionToken, cookieOptions);
+        (ctx.res as any).setHeader("Set-Cookie", sessionCookie);
+
+        await db.upsertUser({ openId: user.openId, lastSignedIn: new Date() });
+
+        return { success: true };
+      }),
+
+    resendCode: publicProcedure
+      .input(z.object({ email: z.string().email() }))
+      .mutation(async ({ input }) => {
+        const user = await db.getUserByEmail(input.email);
+        if (!user) {
+          // Don't reveal whether the email exists
+          return { success: true };
+        }
+        if (user.emailVerified) {
+          return { success: true };
+        }
+
+        const code = await db.createVerificationCode(input.email);
+        await sendOtpEmail(input.email, code);
+        return { success: true };
+      }),
   }),
 
   // User Profile Management

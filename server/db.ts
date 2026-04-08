@@ -15,6 +15,8 @@ import {
   pipelineProjects, InsertPipelineProject, PipelineProject,
   pipelineEvents, InsertPipelineEvent, PipelineEvent,
   type PipelineMetadata,
+  verificationCodes,
+  type UserPermissions,
 } from "../drizzle/schema";
 import { ENV } from './_core/env';
 import {
@@ -24,6 +26,7 @@ import {
   RETAINER_MINIMUM,
 } from "@shared/const";
 import { ilike, or } from "drizzle-orm";
+import { randomInt } from "crypto";
 
 let _db: ReturnType<typeof drizzle> | null = null;
 let _pool: pg.Pool | null = null;
@@ -207,6 +210,7 @@ export async function upsertUserWithGoogle(user: {
       pictureUrl: user.pictureUrl,
       loginMethod: user.loginMethod,
       authProviders: ["google"],
+      emailVerified: true,
       role: role,
       isMasterAdmin: isMaster,
       lastSignedIn: user.lastSignedIn,
@@ -253,6 +257,185 @@ export async function linkGoogleAccount(userId: number, googleData: {
     console.error("[DB] Failed to link Google account:", error);
     throw error;
   }
+}
+
+// ============ NATIVE EMAIL AUTH OPERATIONS ============
+
+export async function createNativeUser(data: {
+  email: string;
+  passwordHash: string;
+  name: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const openId = `email_${data.email}`;
+  const [inserted] = await db
+    .insert(users)
+    .values({
+      openId,
+      name: data.name,
+      email: data.email,
+      passwordHash: data.passwordHash,
+      loginMethod: "email",
+      authProviders: ["email"],
+      emailVerified: false,
+      role: "user",
+    })
+    .returning();
+  return inserted;
+}
+
+export async function createVerificationCode(
+  email: string,
+  type: string = "email_verification"
+): Promise<string> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const code = String(randomInt(100000, 999999));
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+  // Invalidate any existing unused codes for this email+type
+  await db
+    .update(verificationCodes)
+    .set({ usedAt: new Date() })
+    .where(
+      and(
+        eq(verificationCodes.email, email),
+        eq(verificationCodes.type, type),
+        sql`${verificationCodes.usedAt} IS NULL`
+      )
+    );
+
+  await db.insert(verificationCodes).values({
+    email,
+    code,
+    type,
+    expiresAt,
+  });
+
+  return code;
+}
+
+export async function verifyCode(
+  email: string,
+  code: string,
+  type: string = "email_verification"
+): Promise<boolean> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const result = await db
+    .select()
+    .from(verificationCodes)
+    .where(
+      and(
+        eq(verificationCodes.email, email),
+        eq(verificationCodes.code, code),
+        eq(verificationCodes.type, type),
+        sql`${verificationCodes.usedAt} IS NULL`,
+        sql`${verificationCodes.expiresAt} > NOW()`
+      )
+    )
+    .limit(1);
+
+  if (result.length === 0) return false;
+
+  // Mark as used
+  await db
+    .update(verificationCodes)
+    .set({ usedAt: new Date() })
+    .where(eq(verificationCodes.id, result[0].id));
+
+  return true;
+}
+
+export async function setEmailVerified(userId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db
+    .update(users)
+    .set({ emailVerified: true, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+}
+
+export async function updateUserPermissions(
+  userId: number,
+  permissions: Partial<UserPermissions>
+): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const user = await getUserById(userId);
+  if (!user) throw new Error("User not found");
+
+  const currentPerms = (user.permissions ?? {}) as UserPermissions;
+  const merged = { ...currentPerms, ...permissions };
+
+  await db
+    .update(users)
+    .set({ permissions: merged, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+}
+
+export async function getAllUsersForAdmin(filters?: {
+  search?: string;
+  role?: "user" | "admin";
+  limit?: number;
+  offset?: number;
+}) {
+  const db = await getDb();
+  if (!db) return { users: [], total: 0 };
+
+  const conditions = [];
+
+  if (filters?.search && filters.search.length >= 2) {
+    conditions.push(
+      or(
+        ilike(users.name, `%${filters.search}%`),
+        ilike(users.email, `%${filters.search}%`)
+      )
+    );
+  }
+
+  if (filters?.role) {
+    conditions.push(eq(users.role, filters.role));
+  }
+
+  const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+
+  const [countResult, userRows] = await Promise.all([
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(users)
+      .where(whereClause),
+    db
+      .select({
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        role: users.role,
+        pictureUrl: users.pictureUrl,
+        loginMethod: users.loginMethod,
+        emailVerified: users.emailVerified,
+        permissions: users.permissions,
+        isMasterAdmin: users.isMasterAdmin,
+        lastSignedIn: users.lastSignedIn,
+        createdAt: users.createdAt,
+      })
+      .from(users)
+      .where(whereClause)
+      .orderBy(desc(users.lastSignedIn))
+      .limit(filters?.limit ?? 50)
+      .offset(filters?.offset ?? 0),
+  ]);
+
+  return {
+    users: userRows,
+    total: Number(countResult[0]?.count ?? 0),
+  };
 }
 
 // ============ USER PROFILE OPERATIONS ============
