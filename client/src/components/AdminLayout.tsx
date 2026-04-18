@@ -56,8 +56,7 @@ const adminMenuItems = [
   {
     icon: Mic,
     label: "Voice Assistant",
-    path: "/admin/voice",
-    disabled: true,
+    path: "/admin/voice-assistant",
   },
   {
     icon: FileText,

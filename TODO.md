@@ -4,7 +4,57 @@ This document tracks completed work, in-progress features, and planned enhanceme
 
 ---
 
-## Completed (April 2026)
+## Completed (April 2026 — Phase 2: Auth, RBAC & Admin)
+
+### Native Email Authentication & OTP Verification
+- [x] **Database Schema** — `passwordHash`, `emailVerified`, `permissions` (JSON) columns on `users` table; `verification_codes` table for OTPs
+- [x] **Email Registration** — `auth.register` tRPC endpoint with bcrypt hashing (bcryptjs, cost 12)
+- [x] **Email Login** — `auth.login` tRPC endpoint with credential validation
+- [x] **OTP Email Verification** — 6-digit code via nodemailer SMTP, 10-minute TTL, single-use
+- [x] **SMTP Email Service** — `server/services/email.ts` using `info@gogetteros.com` with SSL/TLS on port 465
+- [x] **Landing Page Auth Forms** — Tabbed Google OAuth + Email sign-up/sign-in on `LandingPage.tsx`
+- [x] **OTP Verification Screen** — `/verify-email` page with 6-digit input boxes, resend with cooldown
+- [x] **Email Verification Gate** — `DashboardLayout.tsx` redirects unverified users; Google OAuth auto-verified
+- [x] **Email Deliverability** — SPF, DKIM, and DMARC DNS records configured for `gogetteros.com`
+
+### RBAC Permission System
+- [x] **Shared Permissions Config** — `shared/permissions.ts` with `DEFAULT_PERMISSIONS`, `FULL_PERMISSIONS`, `hasPermission()`, `ROUTE_PERMISSION_MAP`, `PERMISSION_LABELS`
+- [x] **Permission Middleware** — `createPermissionProcedure(key)` factory in `server/_core/trpc.ts`
+- [x] **Route Enforcement** — Permission-gated procedures on all 7 route groups (businesses, userBusinesses, dashboard, events, tokenUsage, apiConfig, webhooks)
+- [x] **usePermissions Hook** — `client/src/_core/hooks/usePermissions.ts` with `can(key)` and `canAccessRoute(path)`
+- [x] **Sidebar Filtering** — `DashboardLayout.tsx` filters menu items by user permissions
+- [x] **AccessRestricted Component** — `client/src/components/AccessRestricted.tsx` for permission-denied pages
+- [x] **Page Guards** — All 7 protected pages (Catalog, MyBusinesses, Monitoring, TokenUsage, ApiConfig, Webhooks, Settings) check permissions
+- [x] **Existing User Migration** — `scripts/grant-existing-permissions.ts` grants full permissions to 24 existing users
+
+### Unified Admin User Management
+- [x] **admin.users.list** — Paginated, searchable, filterable by role (all users, not just admins)
+- [x] **admin.users.updatePermissions** — Toggle individual permission flags per user
+- [x] **admin.users.updateRole** — Promote/demote users (master admin only)
+- [x] **Unified User Administration Page** — Rewritten `AdminManagement.tsx` with user table, role badges, verification status, login method, per-user permission dialog with 7 toggle switches
+- [x] **Admin Sidebar Label** — Renamed "Admin Management" → "User Administration"
+
+### Database Seed Scripts
+- [x] **Pipeline Seed** (`scripts/seed-pipeline-data.ts`) — 15 micro-businesses, 15 pipeline projects (phases 0-6), 1,077 business events, 316 token usage records, 71 pipeline events, 15 subscriptions
+- [x] **npm script** — `pnpm seed:pipeline` for easy re-running
+
+### Bug Fixes & TypeScript Cleanup
+- [x] **cookie v1.x** — Fixed `cookie.serialize` import for ESM named exports
+- [x] **React Query v5** — Removed deprecated `onError` from `useQuery`, replaced with `useEffect`
+- [x] **fetch timeout** — Replaced invalid `timeout` property with `AbortSignal.timeout()`
+- [x] **URLSearchParams iteration** — Fixed `for...of` with `.forEach()` for downlevelIteration compatibility
+- [x] **OAuth redirect_uri_mismatch** — Fixed after `noblevision.com` → `gogetteros.com` domain migration
+- [x] **Non-null assertion** — Fixed `storedState.userId` type narrowing in `oauth.ts`
+- [x] **Zero TypeScript errors** — `pnpm check` passes cleanly
+
+### Domain Migration
+- [x] **gogetteros.com** — Migrated from `gogetter.noblevision.com` / `gogetteros.noblevision.com`
+- [x] **Google OAuth URIs** — Updated redirect URIs for new domain (including `www` variant)
+- [x] **DNS Records** — SPF, DKIM, DMARC configured at pair.com for email deliverability
+
+---
+
+## Completed (April 2026 — Phase 1: Admin & Pipeline)
 
 ### Admin Dashboard & ZERO to HERO Pipeline
 - [x] **Hidden Admin Dashboard** (`/admin`) with violet-themed layout, access control, and 403 page
@@ -70,6 +120,30 @@ This document tracks completed work, in-progress features, and planned enhanceme
 
 ## In Progress
 
+### End-to-End Auth Flow Testing & Hardening
+- [ ] Verify OTP email delivery to multiple providers (Gmail ✅, Outlook, Yahoo)
+- [ ] Test email sign-up → OTP → dashboard → permission enforcement full flow
+- [ ] Test admin toggling permissions for a standard user (frontend reflects changes)
+- [ ] Test new user registration gets wizard-only access by default
+- [ ] Verify admin bypass works (admins see all sidebar items regardless of permissions)
+- [ ] Password reset flow — `auth.forgotPassword` and `auth.resetPassword` endpoints (not yet implemented)
+
+### Vercel Deployment Validation
+- [ ] Deploy latest changes to Vercel production
+- [ ] Verify SMTP email sending works from Vercel serverless functions
+- [ ] Verify cookie domain works correctly on `gogetteros.com` and `www.gogetteros.com`
+- [ ] Test Google OAuth + Email auth both work in production
+
+---
+
+## Next Up - High Priority
+
+### Password Reset Flow
+- [ ] `auth.forgotPassword` endpoint — generates reset OTP, sends email
+- [ ] `auth.resetPassword` endpoint — validates OTP + sets new password
+- [ ] `/forgot-password` page with email input
+- [ ] `/reset-password` page with OTP + new password form
+
 ### Admin Dashboard Page 02 - Voice Assistant Console
 - [ ] ElevenLabs agent integration for automated customer interviews
 - [ ] Twilio/Zoom voice call integration (agent joins silently or calls directly)
@@ -105,11 +179,13 @@ This document tracks completed work, in-progress features, and planned enhanceme
 - [ ] **Staging Environment Automation** - Phase 04 sandbox provisioning and code security scanning
 - [ ] **Customer Notification System** - Email/SMS delivery for MVP links, retainer reminders, phase updates
 
-### Additional OAuth Providers (Phase 00 Enhancement)
+### Additional Auth Providers (Phase 00 Enhancement)
+- [x] Native email/password registration with OTP verification ✅
 - [ ] Microsoft OAuth integration
 - [ ] GitHub OAuth integration
 - [ ] Facebook OAuth integration
 - [ ] Richer lead data population from OAuth profile info
+- [ ] Social login one-click linking (link Google to existing email account)
 
 ### Self-Serve User Pipeline (Trimmed ZERO to HERO)
 - [ ] User-facing Phase 00-03 workflow in main UI
@@ -182,11 +258,13 @@ This document tracks completed work, in-progress features, and planned enhanceme
 
 ### Code Quality Standards
 - Maintain 90%+ test coverage with property-based testing
-- Follow TypeScript strict mode for all new code
-- Use `adminProcedure` for all pipeline/dashboard operations
-- Use `masterAdminProcedure` only for admin role management
+- Follow TypeScript strict mode for all new code — `pnpm check` must pass with zero errors
+- Use `createPermissionProcedure(key)` for user-facing feature routes (enforces RBAC)
+- Use `adminProcedure` for all pipeline/dashboard admin operations
+- Use `masterAdminProcedure` only for admin role management (promote/demote)
 - Pipeline metadata uses typed JSONB interfaces (`PipelineMetadata`, `PipelineAddOns`, `PipelineAgreements`)
-- All business rules centralized in `shared/const.ts`
+- Permission config centralized in `shared/permissions.ts`; business rules in `shared/const.ts`
+- New dependencies: `bcryptjs` (password hashing), `nodemailer` (SMTP email)
 
 ### Performance Targets
 - Page load times under 2 seconds

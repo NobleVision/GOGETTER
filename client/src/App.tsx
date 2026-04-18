@@ -26,6 +26,7 @@ import AdminPipeline from "./pages/admin/AdminPipeline";
 import AdminPipelineDetail from "./pages/admin/AdminPipelineDetail";
 import AdminManagement from "./pages/admin/AdminManagement";
 import AdminAnalytics from "./pages/admin/AdminAnalytics";
+import AdminVoiceAssistant from "./pages/admin/AdminVoiceAssistant";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -52,6 +53,7 @@ function Router() {
         component={AdminPipelineDetail}
       />
       <Route path="/admin/admins" component={AdminManagement} />
+      <Route path="/admin/voice-assistant" component={AdminVoiceAssistant} />
       <Route path="/admin/analytics" component={AdminAnalytics} />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}

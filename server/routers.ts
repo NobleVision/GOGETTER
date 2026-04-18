@@ -26,6 +26,7 @@ import { goGetterAgent } from "./services/goGetterAgent";
 import { sendOtpEmail } from "./services/email";
 import { hash as bcryptHash, compare as bcryptCompare } from "bcryptjs";
 import { sdk } from "./_core/sdk";
+import { voiceAssistantRouter } from "./voiceAssistantRouter";
 
 export const appRouter = router({
   system: systemRouter,
@@ -796,6 +797,8 @@ export const appRouter = router({
           return { success: true };
         }),
     }),
+
+    voiceAssistant: voiceAssistantRouter,
 
     // Subscription Management (admin view)
     subscriptions: router({

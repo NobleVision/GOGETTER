@@ -43,6 +43,13 @@
       "when": 1775634647946,
       "tag": "0005_high_zuras",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1776546104031,
+      "tag": "0006_ambiguous_stryfe",
+      "breakpoints": true
     }
   ]
 }

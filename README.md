@@ -154,7 +154,7 @@ The admin interface is accessible at `/admin` (no links from the main UI). Acces
 - **Master Admin**: `nobviz@gmail.com` (via Google OAuth) -- can add/remove other admins
 - **Dashboard Overview**: KPIs, phase distribution charts, recent activity feed
 - **Business Pipeline**: Filterable project table, create/manage pipeline projects, phase advancement with business rule enforcement
-- **Admin Management**: Promote/demote admin users (master admin only)
+- **User Administration**: Unified user management with role promotion/demotion and per-user granular permission toggles (7 feature flags)
 - **Analytics**: Phase distribution, status breakdown, pipeline funnel charts
 - **Voice Assistant Console**: Coming soon (ElevenLabs + Twilio)
 - **Content Assistant Tools**: Coming soon (NotebookLM + Broll generation)
@@ -196,11 +196,15 @@ The admin interface is accessible at `/admin` (no links from the main UI). Acces
 - **Cost Optimization** - Automatic model selection to minimize expenses while maintaining quality
 - **Usage Analytics** - Detailed breakdowns by provider, model, and time period
 
-### 🔐 Enterprise-Grade Security
+### 🔐 Enterprise-Grade Security & Authentication
 
-- **Google OAuth 2.0** - Secure, industry-standard authentication
+- **Dual Auth Support** - Google OAuth 2.0 and native email/password registration
+- **OTP Email Verification** - 6-digit one-time password via SMTP with 10-minute TTL
+- **bcrypt Password Hashing** - Industry-standard password security (cost factor 12)
+- **RBAC Permission System** - 7 granular feature permissions with admin bypass
 - **Multi-Provider Support** - Account linking across different OAuth providers
 - **JWT Session Management** - Secure, stateless session handling
+- **Email Deliverability** - SPF, DKIM, and DMARC DNS records for reliable inbox delivery
 - **Environment Validation** - Comprehensive security checks and configuration validation
 
 ### ⚙️ Multi-Model API Configuration
@@ -369,7 +373,51 @@ graph TD
 
 ## Authentication & Security
 
-GO-GETTER OS implements enterprise-grade security with **Google OAuth 2.0** for user authentication, providing a secure, industry-standard authentication flow without requiring users to create separate credentials.
+GO-GETTER OS implements enterprise-grade security with **dual authentication**: Google OAuth 2.0 for frictionless sign-in and native email/password registration with OTP email verification. A granular RBAC (Role-Based Access Control) system restricts new users to the Business Wizard by default, with admin-controllable per-feature access.
+
+### Native Email Authentication Flow
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Client as React Client
+    participant Server as tRPC Server
+    participant DB as Database
+    participant SMTP as SMTP Server
+
+    User->>Client: Fill sign-up form (name, email, password)
+    Client->>Server: auth.register mutation
+    Server->>Server: Hash password (bcrypt, cost 12)
+    Server->>DB: Create user (emailVerified=false)
+    Server->>Server: Generate 6-digit OTP (10-min TTL)
+    Server->>DB: Store verification code
+    Server->>SMTP: Send OTP email (info@gogetteros.com)
+    SMTP->>User: Receive OTP in inbox
+    Client->>Client: Redirect to /verify-email
+    User->>Client: Enter 6-digit OTP
+    Client->>Server: auth.verifyEmail mutation
+    Server->>DB: Validate OTP (not expired, not used)
+    Server->>DB: Set emailVerified=true
+    Server->>Server: Create JWT session
+    Server->>Client: Set session cookie
+    Client->>User: Redirect to dashboard
+```
+
+### RBAC Permission System
+
+New users (both Google OAuth and email) start with **wizard-only access**. Admins can grant granular permissions through the User Administration panel:
+
+| Permission Key | Feature | Default |
+|---|---|---|
+| `businessCatalog` | Business Catalog browsing | Restricted |
+| `myBusinesses` | My Businesses management | Restricted |
+| `monitoring` | Real-time monitoring dashboard | Restricted |
+| `tokenUsage` | Token usage analytics | Restricted |
+| `apiConfig` | API key configuration | Restricted |
+| `webhooks` | Webhook management | Restricted |
+| `settings` | Account settings | Restricted |
+
+**Admin users bypass all permission checks** and always have full access. Permissions are enforced on both the tRPC backend (middleware) and the React frontend (sidebar filtering + page guards).
 
 ### Enhanced Google OAuth Flow
 
@@ -477,8 +525,12 @@ sequenceDiagram
 - **CSRF Protection**: State tokens prevent cross-site request forgery
 - **Secure Cookies**: HttpOnly, SameSite, and Secure flags
 - **JWT Security**: HS256 signing with 32+ character secrets
+- **Password Hashing**: bcrypt with cost factor 12 for native email accounts
+- **OTP Security**: 6-digit codes with 10-minute TTL, single-use, previous codes invalidated
+- **RBAC Enforcement**: Permission middleware on tRPC routes + frontend page guards
 - **Account Linking**: Automatic linking of multiple OAuth providers by email
 - **Session Management**: Configurable timeouts and refresh mechanisms
+- **Email Authentication**: SPF, DKIM, and DMARC records prevent spoofing and improve deliverability
 - **Environment Validation**: Comprehensive security configuration checks
 
 ### Key Authentication Files
@@ -608,9 +660,13 @@ go-getter-os/
 │   └── trpc/               # tRPC API handler
 ├── client/                 # React 19 frontend
 │   └── src/
-│       ├── _core/hooks/    # Core hooks (useAuth)
+│       ├── _core/hooks/    # Core hooks
+│       │   ├── useAuth.ts             # Authentication state and session
+│       │   └── usePermissions.ts      # RBAC permission checks (can, canAccessRoute)
 │       ├── components/     # UI components
 │       │   ├── AdminLayout.tsx          # Admin dashboard layout (violet theme)
+│       │   ├── AccessRestricted.tsx     # Permission-denied page component
+│       │   ├── LandingPage.tsx          # Landing with Google + Email auth forms
 │       │   ├── SubscriptionBanner.tsx   # Wizard usage remaining banner
 │       │   ├── admin/                   # Admin-specific components
 │       │   │   ├── PhaseBadge.tsx       # Color-coded phase badges (00-06)
@@ -622,10 +678,11 @@ go-getter-os/
 │       │   │   ├── AdminDashboard.tsx   # KPIs, charts, activity feed
 │       │   │   ├── AdminPipeline.tsx    # Pipeline list with filters
 │       │   │   ├── AdminPipelineDetail.tsx # Project detail with tabs
-│       │   │   ├── AdminManagement.tsx  # Admin user management
+│       │   │   ├── AdminManagement.tsx  # Unified user administration (all users + permissions)
 │       │   │   └── AdminAnalytics.tsx   # Pipeline analytics & charts
+│       │   ├── VerifyEmail.tsx # OTP verification screen (6-digit input)
 │       │   ├── Wizard.tsx      # Discovery wizard with presets
-│       │   ├── Monitoring.tsx  # Real-time dashboard
+│       │   ├── Monitoring.tsx  # Real-time dashboard (permission-gated)
 │       │   └── Settings.tsx    # Account, subscription & provider management
 │       ├── lib/            # Utilities
 │       │   └── errorHandling.ts # Error boundary logic
@@ -634,31 +691,56 @@ go-getter-os/
 │   ├── _core/
 │   │   ├── oauth.ts        # OAuth route registration
 │   │   ├── googleOAuth.ts  # Google OAuth implementation
-│   │   ├── trpc.ts         # Procedure definitions (public, protected, admin, masterAdmin)
+│   │   ├── trpc.ts         # Procedure definitions (public, protected, admin, masterAdmin, permission)
 │   │   ├── envValidation.ts # Environment security validation
 │   │   ├── sdk.ts          # Session management (JWT)
 │   │   ├── cookies.ts      # Cookie configuration
-│   │   └── env.ts          # Environment variables
+│   │   └── env.ts          # Environment variables (includes SMTP config)
 │   ├── services/           # Business logic services
+│   │   ├── email.ts             # SMTP email service (OTP sending via nodemailer)
 │   │   ├── goGetterAgent.ts     # AI agent implementation
 │   │   ├── modelRouter.ts       # Multi-model AI routing
 │   │   └── *.test.ts            # Property-based tests
-│   ├── db.ts               # Database queries (users, businesses, pipeline, subscriptions)
-│   └── routers.ts          # tRPC API routes (user + admin routers)
+│   ├── db.ts               # Database queries (users, auth, permissions, businesses, pipeline)
+│   └── routers.ts          # tRPC API routes (auth, user, admin.users, admin.pipeline)
 ├── drizzle/                # Database schema & migrations
 │   ├── schema.ts           # Table definitions (12 tables)
 │   ├── relations.ts        # Table relationships
 │   └── migrations/         # Database migrations
 ├── shared/                 # Shared types, constants, and business rules
 │   ├── const.ts            # Subscription tiers, phase names, profit sharing rules
+│   ├── permissions.ts      # RBAC permission types, defaults, helpers, route mapping
 │   └── types.ts            # Re-exported Drizzle types
 ├── scripts/                # Utility scripts
-│   └── seed-businesses.mjs # Business catalog seeding
+│   ├── seed-businesses.mjs          # Business catalog seeding (20 entries)
+│   ├── seed-pipeline-data.ts        # Full pipeline mock data (15 businesses, 7 tables)
+│   └── grant-existing-permissions.ts # One-time migration: grant full permissions
 ├── vitest.config.ts        # Test configuration
 └── [Tests colocated with source files as *.test.ts - 60+ tests total]
 ```
 
 ## Recent Major Enhancements (April 2026)
+
+### Native Email Auth, OTP Verification & RBAC (Phase 2)
+- **Native Email Registration** - Email/password sign-up alongside Google OAuth with tabbed landing page UI
+- **OTP Email Verification** - 6-digit code via SMTP (info@gogetteros.com) with 10-minute TTL, branded HTML email
+- **Email Verification Gate** - Unverified users redirected to `/verify-email`; Google OAuth users auto-verified
+- **Password Security** - bcrypt hashing (bcryptjs, cost factor 12)
+- **RBAC Permission System** - 7 granular feature flags (`businessCatalog`, `myBusinesses`, `monitoring`, `tokenUsage`, `apiConfig`, `webhooks`, `settings`)
+- **Permission Middleware** - `createPermissionProcedure(key)` factory in tRPC enforces per-route access
+- **Frontend Permission Enforcement** - Sidebar filtering via `usePermissions` hook + `AccessRestricted` page guard component
+- **Unified User Administration** - Replaced admin-only management with full user dashboard: search, role/verification filters, pagination, per-user permission toggles
+- **Email Deliverability** - SPF, DKIM, and DMARC DNS records configured for `gogetteros.com`
+
+### Database Seed Scripts
+- **Pipeline Seed** (`seed-pipeline-data.ts`) - 15 micro-businesses across all pipeline phases, 1,000+ events, 300+ token usage records, subscriptions
+- **Permissions Migration** (`grant-existing-permissions.ts`) - One-time grant of full permissions to existing users
+
+### Pre-existing Bug Fixes
+- **cookie v1.x API** - Fixed `cookie.serialize` import for cookie package v1.0 (ESM named exports)
+- **React Query v5** - Removed deprecated `onError` from `useQuery` in `useAuth.ts`, replaced with `useEffect`
+- **fetch timeout** - Fixed invalid `timeout` property on fetch, replaced with `AbortSignal.timeout()`
+- **Domain Migration** - Fixed Google OAuth redirect URI mismatch after `noblevision.com` → `gogetteros.com` migration
 
 ### Admin Dashboard & ZERO to HERO Pipeline
 - **Hidden Admin Interface** (`/admin`) with violet-themed layout, separate from user-facing UI
@@ -751,16 +833,21 @@ go-getter-os/
 - `pnpm build` - Build for production
 - `pnpm build:vercel` - Build for Vercel deployment
 - `pnpm start` - Start production server
+- `pnpm check` - TypeScript type checking (no emit)
 - `pnpm test` - Run tests
 - `pnpm db:push` - Push database schema changes
+- `pnpm seed:pipeline` - Seed 15 mock businesses with full pipeline data
+- `npx tsx scripts/grant-existing-permissions.ts` - Grant full permissions to existing users
 
 ## Tech Stack
 
 - **Frontend:** React 19, TypeScript, Tailwind CSS 4, shadcn/ui
 - **Backend:** Express 4, tRPC 11
-- **Authentication:** Google OAuth 2.0, JWT sessions
+- **Authentication:** Google OAuth 2.0, native email/password (bcryptjs), OTP verification (nodemailer)
+- **Authorization:** RBAC with 7 granular permissions, admin bypass
 - **Database:** PostgreSQL with Drizzle ORM
 - **Charts:** Recharts
+- **Email:** Nodemailer via SMTP (SSL/TLS), SPF + DKIM + DMARC
 - **Deployment:** Vercel (serverless functions)
 
 ## Environment Variables Reference
@@ -780,6 +867,11 @@ go-getter-os/
 | `VITE_APP_ID`          | No       | Application identifier                    | `go-getter-os`                                          |
 | `OWNER_OPEN_ID`        | No       | Admin user's Open ID                      | `google-oauth2\|123456789`                              |
 | `MASTER_ADMIN_EMAIL`   | No       | Master admin email (default: nobviz@gmail.com) | `nobviz@gmail.com`                                 |
+| `SMTP_HOST`            | No       | SMTP server hostname for OTP emails       | `mail7.g24.pair.com`                                    |
+| `SMTP_PORT`            | No       | SMTP port (default: 465 for SSL/TLS)      | `465`                                                   |
+| `SMTP_USER`            | No       | SMTP authentication username              | `info@gogetteros.com`                                   |
+| `SMTP_PASS`            | No       | SMTP authentication password              | `your-smtp-password`                                    |
+| `SMTP_FROM`            | No       | Sender address (default: SMTP_USER)       | `info@gogetteros.com`                                   |
 | `CLOUDINARY_URL`       | No       | Cloudinary URL for artifact storage       | `cloudinary://api_key:api_secret@cloud_name`            |
 | `ZAI_API_KEY`          | No       | Z.ai GLM-5.1 API key                     | `zai-abc123...`                                         |
 | `NODE_ENV`             | No       | Environment (development/production)      | `development`                                           |

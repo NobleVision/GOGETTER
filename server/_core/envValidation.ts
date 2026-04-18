@@ -97,6 +97,21 @@ export function validateEnvironment(env: {
   databaseUrl?: string;
   jwtSecret?: string;
   isProduction?: boolean;
+  cloudinaryUrl?: string;
+  manusApi?: string;
+  twilioSid?: string;
+  twilioSecret?: string;
+  twilioAuthToken?: string;
+  twilioPhoneNumber?: string;
+  elevenLabsApiKey?: string;
+  elevenLabsAgentId?: string;
+  elevenLabsAgentWebhookSecret?: string;
+  zoomAccountId?: string;
+  zoomClientId?: string;
+  zoomClientSecret?: string;
+  zoomSecretToken?: string;
+  zoomEventWebhook?: string;
+  pikaApiKey?: string;
 }): ValidationResult {
   const errors: string[] = [];
   const warnings: string[] = [];
@@ -117,6 +132,69 @@ export function validateEnvironment(env: {
     warnings.push(jwtResult.warning);
   }
 
+  const requireIfAnyPresent = (
+    label: string,
+    fields: Array<[string, string | undefined]>
+  ) => {
+    const anyPresent = fields.some(([, value]) => Boolean(value?.trim()));
+    if (!anyPresent) {
+      return;
+    }
+
+    const missing = fields
+      .filter(([, value]) => !value || value.trim() === "")
+      .map(([name]) => name);
+
+    if (missing.length > 0) {
+      errors.push(`${label} is partially configured. Missing: ${missing.join(", ")}`);
+    }
+  };
+
+  requireIfAnyPresent("Twilio voice assistant configuration", [
+    ["TWILIO_SID", env.twilioSid],
+    ["TWILIO_SECRET", env.twilioSecret],
+    ["TWILIO_AUTH_TOKEN", env.twilioAuthToken],
+    ["TWILIO_PHONE_NUMBER", env.twilioPhoneNumber],
+  ]);
+
+  requireIfAnyPresent("ElevenLabs voice assistant configuration", [
+    ["ELEVENLABS_API_KEY", env.elevenLabsApiKey],
+    ["ELEVENLABS_AGENT_ID", env.elevenLabsAgentId],
+    ["ELEVENLABS_AGENT_WEBHOOK_SECRET", env.elevenLabsAgentWebhookSecret],
+  ]);
+
+  requireIfAnyPresent("Zoom meeting integration configuration", [
+    ["ZOOM_ACCOUNT_ID", env.zoomAccountId],
+    ["ZOOM_CLIENT_ID", env.zoomClientId],
+    ["ZOOM_CLIENT_SECRET", env.zoomClientSecret],
+    ["ZOOM_SECRET_TOKEN", env.zoomSecretToken],
+    ["ZOOM_EVENT_WEBHOOK", env.zoomEventWebhook],
+  ]);
+
+  const anyVoiceProviderConfigured = [
+    env.twilioSid,
+    env.elevenLabsApiKey,
+    env.zoomClientId,
+  ].some((value) => Boolean(value?.trim()));
+
+  if (anyVoiceProviderConfigured && !env.cloudinaryUrl?.trim()) {
+    warnings.push(
+      "CLOUDINARY_URL is not configured. Avatar uploads, recordings, and transcript artifacts will not be persisted."
+    );
+  }
+
+  if (env.pikaApiKey?.trim() && !env.zoomClientId?.trim()) {
+    warnings.push(
+      "PIKA_API_KEY is configured without the Zoom integration. Experimental video dial-in will remain unavailable until Zoom is configured."
+    );
+  }
+
+  if (anyVoiceProviderConfigured && !env.manusApi?.trim()) {
+    warnings.push(
+      "MANUS_API is not configured. Development Mode can be displayed, but live implementation workflows will be limited."
+    );
+  }
+
   return {
     valid: errors.length === 0,
     errors,
@@ -133,6 +211,21 @@ export function runStartupValidation(): void {
     databaseUrl: process.env.DATABASE_URL,
     jwtSecret: process.env.JWT_SECRET,
     isProduction: process.env.NODE_ENV === "production",
+    cloudinaryUrl: process.env.CLOUDINARY_URL,
+    manusApi: process.env.MANUS_API,
+    twilioSid: process.env.TWILIO_SID,
+    twilioSecret: process.env.TWILIO_SECRET,
+    twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,
+    twilioPhoneNumber: process.env.TWILIO_PHONE_NUMBER,
+    elevenLabsApiKey: process.env.ELEVENLABS_API_KEY,
+    elevenLabsAgentId: process.env.ELEVENLABS_AGENT_ID,
+    elevenLabsAgentWebhookSecret: process.env.ELEVENLABS_AGENT_WEBHOOK_SECRET,
+    zoomAccountId: process.env.ZOOM_ACCOUNT_ID,
+    zoomClientId: process.env.ZOOM_CLIENT_ID,
+    zoomClientSecret: process.env.ZOOM_CLIENT_SECRET,
+    zoomSecretToken: process.env.ZOOM_SECRET_TOKEN,
+    zoomEventWebhook: process.env.ZOOM_EVENT_WEBHOOK,
+    pikaApiKey: process.env.PIKA_API_KEY,
   });
 
   // Log warnings

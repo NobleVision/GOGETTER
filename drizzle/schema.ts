@@ -15,6 +15,13 @@ export const eventTypeEnum = pgEnum("event_type", ["revenue", "cost", "error", "
 export const apiProviderEnum = pgEnum("api_provider", ["manus", "perplexity", "openai", "anthropic", "gemini", "grok"]);
 export const pipelineStatusEnum = pgEnum("pipeline_status", ["active", "suspended", "completed", "cancelled"]);
 export const subscriptionTierEnum = pgEnum("subscription_tier", ["free", "starter", "pro", "unlimited"]);
+export const voiceAccessLevelEnum = pgEnum("voice_access_level", ["admin", "operator", "sales", "support", "observer"]);
+export const voiceAgentModeEnum = pgEnum("voice_agent_mode", ["listen", "interact", "business", "project_management", "development", "custom"]);
+export const scheduledVoiceActionTypeEnum = pgEnum("scheduled_voice_action_type", ["zoom_join", "direct_call", "inbound_wait", "zoom_host", "custom"]);
+export const scheduledVoiceActionStatusEnum = pgEnum("scheduled_voice_action_status", ["scheduled", "queued", "running", "completed", "cancelled", "failed"]);
+export const zoomMeetingStatusEnum = pgEnum("zoom_meeting_status", ["scheduled", "active", "completed", "cancelled"]);
+export const callLogTypeEnum = pgEnum("call_log_type", ["zoom_meeting", "inbound_call", "outbound_call", "agent_session"]);
+export const callLogStatusEnum = pgEnum("call_log_status", ["queued", "in_progress", "completed", "missed", "failed"]);
 
 /**
  * Core user table backing auth flow.
@@ -29,6 +36,8 @@ export const users = pgTable("users", {
   // Google OAuth fields
   googleId: varchar("google_id", { length: 64 }),
   pictureUrl: varchar("picture_url", { length: 500 }),
+  profileImageUrl: varchar("profile_image_url", { length: 500 }),
+  aiConfirmationCode: varchar("ai_confirmation_code", { length: 20 }),
   authProviders: json("auth_providers").$type<string[]>().default([]),
   // Native email auth fields
   passwordHash: varchar("password_hash", { length: 255 }),
@@ -457,3 +466,161 @@ export const pipelineEvents = pgTable("pipeline_events", {
 
 export type PipelineEvent = typeof pipelineEvents.$inferSelect;
 export type InsertPipelineEvent = typeof pipelineEvents.$inferInsert;
+
+// ============ VOICE ASSISTANT TABLES ============
+
+export interface VoiceEmotionTrigger {
+  trigger: string;
+  emotion: string;
+  intensity?: number;
+  notes?: string;
+}
+
+export interface VoiceAgentModeConfig {
+  key: string;
+  label: string;
+  enabled: boolean;
+  prompt: string;
+  tools?: string[];
+  handoffTargets?: string[];
+}
+
+export interface VoiceInvitee {
+  name: string;
+  email: string;
+  userId?: number;
+  status?: string;
+}
+
+export interface VoiceActionMetadata {
+  zoomMeetingId?: number;
+  userId?: number;
+  phoneNumber?: string;
+  confirmationRequired?: boolean;
+  confirmationCode?: string;
+  mode?: string;
+  notes?: string;
+  experimentalVideoEnabled?: boolean;
+  [key: string]: unknown;
+}
+
+export interface VoiceLiveEvent {
+  source: "twilio" | "elevenlabs" | "zoom" | "system";
+  status: string;
+  detail?: string;
+  timestamp: string;
+}
+
+export const aiVoiceAgents = pgTable("ai_voice_agents", {
+  id: serial("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  elevenLabsVoiceId: varchar("eleven_labs_voice_id", { length: 128 }).notNull(),
+  elevenLabsAgentId: varchar("eleven_labs_agent_id", { length: 128 }),
+  avatarUrl: varchar("avatar_url", { length: 500 }),
+  description: text("description"),
+  accessLevel: voiceAccessLevelEnum("access_level").default("operator").notNull(),
+  defaultMode: voiceAgentModeEnum("default_mode").default("listen").notNull(),
+  emotionsEnabled: boolean("emotions_enabled").default(true).notNull(),
+  emotionTriggers: json("emotion_triggers").$type<VoiceEmotionTrigger[]>().default([]),
+  modesConfig: json("modes_config").$type<VoiceAgentModeConfig[]>().default([]),
+  tags: json("tags").$type<string[]>().default([]),
+  isActive: boolean("is_active").default(true).notNull(),
+  createdByUserId: integer("created_by_user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type AIVoiceAgent = typeof aiVoiceAgents.$inferSelect;
+export type InsertAIVoiceAgent = typeof aiVoiceAgents.$inferInsert;
+
+export const zoomMeetings = pgTable("zoom_meetings", {
+  id: serial("id").primaryKey(),
+  subject: varchar("subject", { length: 255 }).notNull(),
+  description: text("description"),
+  hostUserId: integer("host_user_id").references(() => users.id),
+  zoomMeetingExternalId: varchar("zoom_meeting_external_id", { length: 128 }),
+  joinUrl: varchar("join_url", { length: 500 }),
+  startUrl: varchar("start_url", { length: 500 }),
+  passcode: varchar("passcode", { length: 64 }),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  durationMinutes: integer("duration_minutes").default(30).notNull(),
+  timezone: varchar("timezone", { length: 64 }).default("America/New_York").notNull(),
+  invitees: json("invitees").$type<VoiceInvitee[]>().default([]),
+  agenda: json("agenda").$type<string[]>().default([]),
+  status: zoomMeetingStatusEnum("status").default("scheduled").notNull(),
+  experimentalVideoEnabled: boolean("experimental_video_enabled").default(false).notNull(),
+  metadata: json("metadata").$type<Record<string, unknown>>().default({}),
+  createdByUserId: integer("created_by_user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type ZoomMeeting = typeof zoomMeetings.$inferSelect;
+export type InsertZoomMeeting = typeof zoomMeetings.$inferInsert;
+
+export const scheduledVoiceActions = pgTable("scheduled_voice_actions", {
+  id: serial("id").primaryKey(),
+  agentId: integer("agent_id").references(() => aiVoiceAgents.id),
+  userId: integer("user_id").references(() => users.id),
+  zoomMeetingId: integer("zoom_meeting_id").references(() => zoomMeetings.id),
+  type: scheduledVoiceActionTypeEnum("type").notNull(),
+  mode: voiceAgentModeEnum("mode").default("listen").notNull(),
+  status: scheduledVoiceActionStatusEnum("status").default("scheduled").notNull(),
+  startTime: timestamp("start_time").notNull(),
+  endTime: timestamp("end_time"),
+  executeNow: boolean("execute_now").default(false).notNull(),
+  metadata: json("metadata").$type<VoiceActionMetadata>().default({}),
+  lastRunAt: timestamp("last_run_at"),
+  createdByUserId: integer("created_by_user_id").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type ScheduledVoiceAction = typeof scheduledVoiceActions.$inferSelect;
+export type InsertScheduledVoiceAction = typeof scheduledVoiceActions.$inferInsert;
+
+export const callLogs = pgTable("call_logs", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id),
+  agentId: integer("agent_id").references(() => aiVoiceAgents.id),
+  zoomMeetingId: integer("zoom_meeting_id").references(() => zoomMeetings.id),
+  pipelineProjectId: integer("pipeline_project_id").references(() => pipelineProjects.id),
+  type: callLogTypeEnum("type").notNull(),
+  status: callLogStatusEnum("status").default("queued").notNull(),
+  direction: varchar("direction", { length: 32 }).default("outbound").notNull(),
+  externalCallId: varchar("external_call_id", { length: 128 }),
+  phoneNumber: varchar("phone_number", { length: 100 }),
+  startedAt: timestamp("started_at").defaultNow().notNull(),
+  endedAt: timestamp("ended_at"),
+  durationSeconds: integer("duration_seconds").default(0).notNull(),
+  transcript: text("transcript"),
+  summary: text("summary"),
+  transcriptUrl: varchar("transcript_url", { length: 500 }),
+  recordingUrl: varchar("recording_url", { length: 500 }),
+  subtitlesUrl: varchar("subtitles_url", { length: 500 }),
+  sentimentAnalysis: json("sentiment_analysis").$type<Record<string, unknown>>().default({}),
+  liveEvents: json("live_events").$type<VoiceLiveEvent[]>().default([]),
+  metadata: json("metadata").$type<Record<string, unknown>>().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type CallLog = typeof callLogs.$inferSelect;
+export type InsertCallLog = typeof callLogs.$inferInsert;
+
+export const callContent = pgTable("call_content", {
+  id: serial("id").primaryKey(),
+  callLogId: integer("call_log_id").notNull().references(() => callLogs.id),
+  userId: integer("user_id").references(() => users.id),
+  pipelineProjectId: integer("pipeline_project_id").references(() => pipelineProjects.id),
+  contentType: varchar("content_type", { length: 64 }).notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  body: text("body"),
+  contentJson: json("content_json").$type<Record<string, unknown>>().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type CallContent = typeof callContent.$inferSelect;
+export type InsertCallContent = typeof callContent.$inferInsert;
