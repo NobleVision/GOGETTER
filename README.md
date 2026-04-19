@@ -156,7 +156,7 @@ The admin interface is accessible at `/admin` (no links from the main UI). Acces
 - **Business Pipeline**: Filterable project table, create/manage pipeline projects, phase advancement with business rule enforcement
 - **User Administration**: Unified user management with role promotion/demotion and per-user granular permission toggles (7 feature flags)
 - **Analytics**: Phase distribution, status breakdown, pipeline funnel charts
-- **Voice Assistant Console**: Coming soon (ElevenLabs + Twilio)
+- **Voice Assistant Console** (`/admin/voice-assistant`): Six-tab AI voice operations centre covering Zoom/AI scheduling, agent configuration, contact profiles, live-call monitoring, log analysis, and content management. Integrated with Twilio, ElevenLabs Conversational AI, Zoom Server-to-Server OAuth, Cloudinary, and experimental Pika video dial-in. See [Voice Assistant Console](#voice-assistant-console) below.
 - **Content Assistant Tools**: Coming soon (NotebookLM + Broll generation)
 
 ## Core Features
@@ -741,6 +741,33 @@ go-getter-os/
 - **React Query v5** - Removed deprecated `onError` from `useQuery` in `useAuth.ts`, replaced with `useEffect`
 - **fetch timeout** - Fixed invalid `timeout` property on fetch, replaced with `AbortSignal.timeout()`
 - **Domain Migration** - Fixed Google OAuth redirect URI mismatch after `noblevision.com` → `gogetteros.com` migration
+
+### Voice Assistant Console
+
+A complete AI voice operations centre at `/admin/voice-assistant`, gated by `adminProcedure`.
+
+**Six tabs, all live:**
+
+1. **Call Admin** — Zoom CRUD (schedules real Zoom meetings via Server-to-Server OAuth, stores `join_url`/`start_url`/`passcode`) + AI Voice Agent scheduler (`zoom_join`, `direct_call`, `inbound_wait`, `zoom_host`, `custom`) with one-click "Execute Now".
+2. **AI Admin** — Agent CRUD with ElevenLabs voice assignment, Cloudinary avatar, V3 emotion triggers, mode config (LISTEN/INTERACT/BUSINESS/PM/DEVELOPMENT/CUSTOM). **Personality presets** (Friendly Closer / Analytical PM / Stoic Observer) and a **🔊 voice preview** button that synthesizes a sample line via ElevenLabs.
+3. **Contact Admin** — Caller profiles linked to GoGetterOS `users` + `pipeline_projects`. Admins can generate/reveal an AI confirmation code per user.
+4. **Live Admin** — Last-hour activity feed from webhook events; Hang Up / Drop / Reset / Rejoin controls; development-mode brief generator.
+5. **Log Admin** — Searchable call history, AI analysis of the last 25 calls via `modelRouter`, transcript / recording / subtitle links.
+6. **Content Admin** — Editable summaries / briefs / transcripts linked to a user or pipeline project.
+
+**External integrations:**
+
+- **Twilio** (`server/services/twilio.ts`) — outbound calls, hang-up, status polling. Webhook at `POST /api/webhooks/twilio` validates `X-Twilio-Signature`.
+- **ElevenLabs** (`server/services/elevenlabs.ts`) — Conversational-AI outbound via `/v1/convai/twilio/outbound-call`, voice synthesis for previews. Webhook at `POST /api/webhooks/elevenlabs` validates the signed timestamp + HMAC-SHA256 per ElevenLabs convention.
+- **Zoom** (`server/services/zoom.ts`) — creates / updates / ends meetings via `POST /v2/users/me/meetings`. Webhook at `POST /api/webhooks/zoom` handles `endpoint.url_validation` challenge and signed events (`X-Zm-Signature`, `X-Zm-Request-Timestamp`).
+- **Pika** (`server/services/pika.ts`) — experimental avatar video dial-in (feature-flag per meeting; requires `PIKA_API_KEY`).
+- **Cloudinary** — avatar + recording storage via existing `CLOUDINARY_URL` integration.
+
+**Scheduler runner:** `/api/cron/voice-scheduler` executes every minute (Vercel Cron). Processes `scheduled_voice_actions` whose `start_time <= NOW()` and `status in ('scheduled','queued')`, dispatches to the appropriate provider, and records the result in `call_logs`.
+
+**User-facing confirmation code:** each user sees their AI verification code (with a scannable QR) on their Settings page. The AI asks for this on inbound calls to verify identity.
+
+**Required environment variables:** see `.env.example` — all are validated in `server/_core/env.ts`.
 
 ### Admin Dashboard & ZERO to HERO Pipeline
 - **Hidden Admin Interface** (`/admin`) with violet-themed layout, separate from user-facing UI

@@ -1,7 +1,11 @@
 import { z } from "zod";
-import { adminProcedure, router } from "./_core/trpc";
+import { adminProcedure, protectedProcedure, router } from "./_core/trpc";
+import { ENV } from "./_core/env";
+
+const ENV_SAFE_PHONE = ENV.twilioPhoneNumber;
 import {
   createAgent,
+  createAgentFromPreset,
   createCallLog,
   createDevelopmentModeBrief,
   createScheduledAction,
@@ -22,8 +26,10 @@ import {
   listCallLogs,
   listContacts,
   listLiveActivity,
+  listPersonalityPresets,
   listScheduledActions,
   listZoomMeetings,
+  previewAgentVoice,
   rejoinAgentToCall,
   resetAgentSession,
   seedVoiceAssistantDemoData,
@@ -127,6 +133,12 @@ export const voiceAssistantRouter = router({
     return getVoiceAssistantOverview();
   }),
 
+  myConfirmationCode: protectedProcedure.query(async ({ ctx }) => {
+    const code = await ensureUserConfirmationCode(ctx.user.id);
+    const phone = ENV_SAFE_PHONE;
+    return { code, dialNumber: phone };
+  }),
+
   seedDemo: adminProcedure.mutation(async ({ ctx }) => {
     const seeded = await seedVoiceAssistantDemoData(ctx.user.id);
     return { seeded };
@@ -190,6 +202,34 @@ export const voiceAssistantRouter = router({
         await deleteAgent(input.id);
         return { success: true };
       }),
+
+    listPresets: adminProcedure.query(async () => listPersonalityPresets()),
+
+    createFromPreset: adminProcedure
+      .input(
+        z.object({
+          preset: z.enum([
+            "friendly_closer",
+            "analytical_pm",
+            "stoic_observer",
+          ]),
+          elevenLabsVoiceId: z.string().min(1).max(128),
+          elevenLabsAgentId: z.string().max(128).optional(),
+          avatarUrl: z.string().url().optional(),
+        }),
+      )
+      .mutation(async ({ ctx, input }) =>
+        createAgentFromPreset({ ...input, createdByUserId: ctx.user.id }),
+      ),
+
+    preview: adminProcedure
+      .input(
+        z.object({
+          voiceId: z.string().min(1).max(128),
+          text: z.string().max(300).optional(),
+        }),
+      )
+      .mutation(async ({ input }) => previewAgentVoice(input)),
   }),
 
   meetings: router({

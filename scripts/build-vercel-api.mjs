@@ -55,10 +55,14 @@ const pathAliasPlugin = {
   },
 };
 
-// Find all TypeScript files in api directory recursively
+// Find all TypeScript files in api directory recursively.
+// Files or directories that start with "_" are treated as shared helpers and
+// skipped — they get bundled into any function that imports them but are not
+// deployed as standalone endpoints.
 function findApiFiles(dir, files = []) {
   const entries = readdirSync(dir);
   for (const entry of entries) {
+    if (entry.startsWith("_")) continue;
     const fullPath = join(dir, entry);
     const stat = statSync(fullPath);
     if (stat.isDirectory()) {
@@ -93,6 +97,10 @@ async function build() {
         { src: "/api/oauth/google/init", dest: "/api/oauth/google/init" },
         { src: "/api/oauth/google/callback", dest: "/api/oauth/google/callback" },
         { src: "/api/oauth/google/status", dest: "/api/oauth/google/status" },
+        { src: "/api/webhooks/twilio", dest: "/api/webhooks/twilio" },
+        { src: "/api/webhooks/elevenlabs", dest: "/api/webhooks/elevenlabs" },
+        { src: "/api/webhooks/zoom", dest: "/api/webhooks/zoom" },
+        { src: "/api/cron/voice-scheduler", dest: "/api/cron/voice-scheduler" },
         { handle: "filesystem" },
         { src: "/(.*)", dest: "/index.html" },
       ],

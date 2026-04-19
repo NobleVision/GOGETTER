@@ -4,6 +4,49 @@ This document tracks completed work, in-progress features, and planned enhanceme
 
 ---
 
+## Completed (April 2026 — Phase 3: Voice Assistant Operations Centre)
+
+### Voice Assistant Admin Module (`/admin/voice-assistant`)
+- [x] **Six-tab admin UI** — Call Admin, AI Admin, Contact Admin, Live Admin, Log Admin, Content Admin (`client/src/pages/admin/AdminVoiceAssistant.tsx`, 1,280+ lines)
+- [x] **Database schema** — `ai_voice_agents`, `zoom_meetings`, `scheduled_voice_actions`, `call_logs`, `call_content` tables + 7 new PostgreSQL enums; `users.profile_image_url` + `users.ai_confirmation_code` columns (migration `0006_ambiguous_stryfe.sql`)
+- [x] **35+ tRPC procedures** — all `adminProcedure`-protected (overview, agents CRUD, meetings CRUD, scheduler, contacts, live controls, logs, content, webhooks, personality presets, voice preview)
+- [x] **Environment validation** — Twilio/ElevenLabs/Zoom/Pika/Cloudinary/Manus/Perplexity keys validated in `server/_core/env.ts`
+- [x] **Property-based tests** — fast-check coverage for confirmation-code normalization + agent mode resolution (`server/services/voiceAssistant.test.ts`)
+
+### External Integration Services (live API wiring)
+- [x] **Twilio service** (`server/services/twilio.ts`) — outbound call placement, hang-up, call status polling via REST + basic auth
+- [x] **ElevenLabs service** (`server/services/elevenlabs.ts`) — voice list, TTS synthesis, Conversational-AI outbound call, end conversation, transcript fetch
+- [x] **Zoom service** (`server/services/zoom.ts`) — Server-to-Server OAuth token caching, create / update / delete / end meeting
+- [x] **Pika service** (`server/services/pika.ts`) — experimental avatar-stream video dial-in (feature-flagged per meeting)
+- [x] **Real Zoom meeting creation** — `createZoomMeeting` now hits Zoom API and stores `join_url`, `start_url`, `passcode`, `zoom_meeting_external_id`
+- [x] **Real agent control** — `dropAgentFromCall` routes to Twilio hang-up / ElevenLabs end / Zoom end based on `call_log.type`
+- [x] **Real scheduler dispatch** — `dispatchScheduledAction` places actual calls, starts Zoom meetings, and optionally starts a Pika avatar stream when the meeting has `experimental_video_enabled = true`
+
+### HTTP Webhook Endpoints (signature-verified)
+- [x] **`POST /api/webhooks/twilio`** — validates `X-Twilio-Signature` (HMAC-SHA1 over sorted form params)
+- [x] **`POST /api/webhooks/elevenlabs`** — validates signed-timestamp + HMAC-SHA256 format
+- [x] **`POST /api/webhooks/zoom`** — handles `endpoint.url_validation` challenge + HMAC-SHA256 event verification
+- [x] **Shared `readRawBody` helper** (`src-api/webhooks/_verify.ts`) — streams raw body for signature checks before JSON parsing
+- [x] **Vercel Build Output routes** — registered in `scripts/build-vercel-api.mjs`; underscore-prefixed files are treated as shared helpers and not deployed as separate functions
+
+### Scheduler Runner
+- [x] **Vercel Cron** at `/api/cron/voice-scheduler` runs every minute (`* * * * *` in `vercel.json`)
+- [x] **`runDueScheduledActions(limit)`** — picks up `scheduled`/`queued` actions whose `start_time <= NOW()`, dispatches each, records result + failures in `call_logs.live_events`
+- [x] **Optional `CRON_SECRET`** — endpoint rejects anything without matching `Bearer` token if env var is set
+
+### Wow-Factor UI (Phase 3)
+- [x] **Personality presets** — "Friendly Closer", "Analytical PM", "Stoic Observer" — one-click creates a fully-configured agent (voice + mode + emotion triggers + sample prompt)
+- [x] **Voice preview button** — synthesizes a sample greeting via ElevenLabs and plays it in-browser
+- [x] **Confirmation-code QR** on user Settings — `QRCodeSVG` rendered with `GOGETTEROS:CODE:XXXX;TEL:+1...` payload so a customer can scan-read during a call
+- [x] **Dedicated `myConfirmationCode` endpoint** — `protectedProcedure` so any logged-in user can fetch (and lazily generate) their own code
+
+### Bug fixes rolled in
+- [x] **Production login unblocker** — applied migration `0006_ambiguous_stryfe.sql` to prod Neon (`users.profile_image_url` / `users.ai_confirmation_code` were missing, causing the Google OAuth callback to crash with Postgres `42703`)
+- [x] **Vercel build now auto-migrates** — `build:vercel` script prepends `drizzle-kit migrate &&` so future deploys can't drift again
+- [x] **Zero TypeScript errors** — `pnpm check` remains clean
+
+---
+
 ## Completed (April 2026 — Phase 2: Auth, RBAC & Admin)
 
 ### Native Email Authentication & OTP Verification
@@ -144,13 +187,17 @@ This document tracks completed work, in-progress features, and planned enhanceme
 - [ ] `/forgot-password` page with email input
 - [ ] `/reset-password` page with OTP + new password form
 
-### Admin Dashboard Page 02 - Voice Assistant Console
-- [ ] ElevenLabs agent integration for automated customer interviews
-- [ ] Twilio/Zoom voice call integration (agent joins silently or calls directly)
-- [ ] Real-time transcription and summarization
-- [ ] Voice transcript storage in pipeline project metadata
-- [ ] Call controls and transcript viewer in admin sidebar
-- [ ] Voice-to-text for Phase 01 (IDEA) discovery sessions
+### Voice Assistant Console — Production Hardening (follow-ups)
+- [ ] **Cloudinary upload widget** on AI Admin (avatar) and Contact Admin (profile icon) — replace raw URL input with drag-and-drop
+- [ ] **SSE streaming transcript** on Live Admin — replace polling with Postgres `LISTEN/NOTIFY` pipe through a Vercel Edge SSE endpoint
+- [ ] **End-to-end integration tests** — signature verification, Zoom create-then-delete round trip, Twilio test credentials, ElevenLabs outbound happy path
+- [ ] **Live smoke test** — actually place a call with a personal cell + dial-in to a Zoom meeting; verify `call_logs.live_events` populates correctly
+- [ ] **Recording ingestion** — pull Twilio recordings + ElevenLabs transcripts into Cloudinary, store URLs in `call_logs.recording_url` / `transcript_url`
+- [ ] **Scheduler observability** — cron-run summary surfaced on Live Admin (last N runs, dispatched count, failures)
+- [ ] **Call cost meter** — record Twilio + ElevenLabs per-minute cost on `call_logs.metadata.cost_usd`, surface running tally on Log Admin
+- [ ] **"Ask the archive"** RAG query on Log Admin — cross-transcript search via `modelRouter`
+- [ ] **Mode-switch timeline** — Gantt-style view of mode transitions inside a call log, using existing `live_events`
+- [ ] **Inngest / pg-boss migration** — swap Vercel Cron for durable queue with retries + backoff when call volume warrants it
 
 ### Admin Dashboard Page 03 - Content Assistant Tools
 - [ ] NotebookLM integration for podcast-style business summaries

@@ -25,9 +25,12 @@ import {
   RefreshCw,
   Link,
   CheckCircle,
-  Crown
+  Crown,
+  Mic,
+  Copy,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { QRCodeSVG } from "qrcode.react";
 
 function SubscriptionCard() {
   const { data: sub } = trpc.subscription.get.useQuery();
@@ -92,6 +95,98 @@ function SubscriptionCard() {
         <p className="text-xs text-slate-500">
           Contact admin to change your subscription tier
         </p>
+      </CardContent>
+    </Card>
+  );
+}
+
+function VoiceAssistantCodeCard() {
+  const { data, refetch, isFetching } =
+    trpc.admin.voiceAssistant.myConfirmationCode.useQuery(undefined, {
+      retry: false,
+    });
+
+  const code = data?.code ?? "";
+  const dialNumber = data?.dialNumber ?? "";
+
+  const qrValue = code
+    ? `GOGETTEROS:CODE:${code}${dialNumber ? `;TEL:${dialNumber}` : ""}`
+    : "";
+
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(code);
+      toast.success("Confirmation code copied");
+    } catch {
+      toast.error("Copy failed");
+    }
+  };
+
+  return (
+    <Card className="bg-card border-border">
+      <CardHeader>
+        <CardTitle className="text-white flex items-center gap-2">
+          <Mic className="h-5 w-5 text-violet-400" />
+          Voice Assistant Code
+        </CardTitle>
+        <CardDescription>
+          Your unique AI confirmation code. Say or scan it when the GoGetterOS
+          voice assistant asks to verify your identity on an inbound call.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col items-start gap-6 md:flex-row md:items-center">
+          <div className="rounded-xl bg-white p-3">
+            {qrValue ? (
+              <QRCodeSVG value={qrValue} size={128} level="M" />
+            ) : (
+              <Skeleton className="h-[128px] w-[128px]" />
+            )}
+          </div>
+          <div className="flex-1 space-y-3">
+            <div>
+              <div className="text-xs uppercase tracking-wider text-muted-foreground">
+                Your code
+              </div>
+              <div className="font-mono text-3xl tracking-[0.4em] text-white">
+                {code || "——————"}
+              </div>
+            </div>
+            {dialNumber && (
+              <div className="text-sm text-muted-foreground">
+                Dial in:{" "}
+                <a
+                  href={`tel:${dialNumber}`}
+                  className="text-violet-300 hover:text-violet-200"
+                >
+                  {dialNumber}
+                </a>
+              </div>
+            )}
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-border"
+                onClick={copy}
+                disabled={!code}
+              >
+                <Copy className="mr-2 h-4 w-4" />
+                Copy code
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-border"
+                onClick={() => refetch()}
+                disabled={isFetching}
+              >
+                <RefreshCw className="mr-2 h-4 w-4" />
+                Refresh
+              </Button>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
@@ -249,6 +344,9 @@ function SettingsContent() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Voice Assistant Confirmation Code */}
+        <VoiceAssistantCodeCard />
 
         {/* Linked Providers */}
         <Card className="bg-card border-border">

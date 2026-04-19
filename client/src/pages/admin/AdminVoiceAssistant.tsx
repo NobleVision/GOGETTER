@@ -151,6 +151,7 @@ export default function AdminVoiceAssistant() {
   const overview = trpc.admin.voiceAssistant.overview.useQuery();
   const config = trpc.admin.voiceAssistant.config.useQuery();
   const agents = trpc.admin.voiceAssistant.agents.list.useQuery();
+  const presets = trpc.admin.voiceAssistant.agents.listPresets.useQuery();
   const meetings = trpc.admin.voiceAssistant.meetings.list.useQuery({
     includeCompleted: false,
   });
@@ -202,6 +203,22 @@ export default function AdminVoiceAssistant() {
       toast.success("Voice agent created.");
       setAgentForm({ name: "", elevenLabsVoiceId: "", description: "", avatarUrl: "", tags: "sales, support" });
       await refreshAll();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const createFromPreset = trpc.admin.voiceAssistant.agents.createFromPreset.useMutation({
+    onSuccess: async (agent) => {
+      toast.success(`Preset agent "${agent.name}" created.`);
+      await refreshAll();
+    },
+    onError: (error) => toast.error(error.message),
+  });
+
+  const previewVoice = trpc.admin.voiceAssistant.agents.preview.useMutation({
+    onSuccess: (result) => {
+      const audio = new Audio(`data:${result.mime};base64,${result.audioBase64}`);
+      audio.play().catch((err) => toast.error(`Playback blocked: ${err.message}`));
     },
     onError: (error) => toast.error(error.message),
   });
@@ -809,6 +826,57 @@ export default function AdminVoiceAssistant() {
           </TabsContent>
 
           <TabsContent value="ai-admin" className="space-y-6">
+            <Card className="border-border bg-card/80">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-white">
+                  <Sparkles className="h-5 w-5 text-violet-300" />
+                  Personality Presets
+                </CardTitle>
+                <CardDescription>
+                  One-click agents with voice, mode, emotion triggers, and sample prompt pre-tuned. Pick a preset, then edit as needed.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                  {(presets.data ?? []).map((preset) => (
+                    <div key={preset.key} className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <p className="font-semibold text-white">{preset.name}</p>
+                          <p className="mt-1 text-xs text-slate-400">{preset.description}</p>
+                        </div>
+                        <Badge className="bg-violet-500/10 text-violet-200">{preset.defaultMode}</Badge>
+                      </div>
+                      <div className="mt-3 flex flex-wrap gap-1">
+                        {preset.tags.map((tag) => (
+                          <Badge key={tag} className="bg-slate-800 text-slate-300">{tag}</Badge>
+                        ))}
+                      </div>
+                      <Button
+                        className="mt-4 w-full bg-violet-600 text-white hover:bg-violet-500"
+                        disabled={createFromPreset.isPending || !agentForm.elevenLabsVoiceId}
+                        onClick={() =>
+                          createFromPreset.mutate({
+                            preset: preset.key,
+                            elevenLabsVoiceId: agentForm.elevenLabsVoiceId,
+                            avatarUrl: agentForm.avatarUrl || undefined,
+                          })
+                        }
+                      >
+                        <Wand2 className="mr-2 h-4 w-4" />
+                        Create {preset.name}
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                {!agentForm.elevenLabsVoiceId && (
+                  <p className="mt-4 text-xs text-amber-300">
+                    Pick an ElevenLabs voice in the form below to enable preset creation.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
             <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1fr_1.2fr]">
               <Card className="border-border bg-card/80">
                 <CardHeader>
@@ -819,18 +887,37 @@ export default function AdminVoiceAssistant() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <Input value={agentForm.name} onChange={(event) => setAgentForm((state) => ({ ...state, name: event.target.value }))} placeholder="Agent display name" />
-                  <select
-                    className="h-10 rounded-md border border-slate-800 bg-slate-950 px-3 text-sm text-slate-100"
-                    value={agentForm.elevenLabsVoiceId}
-                    onChange={(event) => setAgentForm((state) => ({ ...state, elevenLabsVoiceId: event.target.value }))}
-                  >
-                    <option value="">Select ElevenLabs voice</option>
-                    {(config.data?.availableVoices ?? []).map((voice) => (
-                      <option key={voice.id} value={voice.id}>
-                        {voice.label}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex gap-2">
+                    <select
+                      className="flex-1 h-10 rounded-md border border-slate-800 bg-slate-950 px-3 text-sm text-slate-100"
+                      value={agentForm.elevenLabsVoiceId}
+                      onChange={(event) => setAgentForm((state) => ({ ...state, elevenLabsVoiceId: event.target.value }))}
+                    >
+                      <option value="">Select ElevenLabs voice</option>
+                      {(config.data?.availableVoices ?? []).map((voice) => (
+                        <option key={voice.id} value={voice.id}>
+                          {voice.label}
+                        </option>
+                      ))}
+                    </select>
+                    <Button
+                      variant="outline"
+                      className="border-slate-700 text-slate-100 hover:bg-slate-800"
+                      disabled={!agentForm.elevenLabsVoiceId || previewVoice.isPending}
+                      onClick={() =>
+                        previewVoice.mutate({
+                          voiceId: agentForm.elevenLabsVoiceId,
+                          text: agentForm.name
+                            ? `Hi, I'm ${agentForm.name}, your GoGetterOS assistant.`
+                            : undefined,
+                        })
+                      }
+                      title="Preview voice"
+                    >
+                      <Mic className="h-4 w-4" />
+                      <span className="ml-1">{previewVoice.isPending ? "..." : "Preview"}</span>
+                    </Button>
+                  </div>
                   <Input value={agentForm.avatarUrl} onChange={(event) => setAgentForm((state) => ({ ...state, avatarUrl: event.target.value }))} placeholder="Cloudinary avatar URL" />
                   <Textarea value={agentForm.description} onChange={(event) => setAgentForm((state) => ({ ...state, description: event.target.value }))} placeholder="Describe the persona, access level, and ideal use cases" rows={4} />
                   <Input value={agentForm.tags} onChange={(event) => setAgentForm((state) => ({ ...state, tags: event.target.value }))} placeholder="Tags, comma separated" />

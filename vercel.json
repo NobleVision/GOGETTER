@@ -3,5 +3,11 @@
   "version": 2,
   "buildCommand": "rm -rf dist .vercel/output && pnpm run build:vercel",
   "installCommand": "pnpm install --no-frozen-lockfile",
-  "framework": null
+  "framework": null,
+  "crons": [
+    {
+      "path": "/api/cron/voice-scheduler",
+      "schedule": "* * * * *"
+    }
+  ]
 }
