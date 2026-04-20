@@ -12,6 +12,10 @@ import {
   webhooks, InsertWebhook,
   discoveryPresets, InsertDiscoveryPreset, DiscoveryPreset, UserPreferences,
   subscriptions, InsertSubscription, Subscription,
+  creditTransactions, InsertCreditTransaction,
+  blogPosts, InsertBlogPost,
+  dailyWhyWho, InsertDailyWhyWho,
+  hot100, InsertHot100,
   pipelineProjects, InsertPipelineProject, PipelineProject,
   pipelineEvents, InsertPipelineEvent, PipelineEvent,
   type PipelineMetadata,
@@ -1668,6 +1672,12 @@ export async function getPipelineStats() {
 
 // ============ SUBSCRIPTION OPERATIONS ============
 
+function getSubscriptionTierConfig(
+  tierKey: keyof typeof SUBSCRIPTION_TIERS
+) {
+  return SUBSCRIPTION_TIERS[tierKey] ?? SUBSCRIPTION_TIERS.free;
+}
+
 export async function getOrCreateSubscription(
   userId: number
 ): Promise<Subscription> {
@@ -1682,13 +1692,18 @@ export async function getOrCreateSubscription(
 
   if (existing.length > 0) return existing[0];
 
-  const tier = SUBSCRIPTION_TIERS.free;
+  const tierKey: keyof typeof SUBSCRIPTION_TIERS = "free";
+  const tier = getSubscriptionTierConfig(tierKey);
   const result = await db
     .insert(subscriptions)
     .values({
       userId,
-      tier: "free",
+      tier: tierKey,
+      status: "active",
       monthlyPrice: String(tier.price),
+      creditsRemaining: tier.monthlyCredits,
+      creditsIncluded: tier.monthlyCredits,
+      activeBusinessesLimit: tier.activeBusinesses,
       wizardUsesLimit: tier.wizardUses,
       tokenRateLimit: tier.tokenRateLimit,
       currentPeriodStart: new Date(),
@@ -1698,31 +1713,73 @@ export async function getOrCreateSubscription(
     })
     .returning();
 
+  await db
+    .update(users)
+    .set({ subscriptionTier: tierKey, updatedAt: new Date() })
+    .where(eq(users.id, userId));
+
   return result[0];
 }
 
 export async function updateSubscription(
   userId: number,
-  tierKey: keyof typeof SUBSCRIPTION_TIERS
+  tierKey: keyof typeof SUBSCRIPTION_TIERS,
+  options?: {
+    stripeCustomerId?: string | null;
+    stripeSubscriptionId?: string | null;
+    stripePriceId?: string | null;
+    stripeCheckoutSessionId?: string | null;
+    status?: string;
+    resetCredits?: boolean;
+    currentPeriodStart?: Date | null;
+    currentPeriodEnd?: Date | null;
+  }
 ): Promise<Subscription> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const tier = SUBSCRIPTION_TIERS[tierKey];
+  const tier = getSubscriptionTierConfig(tierKey);
 
-  // Ensure subscription exists
   await getOrCreateSubscription(userId);
+
+  const nextValues: Partial<InsertSubscription> = {
+    tier: tierKey,
+    monthlyPrice: String(tier.price),
+    creditsIncluded: tier.monthlyCredits,
+    activeBusinessesLimit: tier.activeBusinesses,
+    wizardUsesLimit: tier.wizardUses,
+    tokenRateLimit: tier.tokenRateLimit,
+    stripeCustomerId: options?.stripeCustomerId ?? undefined,
+    stripeSubscriptionId: options?.stripeSubscriptionId ?? undefined,
+    stripePriceId: options?.stripePriceId ?? undefined,
+    stripeCheckoutSessionId: options?.stripeCheckoutSessionId ?? undefined,
+    status: options?.status ?? (tierKey === "launch_pass" ? "paid" : "active"),
+    currentPeriodStart: options?.currentPeriodStart ?? undefined,
+    currentPeriodEnd: options?.currentPeriodEnd ?? undefined,
+    updatedAt: new Date(),
+  };
+
+  if (options?.resetCredits !== false) {
+    nextValues.creditsRemaining = tier.monthlyCredits;
+  }
+
+  if (tierKey === "launch_pass") {
+    nextValues.launchPassActivatedAt = new Date();
+  }
 
   await db
     .update(subscriptions)
+    .set(nextValues)
+    .where(eq(subscriptions.userId, userId));
+
+  await db
+    .update(users)
     .set({
-      tier: tierKey,
-      monthlyPrice: String(tier.price),
-      wizardUsesLimit: tier.wizardUses,
-      tokenRateLimit: tier.tokenRateLimit,
+      subscriptionTier: tierKey,
+      stripeCustomerId: options?.stripeCustomerId ?? undefined,
       updatedAt: new Date(),
     })
-    .where(eq(subscriptions.userId, userId));
+    .where(eq(users.id, userId));
 
   const result = await db
     .select()
@@ -1730,6 +1787,69 @@ export async function updateSubscription(
     .where(eq(subscriptions.userId, userId))
     .limit(1);
   return result[0];
+}
+
+export async function getCreditBalance(userId: number): Promise<number> {
+  const sub = await getOrCreateSubscription(userId);
+  return sub.creditsRemaining;
+}
+
+export async function createCreditTransaction(
+  entry: InsertCreditTransaction
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(creditTransactions).values(entry).returning();
+  return result[0];
+}
+
+export async function applyCreditDelta(input: {
+  userId: number;
+  amount: number;
+  reason: string;
+  description?: string;
+  stripeInvoiceId?: string;
+  stripePaymentIntentId?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const sub = await getOrCreateSubscription(input.userId);
+  const nextBalance = Math.max(0, (sub.creditsRemaining ?? 0) + input.amount);
+
+  await db
+    .update(subscriptions)
+    .set({
+      creditsRemaining: nextBalance,
+      updatedAt: new Date(),
+    })
+    .where(eq(subscriptions.userId, input.userId));
+
+  await createCreditTransaction({
+    userId: input.userId,
+    subscriptionId: sub.id,
+    amount: input.amount,
+    balanceAfter: nextBalance,
+    reason: input.reason,
+    description: input.description,
+    stripeInvoiceId: input.stripeInvoiceId,
+    stripePaymentIntentId: input.stripePaymentIntentId,
+    metadata: input.metadata ?? {},
+  });
+
+  return { balance: nextBalance };
+}
+
+export async function listCreditTransactions(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .select()
+    .from(creditTransactions)
+    .where(eq(creditTransactions.userId, userId))
+    .orderBy(desc(creditTransactions.createdAt));
 }
 
 export async function checkWizardLimit(
@@ -1760,4 +1880,116 @@ export async function incrementWizardUsage(
 
   const check = await checkWizardLimit(userId);
   return { remaining: check.remaining };
+}
+
+// ============ CONTENT / MONETIZATION OPERATIONS ============
+
+export async function listBlogPosts(limit = 20) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.select().from(blogPosts).orderBy(desc(blogPosts.publishedAt)).limit(limit);
+}
+
+export async function saveBlogPost(input: InsertBlogPost) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const existing = await db
+    .select()
+    .from(blogPosts)
+    .where(eq(blogPosts.slug, input.slug))
+    .limit(1);
+
+  if (existing.length > 0) {
+    const result = await db
+      .update(blogPosts)
+      .set({
+        ...input,
+        updatedAt: new Date(),
+      })
+      .where(eq(blogPosts.id, existing[0].id))
+      .returning();
+    return result[0];
+  }
+
+  const result = await db.insert(blogPosts).values(input).returning();
+  return result[0];
+}
+
+export async function listDailyWhyWho(limit = 10) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db
+    .select()
+    .from(dailyWhyWho)
+    .orderBy(desc(dailyWhyWho.publishedAt))
+    .limit(limit);
+}
+
+export async function saveDailyWhyWho(input: InsertDailyWhyWho) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const existing = await db
+    .select()
+    .from(dailyWhyWho)
+    .where(eq(dailyWhyWho.slug, input.slug))
+    .limit(1);
+
+  if (existing.length > 0) {
+    const result = await db
+      .update(dailyWhyWho)
+      .set({
+        ...input,
+        updatedAt: new Date(),
+      })
+      .where(eq(dailyWhyWho.id, existing[0].id))
+      .returning();
+    return result[0];
+  }
+
+  const result = await db.insert(dailyWhyWho).values(input).returning();
+  return result[0];
+}
+
+export async function listHot100Entries(limit = 10) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.select().from(hot100).orderBy(desc(hot100.publishedAt)).limit(limit);
+}
+
+export async function saveHot100Entry(input: InsertHot100) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const existing = await db
+    .select()
+    .from(hot100)
+    .where(eq(hot100.slug, input.slug))
+    .limit(1);
+
+  if (existing.length > 0) {
+    const result = await db
+      .update(hot100)
+      .set({
+        ...input,
+        updatedAt: new Date(),
+      })
+      .where(eq(hot100.id, existing[0].id))
+      .returning();
+    return result[0];
+  }
+
+  const result = await db.insert(hot100).values(input).returning();
+  return result[0];
+}
+
+export async function listSubscriptions(limit = 100) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  return db.select().from(subscriptions).orderBy(desc(subscriptions.updatedAt)).limit(limit);
 }

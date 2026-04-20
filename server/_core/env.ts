@@ -13,6 +13,14 @@ export const ENV = {
   googleClientSecret: process.env.GOOGLE_CLIENT_SECRET ?? "",
   // Cloudinary for artifact storage
   cloudinaryUrl: process.env.CLOUDINARY_URL ?? "",
+  // Stripe billing configuration
+  stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY ?? "",
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY ?? "",
+  stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET ?? "",
+  stripeLaunchPassPriceId: process.env.STRIPE_PRICE_LAUNCH_PASS ?? "",
+  stripeStarterPriceId: process.env.STRIPE_PRICE_STARTER_MONTHLY ?? "",
+  stripeProPriceId: process.env.STRIPE_PRICE_PRO_MONTHLY ?? "",
+  stripeCreditsTopupPriceId: process.env.STRIPE_PRICE_CREDIT_TOPUP ?? "",
   // Voice assistant integrations
   twilioSid: process.env.TWILIO_SID ?? "",
   twilioSecret: process.env.TWILIO_SECRET ?? "",

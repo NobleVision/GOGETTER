@@ -99,6 +99,9 @@ export function validateEnvironment(env: {
   isProduction?: boolean;
   cloudinaryUrl?: string;
   manusApi?: string;
+  stripePublishableKey?: string;
+  stripeSecretKey?: string;
+  stripeWebhookSecret?: string;
   twilioSid?: string;
   twilioSecret?: string;
   twilioAuthToken?: string;
@@ -149,6 +152,12 @@ export function validateEnvironment(env: {
       errors.push(`${label} is partially configured. Missing: ${missing.join(", ")}`);
     }
   };
+
+  requireIfAnyPresent("Stripe billing configuration", [
+    ["STRIPE_PUBLISHABLE_KEY", env.stripePublishableKey],
+    ["STRIPE_SECRET_KEY", env.stripeSecretKey],
+    ["STRIPE_WEBHOOK_SECRET", env.stripeWebhookSecret],
+  ]);
 
   requireIfAnyPresent("Twilio voice assistant configuration", [
     ["TWILIO_SID", env.twilioSid],
@@ -213,6 +222,9 @@ export function runStartupValidation(): void {
     isProduction: process.env.NODE_ENV === "production",
     cloudinaryUrl: process.env.CLOUDINARY_URL,
     manusApi: process.env.MANUS_API,
+    stripePublishableKey: process.env.STRIPE_PUBLISHABLE_KEY,
+    stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+    stripeWebhookSecret: process.env.STRIPE_WEBHOOK_SECRET,
     twilioSid: process.env.TWILIO_SID,
     twilioSecret: process.env.TWILIO_SECRET,
     twilioAuthToken: process.env.TWILIO_AUTH_TOKEN,

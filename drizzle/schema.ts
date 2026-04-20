@@ -14,7 +14,7 @@ export const businessStatusEnum = pgEnum("business_status", ["setup", "running",
 export const eventTypeEnum = pgEnum("event_type", ["revenue", "cost", "error", "intervention", "status_change", "agent_activity"]);
 export const apiProviderEnum = pgEnum("api_provider", ["manus", "perplexity", "openai", "anthropic", "gemini", "grok"]);
 export const pipelineStatusEnum = pgEnum("pipeline_status", ["active", "suspended", "completed", "cancelled"]);
-export const subscriptionTierEnum = pgEnum("subscription_tier", ["free", "starter", "pro", "unlimited"]);
+export const subscriptionTierEnum = pgEnum("subscription_tier", ["free", "launch_pass", "starter", "pro", "enterprise", "unlimited"]);
 export const voiceAccessLevelEnum = pgEnum("voice_access_level", ["admin", "operator", "sales", "support", "observer"]);
 export const voiceAgentModeEnum = pgEnum("voice_agent_mode", ["listen", "interact", "business", "project_management", "development", "custom"]);
 export const scheduledVoiceActionTypeEnum = pgEnum("scheduled_voice_action_type", ["zoom_join", "direct_call", "inbound_wait", "zoom_host", "custom"]);
@@ -33,6 +33,10 @@ export const users = pgTable("users", {
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("login_method", { length: 64 }),
   role: userRoleEnum("role").default("user").notNull(),
+  subscriptionTier: subscriptionTierEnum("subscription_tier")
+    .default("free")
+    .notNull(),
+  stripeCustomerId: varchar("stripe_customer_id", { length: 128 }),
   // Google OAuth fields
   googleId: varchar("google_id", { length: 64 }),
   pictureUrl: varchar("picture_url", { length: 500 }),
@@ -331,15 +335,24 @@ export const subscriptions = pgTable("subscriptions", {
     .references(() => users.id)
     .unique(),
   tier: subscriptionTierEnum("tier").default("free").notNull(),
+  stripeCustomerId: varchar("stripe_customer_id", { length: 128 }),
+  stripeSubscriptionId: varchar("stripe_subscription_id", { length: 128 }),
+  stripePriceId: varchar("stripe_price_id", { length: 128 }),
+  stripeCheckoutSessionId: varchar("stripe_checkout_session_id", { length: 128 }),
+  status: varchar("status", { length: 64 }).default("inactive").notNull(),
   monthlyPrice: decimal("monthly_price", { precision: 10, scale: 2 }).default(
     "0"
   ),
+  creditsRemaining: integer("credits_remaining").default(10).notNull(),
+  creditsIncluded: integer("credits_included").default(10).notNull(),
+  activeBusinessesLimit: integer("active_businesses_limit").default(0).notNull(),
   wizardUsesThisMonth: integer("wizard_uses_this_month")
     .default(0)
     .notNull(),
   wizardUsesLimit: integer("wizard_uses_limit").default(1).notNull(),
   tokenRateLimit: integer("token_rate_limit").default(1000).notNull(),
   isActive: boolean("is_active").default(true).notNull(),
+  launchPassActivatedAt: timestamp("launch_pass_activated_at"),
   currentPeriodStart: timestamp("current_period_start"),
   currentPeriodEnd: timestamp("current_period_end"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -348,6 +361,95 @@ export const subscriptions = pgTable("subscriptions", {
 
 export type Subscription = typeof subscriptions.$inferSelect;
 export type InsertSubscription = typeof subscriptions.$inferInsert;
+
+/**
+ * Credit transaction history for billing, top-ups, and feature usage.
+ */
+export const creditTransactions = pgTable("credit_transactions", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id")
+    .notNull()
+    .references(() => users.id),
+  subscriptionId: integer("subscription_id").references(() => subscriptions.id),
+  amount: integer("amount").notNull(),
+  balanceAfter: integer("balance_after"),
+  reason: varchar("reason", { length: 64 }).notNull(),
+  description: text("description"),
+  stripeInvoiceId: varchar("stripe_invoice_id", { length: 128 }),
+  stripePaymentIntentId: varchar("stripe_payment_intent_id", { length: 128 }),
+  metadata: json("metadata").$type<Record<string, unknown>>().default({}),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type CreditTransaction = typeof creditTransactions.$inferSelect;
+export type InsertCreditTransaction = typeof creditTransactions.$inferInsert;
+
+/**
+ * AI-generated and curated blog content shown on the landing page.
+ */
+export const blogPosts = pgTable("blog_posts", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  content: text("content"),
+  summary: text("summary"),
+  imageUrl: varchar("image_url", { length: 500 }),
+  infographicUrl: varchar("infographic_url", { length: 500 }),
+  sourceUrls: json("source_urls").$type<string[]>().default([]),
+  tags: json("tags").$type<string[]>().default([]),
+  category: varchar("category", { length: 100 }),
+  status: varchar("status", { length: 32 }).default("published").notNull(),
+  aiGenerated: boolean("ai_generated").default(true).notNull(),
+  promptOutline: text("prompt_outline"),
+  publishedAt: timestamp("published_at").defaultNow().notNull(),
+  archivedAt: timestamp("archived_at"),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type BlogPost = typeof blogPosts.$inferSelect;
+export type InsertBlogPost = typeof blogPosts.$inferInsert;
+
+/**
+ * Daily why/who landing-page narrative with archive support.
+ */
+export const dailyWhyWho = pgTable("daily_why_who", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  whyContent: text("why_content").notNull(),
+  whoContent: text("who_content").notNull(),
+  marketContext: text("market_context"),
+  sourceUrls: json("source_urls").$type<string[]>().default([]),
+  linkedBlogPostIds: json("linked_blog_post_ids").$type<number[]>().default([]),
+  publishedAt: timestamp("published_at").defaultNow().notNull(),
+  archivedAt: timestamp("archived_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type DailyWhyWho = typeof dailyWhyWho.$inferSelect;
+export type InsertDailyWhyWho = typeof dailyWhyWho.$inferInsert;
+
+/**
+ * Daily or weekly curated Hot 100 / Top 10 opportunity leaderboard.
+ */
+export const hot100 = pgTable("hot_100", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }).notNull().unique(),
+  summary: text("summary"),
+  entries: json("entries").$type<Array<Record<string, unknown>>>().default([]),
+  sourceUrls: json("source_urls").$type<string[]>().default([]),
+  publishedAt: timestamp("published_at").defaultNow().notNull(),
+  archivedAt: timestamp("archived_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type Hot100 = typeof hot100.$inferSelect;
+export type InsertHot100 = typeof hot100.$inferInsert;
 
 /**
  * Pipeline metadata type for JSONB column

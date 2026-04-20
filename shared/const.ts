@@ -10,30 +10,56 @@ export const SUBSCRIPTION_TIERS = {
   free: {
     name: "Free",
     price: 0,
+    monthlyCredits: 10,
+    activeBusinesses: 0,
     wizardUses: 1,
     tokenRateLimit: 1000,
-    description: "Try GoGetter OS with 1 free Business Wizard usage",
+    description: "Browse GoGetterOS with one free wizard run and 10 starter credits.",
+  },
+  launch_pass: {
+    name: "Launch Pass",
+    price: 149,
+    monthlyCredits: 100,
+    activeBusinesses: 1,
+    wizardUses: 5,
+    tokenRateLimit: 5000,
+    description: "One-time access for one business through Genesis to Prototype.",
   },
   starter: {
     name: "Starter",
-    price: 100,
+    price: 99,
+    monthlyCredits: 100,
+    activeBusinesses: 1,
     wizardUses: 5,
     tokenRateLimit: 5000,
-    description: "5 Business Wizard usages per month",
+    description: "Monthly access for one active business with 100 credits.",
   },
   pro: {
     name: "Pro",
-    price: 500,
+    price: 499,
+    monthlyCredits: 500,
+    activeBusinesses: 5,
     wizardUses: 20,
     tokenRateLimit: 25000,
-    description: "20 Business Wizard usages per month",
+    description: "Scale up to five active businesses with advanced product features.",
   },
-  unlimited: {
-    name: "Unlimited",
-    price: 1000,
+  enterprise: {
+    name: "Enterprise",
+    price: 10000,
+    monthlyCredits: 999999,
+    activeBusinesses: 999999,
     wizardUses: 999999,
     tokenRateLimit: 100000,
-    description: "Unlimited Business Wizard usages with token rate limits",
+    description: "Retainer-based real deployment, scaling, and professional services.",
+  },
+  unlimited: {
+    name: "Legacy Unlimited",
+    price: 1000,
+    monthlyCredits: 999999,
+    activeBusinesses: 999999,
+    wizardUses: 999999,
+    tokenRateLimit: 100000,
+    description: "Legacy unlimited tier retained for backward compatibility.",
   },
 } as const;
 
@@ -42,23 +68,23 @@ export type SubscriptionTierKey = keyof typeof SUBSCRIPTION_TIERS;
 // ============ PIPELINE CONSTANTS ============
 
 export const PHASE_NAMES = [
-  "ZERO",
-  "IDEA",
-  "PLAN",
-  "MVP",
-  "ACTIVATE",
-  "DEPLOY",
-  "HERO",
+  "Genesis",
+  "Spark",
+  "Blueprint",
+  "Prototype",
+  "Momentum",
+  "Deploy",
+  "Hero",
 ] as const;
 
 export const PHASE_DESCRIPTIONS = [
-  "Lead Generation & Initialization",
-  "Discovery & Information Gathering",
-  "AI-Enhanced Planning & Strategy",
-  "Minimum Viable Product",
-  "Staging & Refinement",
-  "Production & Handover",
-  "Graduation & Independence",
+  "Establish your account and move from casual visitor to active participant.",
+  "Discover or refine the business idea that best fits your goals and constraints.",
+  "Use adaptive AI planning to compare opportunities, prompts, timelines, and economics.",
+  "Launch a hosted MVP with mock data and refine it through prompts and AI voice feedback.",
+  "Retainer-only real deployment, monitoring, scaling, and operational growth.",
+  "Production handoff, infrastructure hardening, and business rollout.",
+  "Graduation into autonomous, compounding business ownership.",
 ] as const;
 
 // ============ BUSINESS RULES ============

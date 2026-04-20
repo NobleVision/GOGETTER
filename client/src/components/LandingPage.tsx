@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getGoogleLoginUrl } from "@/const";
@@ -9,136 +10,132 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import MediaControls from "./MediaControls";
 import {
-  Rocket,
+  ArrowRight,
+  BadgeDollarSign,
   Bot,
-  TrendingUp,
-  Shield,
-  BarChart3,
-  Clock,
-  DollarSign,
-  ChevronDown,
-  Sparkles,
-  Activity,
-  Cpu,
-  Users,
-  Briefcase,
-  GraduationCap,
-  AlertTriangle,
-  Target,
   Brain,
-  Mail,
-  Eye,
-  EyeOff,
+  Briefcase,
+  CheckCircle2,
+  ChevronRight,
+  CircleDollarSign,
+  Clock3,
+  Cpu,
+  Crown,
+  Flame,
+  Gem,
+  Globe,
+  Layers3,
   Loader2,
+  Lock,
+  Rocket,
+  ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  Wallet,
+  Zap,
 } from "lucide-react";
 
 interface LandingPageProps {
   errorMessage?: string | null;
 }
 
-const VERTICALS = [
-  {
-    name: "Content & Media",
-    icon: Sparkles,
-    color: "text-purple-400",
-    description: "Automated content creation, curation, and distribution across platforms"
-  },
-  {
-    name: "Digital Services",
-    icon: Cpu,
-    color: "text-blue-400",
-    description: "AI-powered service delivery and automated customer support"
-  },
-  {
-    name: "E-commerce",
-    icon: DollarSign,
-    color: "text-emerald-400",
-    description: "Automated product sourcing, listing, and fulfillment coordination"
-  },
-  {
-    name: "Data & Insights",
-    icon: BarChart3,
-    color: "text-amber-400",
-    description: "Information processing, analysis, and premium reporting services"
-  },
+type PricingTierKey = "free" | "launch_pass" | "starter" | "pro" | "enterprise" | "unlimited";
+
+type PricingTier = {
+  key: PricingTierKey;
+  name: string;
+  price: number;
+  monthlyCredits: number;
+  activeBusinesses: number;
+  wizardUses: number;
+  tokenRateLimit: number;
+  description: string;
+};
+
+const PLATFORM_METRICS = [
+  { label: "Phases to monetize", value: "7", icon: Layers3 },
+  { label: "Credits in free exploration", value: "10", icon: Zap },
+  { label: "Active businesses in Pro", value: "5", icon: Briefcase },
+  { label: "AI workflow coverage", value: "24/7", icon: Bot },
 ];
 
-const FEATURES = [
+const CORE_CAPABILITIES = [
   {
-    icon: Bot,
-    title: "Intelligent Discovery",
-    description: "Our AI wizard captures your risk tolerance, capital, and goals to create a personalized entrepreneurial profile and find perfect matches.",
-  },
-  {
-    icon: TrendingUp,
-    title: "Risk-Adjusted Scoring",
-    description: "7-factor composite scoring: guaranteed demand (20%), automation level (15%), token efficiency (15%), profit margin (15%), and more.",
-  },
-  {
-    icon: Clock,
-    title: "Autonomous Execution",
-    description: "Once deployed, AI agents handle day-to-day operations including customer acquisition, service delivery, and quality control.",
-  },
-  {
-    icon: BarChart3,
-    title: "Real-Time Monitoring",
-    description: "Live dashboards track performance metrics, identify optimization opportunities, and automatically adjust strategies.",
-  },
-  {
+    title: "Discover demand before you build",
+    description:
+      "GoGetterOS ranks business ideas, pressure-tests assumptions, and turns opportunity research into a phased launch path.",
     icon: Brain,
-    title: "Multi-Model Intelligence",
-    description: "Combines OpenAI, Anthropic, Gemini, Perplexity, Grok, and Manus—automatically selecting the best model for each task.",
   },
   {
-    icon: Shield,
-    title: "Continuous Optimization",
-    description: "Predictive analytics forecast performance, identify opportunities, and minimize risk before problems arise.",
+    title: "Prompt your way to progress",
+    description:
+      "Every phase is assisted by AI prompts, structured recommendations, and reusable workflows so users can move faster with less guesswork.",
+    icon: Sparkles,
+  },
+  {
+    title: "Upgrade only when traction appears",
+    description:
+      "The free and starter paths keep exploration affordable, while Launch Pass and Pro unlock the serious execution layers when needed.",
+    icon: BadgeDollarSign,
+  },
+  {
+    title: "Transition from ideas to operating systems",
+    description:
+      "The experience shifts from landing-page inspiration to an OS-style workspace built for deployment, monitoring, and scale.",
+    icon: Cpu,
   },
 ];
 
-const PROBLEMS = [
-  { icon: AlertTriangle, text: "Lack of business expertise—don't know what opportunities exist" },
-  { icon: Clock, text: "Limited time and resources for research and execution" },
-  { icon: Shield, text: "Risk aversion—fear of losing money on unproven ideas" },
-  { icon: Cpu, text: "Technical complexity most people can't navigate" },
-  { icon: Activity, text: "Even 'passive' income requires constant attention" },
+const PHASES = [
+  {
+    name: "Genesis",
+    label: "Get in",
+    description: "Create an account, explore the system, and orient around your business goals.",
+  },
+  {
+    name: "Spark",
+    label: "Find the fit",
+    description: "Discover the business model, niche, or workflow most aligned to your time, capital, and risk profile.",
+  },
+  {
+    name: "Blueprint",
+    label: "Model the path",
+    description: "Generate plans, prompts, offers, architecture, and early commercialization assumptions.",
+  },
+  {
+    name: "Prototype",
+    label: "Make it real",
+    description: "Create a hosted MVP, refine it with AI, and validate the offer before heavier investment.",
+  },
+  {
+    name: "Momentum",
+    label: "Retainer tier",
+    description: "Reserved for higher-touch deployment, optimization, and managed execution workflows.",
+  },
+  {
+    name: "Deploy",
+    label: "Operational launch",
+    description: "Push the winning concept into a production environment with real infrastructure and controls.",
+  },
+  {
+    name: "Hero",
+    label: "Compounding autonomy",
+    description: "Graduate into a durable, operating business with scalable AI support and governance.",
+  },
 ];
 
-const AUDIENCES = [
-  {
-    icon: Users,
-    title: "Aspiring Entrepreneurs",
-    points: [
-      "Discover viable opportunities without extensive research",
-      "Launch businesses without deep technical knowledge",
-      "Reduce financial risk through intelligent scoring",
-    ],
-  },
-  {
-    icon: Briefcase,
-    title: "Busy Professionals",
-    points: [
-      "Generate passive income that doesn't require attention",
-      "Diversify income sources to reduce career risk",
-      "Build wealth while maintaining primary career focus",
-    ],
-  },
-  {
-    icon: GraduationCap,
-    title: "Experienced Business Owners",
-    points: [
-      "Identify new opportunities using AI-powered analysis",
-      "Automate routine operations to focus on strategy",
-      "Scale across multiple verticals simultaneously",
-    ],
-  },
-];
+const DAILY_SIGNAL = {
+  title: "Why now / who wins today",
+  why: "Lean teams, solo operators, and founders are under pressure to move faster with less capital. The best opportunities are no longer hidden in complexity; they are hidden in execution speed.",
+  who: "GoGetterOS fits builders who want AI-assisted business formation, monetization experiments, and a direct path from research to launch.",
+};
 
-const STATS = [
-  { value: "20+", label: "Curated Opportunities" },
-  { value: "7", label: "Scoring Factors" },
-  { value: "6+", label: "AI Models Integrated" },
-  { value: "24/7", label: "Autonomous Operation" },
+const HOT_OPPORTUNITIES = [
+  "AI appointment-setting agencies for local service businesses",
+  "Micro-SaaS audit tools for creators and consultants",
+  "Voice-based customer recovery workflows for SMB sales teams",
+  "Niche compliance dashboards with recurring reporting retainers",
+  "Prompt-powered offer generators for coaches and experts",
 ];
 
 export default function LandingPage({ errorMessage }: LandingPageProps) {
@@ -146,15 +143,14 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [formData, setFormData] = useState({ name: "", email: "", password: "", confirmPassword: "" });
+  const [formData, setFormData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+  });
 
-  const handleSignIn = () => {
-    window.location.href = getGoogleLoginUrl();
-  };
-
-  const scrollToFeatures = () => {
-    document.getElementById("features")?.scrollIntoView({ behavior: "smooth" });
-  };
+  const plansQuery = trpc.subscription.plans.useQuery();
 
   const registerMutation = trpc.auth.register.useMutation({
     onSuccess: (data) => {
@@ -178,8 +174,33 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
     onError: (err) => toast.error(err.message),
   });
 
+  const pricingTiers = useMemo(() => {
+    const tiers = (plansQuery.data?.tiers ?? []) as PricingTier[];
+    const preferredOrder: PricingTierKey[] = [
+      "free",
+      "launch_pass",
+      "starter",
+      "pro",
+      "enterprise",
+    ];
+
+    return tiers
+      .filter((tier) => preferredOrder.includes(tier.key))
+      .sort(
+        (a, b) =>
+          preferredOrder.indexOf(a.key) - preferredOrder.indexOf(b.key),
+      );
+  }, [plansQuery.data]);
+
+  const isSubmitting = registerMutation.isPending || loginMutation.isPending;
+
+  const handleSignIn = () => {
+    window.location.href = getGoogleLoginUrl();
+  };
+
   const handleEmailSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (authMode === "signup") {
       if (formData.password !== formData.confirmPassword) {
         toast.error("Passwords do not match.");
@@ -189,497 +210,473 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
         toast.error("Password must be at least 8 characters.");
         return;
       }
+
       registerMutation.mutate({
         name: formData.name,
         email: formData.email,
         password: formData.password,
       });
-    } else {
-      loginMutation.mutate({
-        email: formData.email,
-        password: formData.password,
-      });
+      return;
     }
+
+    loginMutation.mutate({
+      email: formData.email,
+      password: formData.password,
+    });
   };
 
-  const isSubmitting = registerMutation.isPending || loginMutation.isPending;
+  const updateField = (field: keyof typeof formData, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
 
   return (
-    <div className="min-h-screen relative">
-      {/* Fixed Media Controls */}
-      <div className="fixed top-4 right-4 z-50">
+    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#123a32_0%,rgba(15,23,42,0.92)_32%,#020617_75%)] text-white">
+      <div className="fixed right-4 top-4 z-50">
         <MediaControls showVolumeSlider />
       </div>
 
-      {/* Hero Section */}
-      <section className="relative min-h-screen flex items-center justify-center px-4">
-        {/* Gradient overlay for readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-slate-900/80 via-slate-900/60 to-slate-900/90 pointer-events-none" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(16,185,129,0.12),transparent_35%,rgba(15,23,42,0.3))] pointer-events-none" />
 
-        <div className="relative z-10 max-w-5xl mx-auto text-center">
-          {/* Logo and Brand */}
-          <div className="flex items-center justify-center gap-3 mb-6">
-            <img src="/logo-256x256.png" alt="GO-GETTER OS" className="h-16 w-16 rounded-2xl shadow-xl shadow-emerald-500/25" />
-            <h1 className="text-4xl md:text-5xl font-bold text-white tracking-tight">
-              GO-GETTER <span className="text-emerald-400">OS</span>
-            </h1>
+      <section className="relative border-b border-white/10 px-4 pb-20 pt-24 md:px-8">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+          <div className="space-y-8">
+            <div className="flex items-center gap-3">
+              <img
+                src="/logo-256x256.png"
+                alt="GO-GETTER OS"
+                className="h-14 w-14 rounded-2xl shadow-2xl shadow-emerald-500/30"
+              />
+              <div>
+                <p className="text-xs uppercase tracking-[0.3em] text-emerald-300/80">
+                  Monetized AI business operating system
+                </p>
+                <h1 className="text-3xl font-semibold tracking-tight md:text-5xl">
+                  GO-GETTER <span className="text-emerald-400">OS</span>
+                </h1>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <Badge className="bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/20">
+                From exploration to launch-ready revenue systems
+              </Badge>
+              <h2 className="max-w-4xl text-4xl font-semibold leading-tight text-white md:text-6xl">
+                Build, test, price, and scale AI-powered businesses with a clearer path to revenue.
+              </h2>
+              <p className="max-w-3xl text-lg leading-8 text-slate-300 md:text-xl">
+                GoGetterOS turns entrepreneurial ambition into a phased operating system. Users can explore for free, pay when momentum appears, and graduate into high-touch execution only when a concept proves worthy.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <Button
+                size="lg"
+                onClick={handleSignIn}
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover:from-emerald-400 hover:to-teal-400"
+              >
+                Continue with Google
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => setShowEmailForm(true)}
+                className="border-white/15 bg-slate-900/60 text-slate-100 hover:bg-slate-800"
+              >
+                Use email instead
+              </Button>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-4">
+              {PLATFORM_METRICS.map((metric) => (
+                <Card key={metric.label} className="border-white/10 bg-slate-950/60 backdrop-blur">
+                  <CardContent className="flex items-center gap-3 p-4">
+                    <div className="rounded-xl bg-emerald-500/15 p-2 text-emerald-300">
+                      <metric.icon className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="text-xl font-semibold text-white">{metric.value}</div>
+                      <div className="text-xs text-slate-400">{metric.label}</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
 
-          {/* Tagline */}
-          <p className="text-xl md:text-2xl text-emerald-400 font-semibold mb-4">
-            Truly Passive Income Through AI-Powered Business Automation
-          </p>
-
-          {/* Executive Summary */}
-          <p className="text-lg md:text-xl text-slate-300 max-w-3xl mx-auto mb-4 leading-relaxed">
-            A revolutionary platform that democratizes entrepreneurship by leveraging AI to identify,
-            evaluate, and execute autonomous micro-business opportunities.
-          </p>
-          <p className="text-base text-slate-400 max-w-2xl mx-auto mb-8">
-            In an era where traditional employment is uncertain and the gig economy demands constant involvement,
-            GO-GETTER OS offers a third path: <span className="text-emerald-400 font-medium">autonomous income streams that work while you don't.</span>
-          </p>
-
-          {/* Error Message */}
-          {errorMessage && (
-            <div className="mb-6 p-4 bg-red-500/20 border border-red-500/30 rounded-lg max-w-md mx-auto backdrop-blur-sm">
-              <p className="text-red-300 text-sm">{errorMessage}</p>
-            </div>
-          )}
-
-          {/* Auth Section */}
-          <div className="max-w-sm mx-auto mb-12">
-            {!showEmailForm ? (
-              <div className="flex flex-col items-center gap-3">
-                <Button
-                  onClick={handleSignIn}
-                  size="lg"
-                  className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-lg px-8 py-6 rounded-xl shadow-xl shadow-emerald-500/25 transition-all hover:scale-105"
-                >
-                  <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-                    <path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                  Continue with Google
-                </Button>
-
-                <div className="flex items-center gap-3 w-full my-1">
-                  <div className="flex-1 h-px bg-slate-700" />
-                  <span className="text-xs text-slate-500 uppercase tracking-wider">or</span>
-                  <div className="flex-1 h-px bg-slate-700" />
+          <Card className="border-white/10 bg-slate-950/75 shadow-2xl shadow-black/30 backdrop-blur">
+            <CardHeader className="space-y-3">
+              <Badge className="w-fit bg-violet-500/15 text-violet-200 hover:bg-violet-500/20">
+                Access the platform
+              </Badge>
+              <CardTitle className="text-2xl text-white">
+                Start free. Upgrade when the model proves itself.
+              </CardTitle>
+              <CardDescription className="text-slate-300">
+                Explore the system with a free account, then unlock Launch Pass, Starter, or Pro when you are ready to move from concept to execution.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {errorMessage ? (
+                <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
+                  {errorMessage}
                 </div>
+              ) : null}
 
-                <Button
-                  onClick={() => setShowEmailForm(true)}
-                  variant="outline"
-                  size="lg"
-                  className="w-full border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white text-lg px-8 py-6 rounded-xl"
-                >
-                  <Mail className="w-5 h-5 mr-2" />
-                  Continue with Email
-                </Button>
-
-                <Button
-                  onClick={scrollToFeatures}
-                  variant="ghost"
-                  size="sm"
-                  className="text-slate-500 hover:text-slate-300 mt-2"
-                >
-                  Learn More
-                </Button>
-              </div>
-            ) : (
-              <div className="bg-slate-900/80 border border-slate-800 rounded-xl p-6 backdrop-blur-sm">
-                {/* Mode toggle */}
-                <div className="flex rounded-lg bg-slate-800/50 p-1 mb-5">
-                  <button
-                    onClick={() => setAuthMode("signin")}
-                    className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
-                      authMode === "signin"
-                        ? "bg-emerald-500/20 text-emerald-400"
-                        : "text-slate-400 hover:text-white"
-                    }`}
+              {!showEmailForm ? (
+                <div className="space-y-3">
+                  <Button
+                    onClick={handleSignIn}
+                    className="h-12 w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-base text-white hover:from-emerald-400 hover:to-teal-400"
                   >
-                    Sign In
-                  </button>
-                  <button
-                    onClick={() => setAuthMode("signup")}
-                    className={`flex-1 py-2 px-3 rounded-md text-sm font-medium transition-all ${
-                      authMode === "signup"
-                        ? "bg-emerald-500/20 text-emerald-400"
-                        : "text-slate-400 hover:text-white"
-                    }`}
+                    Continue with Google
+                  </Button>
+                  <Button
+                    onClick={() => setShowEmailForm(true)}
+                    variant="outline"
+                    className="h-12 w-full border-white/10 bg-slate-900/60 text-slate-100 hover:bg-slate-800"
                   >
-                    Sign Up
-                  </button>
+                    Continue with email
+                  </Button>
                 </div>
+              ) : (
+                <form className="space-y-4" onSubmit={handleEmailSubmit}>
+                  <div className="flex items-center gap-2 rounded-xl bg-slate-900/80 p-1 text-sm">
+                    <button
+                      type="button"
+                      onClick={() => setAuthMode("signin")}
+                      className={`flex-1 rounded-lg px-3 py-2 transition ${
+                        authMode === "signin"
+                          ? "bg-emerald-500/20 text-white"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      Sign in
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setAuthMode("signup")}
+                      className={`flex-1 rounded-lg px-3 py-2 transition ${
+                        authMode === "signup"
+                          ? "bg-emerald-500/20 text-white"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      Create account
+                    </button>
+                  </div>
 
-                <form onSubmit={handleEmailSubmit} className="space-y-4">
-                  {authMode === "signup" && (
-                    <div className="space-y-1.5">
-                      <Label htmlFor="name" className="text-slate-400 text-sm">Name</Label>
+                  {authMode === "signup" ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="landing-name">Full name</Label>
                       <Input
-                        id="name"
-                        placeholder="Your name"
+                        id="landing-name"
                         value={formData.name}
-                        onChange={(e) => setFormData((p) => ({ ...p, name: e.target.value }))}
-                        className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 h-11"
+                        onChange={(e) => updateField("name", e.target.value)}
+                        className="border-white/10 bg-slate-900/70"
+                        placeholder="Your name"
                         required
                       />
                     </div>
-                  )}
+                  ) : null}
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="email" className="text-slate-400 text-sm">Email</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="landing-email">Email</Label>
                     <Input
-                      id="email"
+                      id="landing-email"
                       type="email"
-                      placeholder="you@example.com"
                       value={formData.email}
-                      onChange={(e) => setFormData((p) => ({ ...p, email: e.target.value }))}
-                      className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 h-11"
+                      onChange={(e) => updateField("email", e.target.value)}
+                      className="border-white/10 bg-slate-900/70"
+                      placeholder="you@example.com"
                       required
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label htmlFor="password" className="text-slate-400 text-sm">Password</Label>
+                  <div className="space-y-2">
+                    <Label htmlFor="landing-password">Password</Label>
                     <div className="relative">
                       <Input
-                        id="password"
+                        id="landing-password"
                         type={showPassword ? "text" : "password"}
-                        placeholder={authMode === "signup" ? "Min 8 characters" : "Your password"}
                         value={formData.password}
-                        onChange={(e) => setFormData((p) => ({ ...p, password: e.target.value }))}
-                        className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 h-11 pr-10"
+                        onChange={(e) => updateField("password", e.target.value)}
+                        className="border-white/10 bg-slate-900/70 pr-11"
+                        placeholder="Minimum 8 characters"
                         required
                       />
                       <button
                         type="button"
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300"
+                        onClick={() => setShowPassword((prev) => !prev)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
                       >
-                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        {showPassword ? <Lock className="h-4 w-4" /> : <ChevronRight className="h-4 w-4 rotate-90" />}
                       </button>
                     </div>
                   </div>
 
-                  {authMode === "signup" && (
-                    <div className="space-y-1.5">
-                      <Label htmlFor="confirmPassword" className="text-slate-400 text-sm">Confirm Password</Label>
+                  {authMode === "signup" ? (
+                    <div className="space-y-2">
+                      <Label htmlFor="landing-confirm-password">Confirm password</Label>
                       <Input
-                        id="confirmPassword"
-                        type="password"
-                        placeholder="Confirm password"
+                        id="landing-confirm-password"
+                        type={showPassword ? "text" : "password"}
                         value={formData.confirmPassword}
-                        onChange={(e) => setFormData((p) => ({ ...p, confirmPassword: e.target.value }))}
-                        className="bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500 h-11"
+                        onChange={(e) => updateField("confirmPassword", e.target.value)}
+                        className="border-white/10 bg-slate-900/70"
+                        placeholder="Repeat your password"
                         required
                       />
                     </div>
-                  )}
+                  ) : null}
 
                   <Button
                     type="submit"
+                    className="h-12 w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-base text-white hover:from-emerald-400 hover:to-teal-400"
                     disabled={isSubmitting}
-                    className="w-full bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white h-11"
                   >
-                    {isSubmitting && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-                    {authMode === "signup" ? "Create Account" : "Sign In"}
+                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {authMode === "signup" ? "Create my account" : "Sign in"}
                   </Button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowEmailForm(false)}
+                    className="w-full text-sm text-slate-400 transition hover:text-white"
+                  >
+                    Back to Google sign-in options
+                  </button>
                 </form>
+              )}
 
-                <div className="flex items-center gap-3 w-full my-4">
-                  <div className="flex-1 h-px bg-slate-700" />
-                  <span className="text-xs text-slate-500 uppercase tracking-wider">or</span>
-                  <div className="flex-1 h-px bg-slate-700" />
-                </div>
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-slate-200">
+                Free accounts can browse, run one discovery flow, and preview the monetized GoGetterOS experience before upgrading.
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </section>
 
-                <Button
-                  onClick={handleSignIn}
-                  variant="outline"
-                  className="w-full border-slate-700 text-slate-300 hover:bg-slate-800 hover:text-white h-10"
+      <section className="px-4 py-16 md:px-8">
+        <div className="mx-auto max-w-7xl space-y-8">
+          <div className="max-w-3xl space-y-3">
+            <Badge className="bg-white/10 text-slate-200 hover:bg-white/15">Core value proposition</Badge>
+            <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">
+              The platform is designed to convert curiosity into a structured revenue journey.
+            </h3>
+            <p className="text-lg leading-8 text-slate-300">
+              The landing page sells the promise, the account experience reveals the operating system, and the pricing model nudges users into increasingly serious execution only when the opportunity warrants it.
+            </p>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            {CORE_CAPABILITIES.map((item) => (
+              <Card key={item.title} className="border-white/10 bg-slate-950/60">
+                <CardHeader>
+                  <div className="w-fit rounded-xl bg-emerald-500/10 p-3 text-emerald-300">
+                    <item.icon className="h-5 w-5" />
+                  </div>
+                  <CardTitle className="text-white">{item.title}</CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm leading-7 text-slate-300">
+                  {item.description}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-y border-white/10 bg-slate-950/40 px-4 py-16 md:px-8">
+        <div className="mx-auto max-w-7xl space-y-8">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="max-w-3xl space-y-3">
+              <Badge className="bg-violet-500/15 text-violet-200 hover:bg-violet-500/20">Phased monetization model</Badge>
+              <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">Seven phases, one increasingly valuable path.</h3>
+              <p className="text-lg leading-8 text-slate-300">
+                Users start with discovery and pay progressively deeper into the experience. High-touch deployment remains reserved for premium workflows and managed execution.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              className="border-white/10 bg-slate-900/70 text-white hover:bg-slate-800"
+              onClick={() => setLocation("/wizard")}
+            >
+              Preview the discovery flow
+            </Button>
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-7">
+            {PHASES.map((phase, index) => (
+              <Card key={phase.name} className="border-white/10 bg-slate-950/70">
+                <CardHeader className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <Badge variant="outline" className="border-white/15 text-slate-200">
+                      Phase {index + 1}
+                    </Badge>
+                    <Flame className={`h-4 w-4 ${index < 4 ? "text-emerald-300" : "text-amber-300"}`} />
+                  </div>
+                  <CardTitle className="text-white">{phase.name}</CardTitle>
+                  <CardDescription className="text-slate-400">{phase.label}</CardDescription>
+                </CardHeader>
+                <CardContent className="text-sm leading-7 text-slate-300">{phase.description}</CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="px-4 py-16 md:px-8">
+        <div className="mx-auto max-w-7xl space-y-8">
+          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            <div className="max-w-3xl space-y-3">
+              <Badge className="bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/20">Pricing that matches commitment</Badge>
+              <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">Start free, launch with confidence, scale when the business earns it.</h3>
+              <p className="text-lg leading-8 text-slate-300">
+                The pricing model is structured so the platform can monetize earlier without forcing every user into a high-ticket retainer on day one.
+              </p>
+            </div>
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-slate-200">
+              {plansQuery.data?.stripeConfigured ? "Checkout is ready to connect to Stripe." : "Pricing is wired for checkout and can activate once Stripe keys are configured."}
+            </div>
+          </div>
+
+          <div className="grid gap-4 xl:grid-cols-5">
+            {pricingTiers.map((tier) => {
+              const featured = tier.key === "starter" || tier.key === "pro";
+              const isEnterprise = tier.key === "enterprise";
+              return (
+                <Card
+                  key={tier.key}
+                  className={`relative overflow-hidden border-white/10 ${featured ? "bg-gradient-to-b from-emerald-500/10 to-slate-950/80 shadow-lg shadow-emerald-500/10" : "bg-slate-950/70"}`}
                 >
-                  <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
-                    <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-                  </svg>
-                  Continue with Google
-                </Button>
-
-                <button
-                  onClick={() => setShowEmailForm(false)}
-                  className="w-full text-center text-xs text-slate-500 hover:text-slate-300 mt-3 transition-colors"
-                >
-                  Back to options
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Stats Row */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 max-w-2xl mx-auto mb-12">
-            {STATS.map((stat, i) => (
-              <div key={i} className="text-center">
-                <div className="text-3xl md:text-4xl font-bold text-emerald-400">{stat.value}</div>
-                <div className="text-sm text-slate-400">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Scroll indicator */}
-          <button
-            onClick={scrollToFeatures}
-            className="animate-bounce text-slate-500 hover:text-emerald-400 transition-colors"
-            aria-label="Scroll to features"
-          >
-            <ChevronDown className="h-8 w-8" />
-          </button>
-        </div>
-      </section>
-
-      {/* Problem Section */}
-      <section className="relative py-20 px-4 bg-slate-900/80 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <Badge className="mb-4 bg-red-500/20 text-red-400 border-red-500/30">
-              <Target className="h-3 w-3 mr-1" />
-              The Problem
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Financial Independence Shouldn't Be This Hard
-            </h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">
-              Most people want financial freedom but face significant barriers that keep them stuck in the 9-to-5 grind.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 mb-12">
-            {PROBLEMS.map((problem, i) => (
-              <div key={i} className="flex items-center gap-3 p-4 rounded-lg bg-slate-800/30 border border-slate-700/30">
-                <problem.icon className="h-5 w-5 text-red-400 shrink-0" />
-                <span className="text-sm text-slate-300">{problem.text}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="text-center p-6 rounded-xl bg-gradient-to-r from-emerald-500/10 to-teal-600/10 border border-emerald-500/20">
-            <p className="text-lg text-emerald-400 font-medium mb-2">Our Solution</p>
-            <p className="text-slate-300">
-              GO-GETTER OS transforms business development from a manual, risky, time-intensive process into an
-              <span className="text-white font-medium"> automated, data-driven, and scalable system</span>.
-            </p>
+                  {featured ? (
+                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 to-teal-400" />
+                  ) : null}
+                  <CardHeader className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="border-white/10 text-slate-200 capitalize">
+                        {tier.name}
+                      </Badge>
+                      {tier.key === "pro" ? <Crown className="h-4 w-4 text-amber-300" /> : null}
+                      {tier.key === "launch_pass" ? <Rocket className="h-4 w-4 text-emerald-300" /> : null}
+                      {tier.key === "free" ? <Sparkles className="h-4 w-4 text-violet-300" /> : null}
+                      {tier.key === "enterprise" ? <Gem className="h-4 w-4 text-cyan-300" /> : null}
+                    </div>
+                    <div>
+                      <CardTitle className="text-white">{tier.name}</CardTitle>
+                      <CardDescription className="mt-2 min-h-16 text-slate-300">{tier.description}</CardDescription>
+                    </div>
+                    <div>
+                      <div className="text-4xl font-semibold text-white">
+                        {isEnterprise ? "$10k+" : tier.price === 0 ? "$0" : `$${tier.price}`}
+                      </div>
+                      <div className="text-sm text-slate-400">
+                        {tier.key === "launch_pass" ? "one-time unlock" : tier.key === "enterprise" ? "managed monthly retainer" : tier.price === 0 ? "start exploring" : "per month"}
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4 text-sm text-slate-200">
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-300" /> {tier.monthlyCredits.toLocaleString()} credits</div>
+                      <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-300" /> {tier.activeBusinesses === 999999 ? "Unlimited active businesses" : `${tier.activeBusinesses} active business${tier.activeBusinesses === 1 ? "" : "es"}`}</div>
+                      <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-300" /> {tier.wizardUses === 999999 ? "Unlimited discovery runs" : `${tier.wizardUses} discovery runs`}</div>
+                      <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-300" /> Token capacity: {tier.tokenRateLimit.toLocaleString()}</div>
+                    </div>
+                    <Button
+                      className={`w-full ${featured ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-400 hover:to-teal-400" : "bg-slate-800 text-white hover:bg-slate-700"}`}
+                      onClick={handleSignIn}
+                    >
+                      {tier.key === "free" ? "Start free" : isEnterprise ? "Talk to GoGetterOS" : `Choose ${tier.name}`}
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       </section>
 
-      {/* Verticals Section */}
-      <section className="relative py-20 px-4 bg-slate-950/80 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <Badge className="mb-4 bg-emerald-500/20 text-emerald-400 border-emerald-500/30">
-              4 Industry Verticals
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Opportunities Across Key Markets
-            </h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">
-              Advanced algorithms analyze market data, competition, automation potential, and profitability
-              to identify viable micro-business opportunities.
-            </p>
-          </div>
+      <section className="border-y border-white/10 bg-slate-950/40 px-4 py-16 md:px-8">
+        <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+          <Card className="border-white/10 bg-slate-950/70">
+            <CardHeader>
+              <Badge className="w-fit bg-amber-500/15 text-amber-200 hover:bg-amber-500/20">Daily narrative engine</Badge>
+              <CardTitle className="text-white">{DAILY_SIGNAL.title}</CardTitle>
+              <CardDescription className="text-slate-300">
+                This area is designed to become a dynamic Why/Who section driven by scheduled content generation and admin curation.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-5">
+                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-emerald-300">
+                  <TrendingUp className="h-4 w-4" /> Why now
+                </div>
+                <p className="text-sm leading-7 text-slate-300">{DAILY_SIGNAL.why}</p>
+              </div>
+              <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-5">
+                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-cyan-300">
+                  <Globe className="h-4 w-4" /> Who it serves
+                </div>
+                <p className="text-sm leading-7 text-slate-300">{DAILY_SIGNAL.who}</p>
+              </div>
+            </CardContent>
+          </Card>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {VERTICALS.map((vertical, i) => (
-              <div
-                key={i}
-                className="p-6 rounded-xl bg-slate-800/50 border border-slate-700/50 hover:border-emerald-500/30 transition-all group"
+          <Card className="border-white/10 bg-slate-950/70">
+            <CardHeader>
+              <Badge className="w-fit bg-rose-500/15 text-rose-200 hover:bg-rose-500/20">Top opportunities</Badge>
+              <CardTitle className="text-white">Hot business opportunities to showcase</CardTitle>
+              <CardDescription className="text-slate-300">
+                This panel is prepared for the dynamic Hot 100 / Top 10 content layer the admin tools will manage.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {HOT_OPPORTUNITIES.map((item, index) => (
+                <div key={item} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4 text-sm text-slate-200">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-500/10 font-semibold text-rose-200">
+                    {index + 1}
+                  </div>
+                  <div className="leading-7">{item}</div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </section>
+
+      <section className="px-4 py-16 md:px-8">
+        <div className="mx-auto max-w-7xl rounded-3xl border border-white/10 bg-gradient-to-r from-slate-950 to-slate-900 p-8 shadow-2xl shadow-black/20">
+          <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
+            <div className="space-y-4">
+              <Badge className="bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/20">Ready to start cooking?</Badge>
+              <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">
+                Explore the OS for free, then pay when the opportunity earns a deeper commitment.
+              </h3>
+              <p className="max-w-3xl text-lg leading-8 text-slate-300">
+                The new experience is built to convert interest into action: clearer positioning, stronger pricing, a visible path through the phases, and a billing layer that supports real monetization.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+              <Button
+                size="lg"
+                onClick={handleSignIn}
+                className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-400 hover:to-teal-400"
               >
-                <vertical.icon className={`h-10 w-10 ${vertical.color} mb-4 group-hover:scale-110 transition-transform`} />
-                <h3 className="text-lg font-semibold text-white mb-2">{vertical.name}</h3>
-                <p className="text-sm text-slate-400">{vertical.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="relative py-20 px-4 bg-slate-900/80 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-teal-500/20 text-teal-400 border-teal-500/30">
-              <Rocket className="h-3 w-3 mr-1" />
-              Core Capabilities
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              End-to-End Autonomous Business Platform
-            </h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">
-              From intelligent discovery through deployment to continuous optimization—GO-GETTER OS
-              handles the entire lifecycle of your autonomous businesses.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {FEATURES.map((feature, i) => (
-              <div
-                key={i}
-                className="p-6 rounded-xl bg-slate-800/30 border border-slate-700/50 hover:border-teal-500/30 transition-all"
+                Create free account
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                onClick={() => setShowEmailForm(true)}
+                className="border-white/10 bg-slate-900/60 text-white hover:bg-slate-800"
               >
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-emerald-500/20 to-teal-600/20 flex items-center justify-center mb-4">
-                  <feature.icon className="h-6 w-6 text-emerald-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{feature.description}</p>
-              </div>
-            ))}
+                Use email instead
+              </Button>
+            </div>
           </div>
         </div>
       </section>
-
-      {/* How It Works Section */}
-      <section className="relative py-20 px-4 bg-slate-900/80 backdrop-blur-sm">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-purple-500/20 text-purple-400 border-purple-500/30">
-              <Activity className="h-3 w-3 mr-1" />
-              How It Works
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              From Zero to Automated Revenue in 4 Steps
-            </h2>
-          </div>
-
-          <div className="space-y-8">
-            {[
-              {
-                step: "01",
-                title: "Complete the Discovery Wizard",
-                description: "Tell us about your risk tolerance, available capital, technical skills, and business goals. Our AI tailors recommendations just for you.",
-              },
-              {
-                step: "02",
-                title: "Explore Curated Opportunities",
-                description: "Browse 20+ autonomous business opportunities, each with detailed scoring across 7 factors including demand, profit margins, and legal risk.",
-              },
-              {
-                step: "03",
-                title: "Deploy with One Click",
-                description: "Choose your business, configure your AI models, and deploy. Our step-by-step blueprints and code templates make setup effortless.",
-              },
-              {
-                step: "04",
-                title: "Monitor & Scale",
-                description: "Track real-time performance, revenue, and costs from your dashboard. Optimize, scale successful businesses, or pivot as needed.",
-              },
-            ].map((item, i) => (
-              <div key={i} className="flex gap-6 items-start">
-                <div className="shrink-0 h-14 w-14 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white font-bold text-lg">
-                  {item.step}
-                </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-white mb-2">{item.title}</h3>
-                  <p className="text-slate-400">{item.description}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Who It's For Section */}
-      <section className="relative py-20 px-4 bg-slate-950/80 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <Badge className="mb-4 bg-blue-500/20 text-blue-400 border-blue-500/30">
-              <Users className="h-3 w-3 mr-1" />
-              Who It's For
-            </Badge>
-            <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-              Built for Builders at Every Stage
-            </h2>
-            <p className="text-slate-400 max-w-2xl mx-auto">
-              Whether you're just starting out or scaling an empire, GO-GETTER OS meets you where you are.
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {AUDIENCES.map((audience, i) => (
-              <div
-                key={i}
-                className="p-6 rounded-xl bg-slate-800/30 border border-slate-700/50 hover:border-blue-500/30 transition-all"
-              >
-                <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-600/20 flex items-center justify-center mb-4">
-                  <audience.icon className="h-6 w-6 text-blue-400" />
-                </div>
-                <h3 className="text-lg font-semibold text-white mb-4">{audience.title}</h3>
-                <ul className="space-y-2">
-                  {audience.points.map((point, j) => (
-                    <li key={j} className="text-sm text-slate-400 flex items-start gap-2">
-                      <span className="text-emerald-400 mt-1">•</span>
-                      <span>{point}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* Final CTA Section */}
-      <section className="relative py-24 px-4 bg-gradient-to-b from-slate-900/80 to-slate-950/90 backdrop-blur-sm">
-        <div className="max-w-3xl mx-auto text-center">
-          <img src="/logo-256x256.png" alt="GO-GETTER OS" className="h-20 w-20 rounded-2xl mx-auto mb-8 shadow-xl shadow-emerald-500/25" />
-
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            The Third Path to Financial Independence
-          </h2>
-          <p className="text-lg text-slate-400 mb-4 max-w-xl mx-auto">
-            Not a corporate ladder. Not a side hustle that demands your time.
-          </p>
-          <p className="text-lg text-emerald-400 font-medium mb-8">
-            Truly autonomous income through AI-powered business automation.
-          </p>
-
-          <Button
-            onClick={handleSignIn}
-            size="lg"
-            className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white text-lg px-10 py-6 rounded-xl shadow-xl shadow-emerald-500/25 transition-all hover:scale-105"
-          >
-            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
-              <path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-              <path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-              <path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-              <path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-            </svg>
-            Start Building Your Autonomous Future
-          </Button>
-
-          <p className="text-sm text-slate-500 mt-6">
-            Free to explore. No credit card required.
-          </p>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="relative py-8 px-4 border-t border-slate-800 bg-slate-950/90 backdrop-blur-sm">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <img src="/logo-64x64.png" alt="GO-GETTER OS" className="h-8 w-8 rounded-lg" />
-            <span className="font-bold text-white">GO-GETTER OS</span>
-          </div>
-          <p className="text-sm text-slate-500">
-            &copy; {new Date().getFullYear()} NobleVision. Autonomous business development powered by AI.
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }
-

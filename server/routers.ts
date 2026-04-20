@@ -24,9 +24,16 @@ const settingsProcedure = createPermissionProcedure("settings");
 import * as db from "./db";
 import { goGetterAgent } from "./services/goGetterAgent";
 import { sendOtpEmail } from "./services/email";
+import {
+  createBillingPortalSession,
+  createCheckoutSession,
+  createCreditTopUpSession,
+  stripeConfigured,
+} from "./services/stripe";
 import { hash as bcryptHash, compare as bcryptCompare } from "bcryptjs";
 import { sdk } from "./_core/sdk";
 import { voiceAssistantRouter } from "./voiceAssistantRouter";
+import { SUBSCRIPTION_TIERS } from "@shared/const";
 
 export const appRouter = router({
   system: systemRouter,
@@ -543,6 +550,78 @@ export const appRouter = router({
     get: protectedProcedure.query(async ({ ctx }) => {
       return db.getOrCreateSubscription(ctx.user.id);
     }),
+
+    plans: publicProcedure.query(() => {
+      return {
+        stripeConfigured: stripeConfigured(),
+        tiers: Object.entries(SUBSCRIPTION_TIERS).map(([key, value]) => ({
+          key,
+          ...value,
+        })),
+      };
+    }),
+
+    billingReadiness: protectedProcedure.query(async ({ ctx }) => {
+      const subscription = await db.getOrCreateSubscription(ctx.user.id);
+      return {
+        stripeConfigured: stripeConfigured(),
+        publishableKeyConfigured: Boolean(process.env.STRIPE_PUBLISHABLE_KEY),
+        subscription,
+      };
+    }),
+
+    creditHistory: protectedProcedure.query(async ({ ctx }) => {
+      return db.listCreditTransactions(ctx.user.id);
+    }),
+
+    createCheckoutSession: protectedProcedure
+      .input(
+        z.object({
+          plan: z.enum(["launch_pass", "starter", "pro"]),
+          successUrl: z.string().url(),
+          cancelUrl: z.string().url(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        return createCheckoutSession({
+          userId: ctx.user.id,
+          plan: input.plan,
+          successUrl: input.successUrl,
+          cancelUrl: input.cancelUrl,
+        });
+      }),
+
+    createBillingPortalSession: protectedProcedure
+      .input(
+        z.object({
+          returnUrl: z.string().url(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        return createBillingPortalSession({
+          userId: ctx.user.id,
+          returnUrl: input.returnUrl,
+        });
+      }),
+
+    createCreditTopUpSession: protectedProcedure
+      .input(
+        z.object({
+          successUrl: z.string().url(),
+          cancelUrl: z.string().url(),
+          amountUsd: z.number().min(10).max(10000),
+          credits: z.number().min(10).max(100000),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        return createCreditTopUpSession({
+          userId: ctx.user.id,
+          successUrl: input.successUrl,
+          cancelUrl: input.cancelUrl,
+          amountUsd: input.amountUsd,
+          credits: input.credits,
+        });
+      }),
   }),
 
   // ============ ADMIN ROUTES ============
@@ -802,6 +881,10 @@ export const appRouter = router({
 
     // Subscription Management (admin view)
     subscriptions: router({
+      list: adminProcedure.query(async () => {
+        return db.listSubscriptions();
+      }),
+
       get: adminProcedure
         .input(z.object({ userId: z.number() }))
         .query(async ({ input }) => {
@@ -814,14 +897,102 @@ export const appRouter = router({
             userId: z.number(),
             tier: z.enum([
               "free",
+              "launch_pass",
               "starter",
               "pro",
+              "enterprise",
               "unlimited",
             ]),
           })
         )
         .mutation(async ({ input }) => {
           return db.updateSubscription(input.userId, input.tier);
+        }),
+    }),
+
+    content: router({
+      overview: adminProcedure.query(async () => {
+        const [blogs, whyWho, hotLists, subscriptions] = await Promise.all([
+          db.listBlogPosts(8),
+          db.listDailyWhyWho(8),
+          db.listHot100Entries(8),
+          db.listSubscriptions(25),
+        ]);
+
+        return {
+          blogs,
+          whyWho,
+          hotLists,
+          subscriptions,
+        };
+      }),
+
+      saveBlogPost: adminProcedure
+        .input(
+          z.object({
+            title: z.string().min(3).max(255),
+            slug: z.string().min(3).max(255),
+            summary: z.string().optional(),
+            content: z.string().optional(),
+            imageUrl: z.string().url().optional().or(z.literal("")),
+            infographicUrl: z.string().url().optional().or(z.literal("")),
+            category: z.string().max(100).optional(),
+            status: z.string().max(32).default("published"),
+            aiGenerated: z.boolean().default(true),
+            promptOutline: z.string().optional(),
+            sourceUrls: z.array(z.string()).default([]),
+            tags: z.array(z.string()).default([]),
+          })
+        )
+        .mutation(async ({ input }) => {
+          return db.saveBlogPost({
+            ...input,
+            imageUrl: input.imageUrl || null,
+            infographicUrl: input.infographicUrl || null,
+            summary: input.summary || null,
+            content: input.content || null,
+            category: input.category || null,
+            promptOutline: input.promptOutline || null,
+            publishedAt: new Date(),
+          });
+        }),
+
+      saveDailyWhyWho: adminProcedure
+        .input(
+          z.object({
+            title: z.string().min(3).max(255),
+            slug: z.string().min(3).max(255),
+            whyContent: z.string().min(10),
+            whoContent: z.string().min(10),
+            marketContext: z.string().optional(),
+            sourceUrls: z.array(z.string()).default([]),
+            linkedBlogPostIds: z.array(z.number()).default([]),
+          })
+        )
+        .mutation(async ({ input }) => {
+          return db.saveDailyWhyWho({
+            ...input,
+            marketContext: input.marketContext || null,
+            publishedAt: new Date(),
+          });
+        }),
+
+      saveHot100: adminProcedure
+        .input(
+          z.object({
+            title: z.string().min(3).max(255),
+            slug: z.string().min(3).max(255),
+            summary: z.string().optional(),
+            entries: z.array(z.record(z.string(), z.any())).default([]),
+            sourceUrls: z.array(z.string()).default([]),
+          })
+        )
+        .mutation(async ({ input }) => {
+          return db.saveHot100Entry({
+            ...input,
+            summary: input.summary || null,
+            publishedAt: new Date(),
+          });
         }),
     }),
   }),
@@ -843,7 +1014,7 @@ export const appRouter = router({
         const wizardCheck = await db.checkWizardLimit(ctx.user.id);
         if (!wizardCheck.allowed) {
           throw new Error(
-            `Wizard usage limit reached (${wizardCheck.limit}/month). Upgrade your subscription for more usages.`
+            `Wizard usage limit reached (${wizardCheck.limit}/period). Upgrade your plan for more discovery capacity.`
           );
         }
 

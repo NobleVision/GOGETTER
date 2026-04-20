@@ -37,7 +37,12 @@ import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "@/components/ui/button";
 
-const adminMenuItems = [
+const adminMenuItems: Array<{
+  icon: any;
+  label: string;
+  path: string;
+  disabled?: boolean;
+}> = [
   {
     icon: LayoutDashboard,
     label: "Dashboard Overview",
@@ -62,7 +67,6 @@ const adminMenuItems = [
     icon: FileText,
     label: "Content Tools",
     path: "/admin/content",
-    disabled: true,
   },
   {
     icon: BarChart3,
