@@ -866,7 +866,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
             whileInView={shouldReduceMotion ? undefined : "visible"}
             viewport={{ once: true, amount: 0.3 }}
             variants={sectionStagger}
-            className="max-w-3xl space-y-3"
+            className="max-w-3xl space-y-3 rounded-[28px] border border-white/10 bg-slate-950/72 p-6 shadow-[0_24px_80px_rgba(2,6,23,0.45)] backdrop-blur-xl md:p-8"
           >
             <motion.div variants={itemFromBelow}>
               <Badge className="border border-white/12 bg-white/10 text-slate-50 hover:bg-white/15">Core value proposition</Badge>
@@ -927,7 +927,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
               whileInView={shouldReduceMotion ? undefined : "visible"}
               viewport={{ once: true, amount: 0.3 }}
               variants={sectionStagger}
-              className="max-w-3xl space-y-3"
+              className="max-w-3xl space-y-3 rounded-[28px] border border-white/10 bg-slate-950/72 p-6 shadow-[0_24px_80px_rgba(2,6,23,0.45)] backdrop-blur-xl md:p-8"
             >
               <motion.div variants={itemFromLeft}>
                 <Badge className="border border-violet-400/24 bg-violet-500/18 text-violet-50 hover:bg-violet-500/24">Phased monetization model</Badge>
@@ -999,7 +999,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
               whileInView={shouldReduceMotion ? undefined : "visible"}
               viewport={{ once: true, amount: 0.3 }}
               variants={sectionStagger}
-              className="max-w-3xl space-y-3"
+              className="max-w-3xl space-y-3 rounded-[28px] border border-white/10 bg-slate-950/72 p-6 shadow-[0_24px_80px_rgba(2,6,23,0.45)] backdrop-blur-xl md:p-8"
             >
               <motion.div variants={itemFromRight}>
                 <Badge className="border border-emerald-400/24 bg-emerald-500/18 text-emerald-50 hover:bg-emerald-500/24">Pricing that matches commitment</Badge>
