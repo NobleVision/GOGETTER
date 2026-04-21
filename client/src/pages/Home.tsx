@@ -404,9 +404,9 @@ export default function Home() {
               )}
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
 
-        <div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+        <motion.div className="grid gap-4 xl:grid-cols-[0.95fr_1.05fr]" variants={pageMotion.section.variants}>
           <Card className="border-white/10 bg-slate-950/70">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
