@@ -78,15 +78,17 @@ function App() {
       >
         <MediaProvider>
           <TooltipProvider>
-            {/* Global background media - renders behind everything */}
+            {/* Global background media */}
             <BackgroundVideo />
             <BackgroundMusic />
 
-            {/* Handle URL-based notifications */}
-            <UrlNotifications />
+            <div className="relative z-10">
+              {/* Handle URL-based notifications */}
+              <UrlNotifications />
 
-            <Toaster />
-            <Router />
+              <Toaster />
+              <Router />
+            </div>
           </TooltipProvider>
         </MediaProvider>
       </ThemeProvider>

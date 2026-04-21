@@ -28,7 +28,7 @@ export default function BackgroundVideo({
     setCurrentVideoCategory(category);
   }, [category, setCurrentVideoCategory]);
 
-  const { videoUrl, selectRandomVideo } = useVideoSelection(category);
+  const { videoUrl } = useVideoSelection(category);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const nextVideoRef = useRef<HTMLVideoElement>(null);
@@ -64,25 +64,28 @@ export default function BackgroundVideo({
     setHasError(false);
   }, [category]);
 
-  // Handle video error
+  // Handle video error by switching to a different clip instead of unmounting the layer
   const handleError = useCallback(() => {
     console.warn("Video failed to load:", currentSrc);
     setHasError(true);
-    // Try next video after a delay
     setTimeout(() => {
-      selectRandomVideo();
+      const fallbackVideoNumber = getRandomVideoFromCategory(category);
+      const fallbackUrl = getVideoUrl(fallbackVideoNumber);
+      setCurrentSrc(fallbackUrl);
+      setNextSrc(null);
+      setIsTransitioning(false);
       setHasError(false);
-    }, 2000);
-  }, [currentSrc, selectRandomVideo]);
+    }, 250);
+  }, [category, currentSrc]);
 
-  if (!videoEnabled || hasError) {
+  if (!videoEnabled) {
     return null;
   }
 
   return (
     <div 
       className={`fixed inset-0 overflow-hidden pointer-events-none ${className}`}
-      style={{ zIndex: -1 }}
+      style={{ zIndex: 0 }}
       aria-hidden="true"
     >
       {/* Current video */}
@@ -99,6 +102,7 @@ export default function BackgroundVideo({
         playsInline
         onEnded={handleVideoEnded}
         onError={handleError}
+        preload="auto"
       />
       
       {/* Next video (for crossfade) */}
@@ -115,6 +119,7 @@ export default function BackgroundVideo({
           playsInline
           onEnded={handleVideoEnded}
           onError={handleError}
+          preload="auto"
         />
       )}
       
