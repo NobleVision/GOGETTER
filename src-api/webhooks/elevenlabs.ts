@@ -4,9 +4,19 @@ import { ingestWebhookEvent } from "../../server/services/voiceAssistant";
 import { ENV } from "../../server/_core/env";
 import { readRawBody, verifyElevenLabsSignature } from "./_verify";
 
+function sendJson(
+  res: VercelResponse,
+  statusCode: number,
+  payload: Record<string, unknown>
+) {
+  res.statusCode = statusCode;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.end(JSON.stringify(payload));
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
-    res.status(405).json({ error: "Method not allowed" });
+    sendJson(res, 405, { error: "Method not allowed" });
     return;
   }
 
@@ -26,7 +36,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       hasSecret: Boolean(ENV.elevenLabsAgentWebhookSecret),
       hasSignature: Boolean(signatureHeader),
     });
-    res.status(403).json({ error: "invalid signature" });
+    sendJson(res, 403, { error: "invalid signature" });
     return;
   }
 
@@ -34,7 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     payload = rawBody ? JSON.parse(rawBody) : {};
   } catch {
-    res.status(400).json({ error: "invalid json" });
+    sendJson(res, 400, { error: "invalid json" });
     return;
   }
 
@@ -55,9 +65,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       source: "elevenlabs",
       payload: flat,
     });
-    res.status(200).json({ ok: true, ...result });
+    sendJson(res, 200, { ok: true, ...result });
   } catch (error) {
     console.error("[webhook:elevenlabs] ingest failed", error);
-    res.status(500).json({ error: "ingest failed" });
+    sendJson(res, 500, { error: "ingest failed" });
   }
 }

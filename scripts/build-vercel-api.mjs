@@ -100,6 +100,7 @@ async function build() {
         { src: "/api/webhooks/twilio", dest: "/api/webhooks/twilio" },
         { src: "/api/webhooks/elevenlabs", dest: "/api/webhooks/elevenlabs" },
         { src: "/api/webhooks/zoom", dest: "/api/webhooks/zoom" },
+        { src: "/api/webhooks/stripe", dest: "/api/webhooks/stripe" },
         { src: "/api/cron/voice-scheduler", dest: "/api/cron/voice-scheduler" },
         { handle: "filesystem" },
         { src: "/(.*)", dest: "/index.html" },

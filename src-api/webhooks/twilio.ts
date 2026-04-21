@@ -4,9 +4,19 @@ import { ingestWebhookEvent } from "../../server/services/voiceAssistant";
 import { ENV } from "../../server/_core/env";
 import { readRawBody, verifyTwilioSignature } from "./_verify";
 
+function sendJson(
+  res: VercelResponse,
+  statusCode: number,
+  payload: Record<string, unknown>
+) {
+  res.statusCode = statusCode;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.end(JSON.stringify(payload));
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
-    res.status(405).json({ error: "Method not allowed" });
+    sendJson(res, 405, { error: "Method not allowed" });
     return;
   }
 
@@ -32,7 +42,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       hasSignature: Boolean(signature),
       url: fullUrl,
     });
-    res.status(403).json({ error: "invalid signature" });
+    sendJson(res, 403, { error: "invalid signature" });
     return;
   }
 
@@ -45,9 +55,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       payload.status = payload.CallStatus;
     }
     const result = await ingestWebhookEvent({ source: "twilio", payload });
-    res.status(200).json({ ok: true, ...result });
+    sendJson(res, 200, { ok: true, ...result });
   } catch (error) {
     console.error("[webhook:twilio] ingest failed", error);
-    res.status(500).json({ error: "ingest failed" });
+    sendJson(res, 500, { error: "ingest failed" });
   }
 }

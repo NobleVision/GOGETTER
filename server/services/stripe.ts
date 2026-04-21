@@ -308,3 +308,109 @@ export async function applyCreditsFromCheckoutSession(session: Stripe.Checkout.S
 
   return { userId, applied: topUpCredits };
 }
+
+function stripeUnixToDate(value: number | null | undefined): Date | null {
+  return typeof value === "number" && Number.isFinite(value)
+    ? new Date(value * 1000)
+    : null;
+}
+
+export function resolveTierFromStripe(input: {
+  plan?: string | null;
+  priceId?: string | null;
+}): SubscriptionTierKey {
+  if (input.plan && input.plan in SUBSCRIPTION_TIERS) {
+    return input.plan as SubscriptionTierKey;
+  }
+
+  if (input.priceId) {
+    if (input.priceId === ENV.stripeLaunchPassPriceId) return "launch_pass";
+    if (input.priceId === ENV.stripeStarterPriceId) return "starter";
+    if (input.priceId === ENV.stripeProPriceId) return "pro";
+  }
+
+  return "free";
+}
+
+export async function handleStripeEvent(event: Stripe.Event) {
+  switch (event.type) {
+    case "checkout.session.completed": {
+      const session = event.data.object as Stripe.Checkout.Session;
+      const plan = session.metadata?.plan ?? null;
+
+      if (plan === "credits") {
+        const result = await applyCreditsFromCheckoutSession(session);
+        return { handled: true, type: event.type, ...result };
+      }
+
+      const userId = Number(session.metadata?.userId ?? session.client_reference_id ?? 0);
+      const tier = resolveTierFromStripe({ plan });
+
+      if (!userId || tier === "free") {
+        return { handled: false, type: event.type, reason: "missing_user_or_plan" };
+      }
+
+      await syncSubscriptionFromStripe({
+        userId,
+        customerId:
+          typeof session.customer === "string" ? session.customer : undefined,
+        subscriptionId:
+          typeof session.subscription === "string"
+            ? session.subscription
+            : undefined,
+        tier,
+        status: session.payment_status === "paid" ? "active" : session.status ?? "pending",
+        currentPeriodStart: new Date(),
+        resetCredits: true,
+      });
+
+      return { handled: true, type: event.type, userId, tier };
+    }
+
+    case "customer.subscription.created":
+    case "customer.subscription.updated":
+    case "customer.subscription.deleted": {
+      const subscription = event.data.object as Stripe.Subscription;
+      const customerId =
+        typeof subscription.customer === "string"
+          ? subscription.customer
+          : subscription.customer.id;
+
+      const existingSubscription =
+        (await db.getSubscriptionByStripeSubscriptionId(subscription.id)) ??
+        (await db.getSubscriptionByStripeCustomerId(customerId));
+
+      if (!existingSubscription) {
+        return { handled: false, type: event.type, reason: "subscription_not_mapped" };
+      }
+
+      const priceId = subscription.items.data[0]?.price?.id ?? null;
+      const tier = resolveTierFromStripe({
+        plan: subscription.metadata?.plan ?? null,
+        priceId,
+      });
+
+      await syncSubscriptionFromStripe({
+        userId: existingSubscription.userId,
+        customerId,
+        subscriptionId: subscription.id,
+        priceId,
+        tier,
+        status: subscription.status,
+        currentPeriodStart: stripeUnixToDate((subscription as any).current_period_start),
+        currentPeriodEnd: stripeUnixToDate((subscription as any).current_period_end),
+        resetCredits: event.type !== "customer.subscription.deleted" && tier !== "free",
+      });
+
+      return {
+        handled: true,
+        type: event.type,
+        userId: existingSubscription.userId,
+        tier,
+      };
+    }
+
+    default:
+      return { handled: false, type: event.type, reason: "ignored" };
+  }
+}

@@ -50,6 +50,13 @@
       "when": 1776546104031,
       "tag": "0006_ambiguous_stryfe",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1776747958306,
+      "tag": "0007_great_pete_wisdom",
+      "breakpoints": true
     }
   ]
 }

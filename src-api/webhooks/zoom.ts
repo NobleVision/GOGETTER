@@ -8,9 +8,19 @@ import {
   verifyZoomSignature,
 } from "./_verify";
 
+function sendJson(
+  res: VercelResponse,
+  statusCode: number,
+  payload: Record<string, unknown>
+) {
+  res.statusCode = statusCode;
+  res.setHeader("Content-Type", "application/json; charset=utf-8");
+  res.end(JSON.stringify(payload));
+}
+
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
-    res.status(405).json({ error: "Method not allowed" });
+    sendJson(res, 405, { error: "Method not allowed" });
     return;
   }
 
@@ -19,21 +29,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     parsed = rawBody ? JSON.parse(rawBody) : {};
   } catch {
-    res.status(400).json({ error: "invalid json" });
+    sendJson(res, 400, { error: "invalid json" });
     return;
   }
 
   if (parsed.event === "endpoint.url_validation") {
     const payload = parsed.payload as { plainToken?: string } | undefined;
     if (!payload?.plainToken) {
-      res.status(400).json({ error: "missing plainToken" });
+      sendJson(res, 400, { error: "missing plainToken" });
       return;
     }
     const response = buildZoomUrlValidationResponse(
       payload.plainToken,
       ENV.zoomSecretToken,
     );
-    res.status(200).json(response);
+    sendJson(res, 200, response as Record<string, unknown>);
     return;
   }
 
@@ -53,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       hasSignature: Boolean(signature),
       hasTimestamp: Boolean(timestamp),
     });
-    res.status(403).json({ error: "invalid signature" });
+    sendJson(res, 403, { error: "invalid signature" });
     return;
   }
 
@@ -71,9 +81,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (parsed.event) flat.status = parsed.event;
 
     const result = await ingestWebhookEvent({ source: "zoom", payload: flat });
-    res.status(200).json({ ok: true, ...result });
+    sendJson(res, 200, { ok: true, ...result });
   } catch (error) {
     console.error("[webhook:zoom] ingest failed", error);
-    res.status(500).json({ error: "ingest failed" });
+    sendJson(res, 500, { error: "ingest failed" });
   }
 }

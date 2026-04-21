@@ -1993,3 +1993,35 @@ export async function listSubscriptions(limit = 100) {
 
   return db.select().from(subscriptions).orderBy(desc(subscriptions.updatedAt)).limit(limit);
 }
+
+export async function getSubscriptionByStripeCustomerId(stripeCustomerId: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.stripeCustomerId, stripeCustomerId))
+    .limit(1);
+
+  return result[0];
+}
+
+export async function getSubscriptionByStripeSubscriptionId(stripeSubscriptionId: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db
+    .select()
+    .from(subscriptions)
+    .where(eq(subscriptions.stripeSubscriptionId, stripeSubscriptionId))
+    .limit(1);
+
+  return result[0];
+}
+
+export async function getUserByStripeCustomerId(stripeCustomerId: string) {
+  const subscription = await getSubscriptionByStripeCustomerId(stripeCustomerId);
+  if (!subscription) return undefined;
+  return getUserById(subscription.userId);
+}
