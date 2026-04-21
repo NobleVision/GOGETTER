@@ -528,6 +528,39 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
     visible: { opacity: 1, x: 0, transition: springReveal },
   };
 
+  // Final CTA entrance: zoom-pop with spring physics (0.8 -> overshoot -> 1),
+  // then releases child stagger once the pop has settled. Under reduced
+  // motion, falls back to a plain opacity fade with no scaling.
+  const ctaZoomContainer: Variants = shouldReduceMotion
+    ? {
+        hidden: { opacity: 1 },
+        visible: { opacity: 1 },
+      }
+    : {
+        hidden: { opacity: 0, scale: 0.8 },
+        visible: {
+          opacity: 1,
+          scale: 1,
+          transition: {
+            scale: { type: "spring", stiffness: 260, damping: 20, mass: 0.9 },
+            opacity: { duration: 0.45, ease: "easeOut" },
+            staggerChildren: 0.12,
+            delayChildren: 0.35,
+          },
+        },
+      };
+
+  const ctaZoomItem: Variants = {
+    hidden: shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 14 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: shouldReduceMotion
+        ? { duration: 0 }
+        : { duration: 0.45, ease: [0.22, 1, 0.36, 1] as const },
+    },
+  };
+
   const hoverLift = shouldReduceMotion
     ? {}
     : {
@@ -1377,42 +1410,45 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
 
       <section className="px-4 py-16 md:px-8">
         <motion.div
-          initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
-          whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+          initial={shouldReduceMotion ? false : "hidden"}
+          whileInView={shouldReduceMotion ? undefined : "visible"}
           viewport={{ once: true, amount: 0.2 }}
-          transition={revealTransition}
-          className="mx-auto max-w-7xl rounded-3xl border border-white/10 bg-gradient-to-r from-slate-950/95 via-slate-900/95 to-slate-950/95 p-8 shadow-2xl shadow-black/20"
+          variants={ctaZoomContainer}
+          style={{ transformOrigin: "50% 50%" }}
+          className="mx-auto max-w-7xl rounded-3xl border border-white/10 bg-slate-950/82 p-8 shadow-[0_40px_120px_rgba(2,6,23,0.55)] backdrop-blur-xl"
         >
           <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div className="space-y-4">
-              <Badge className="border border-emerald-400/20 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/20">Ready to start cooking?</Badge>
+              <motion.div variants={ctaZoomItem}>
+                <Badge className="border border-emerald-400/20 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/20">Ready to start cooking?</Badge>
+              </motion.div>
               <MaskRevealHeading
                 as="h3"
                 className="text-3xl font-semibold tracking-tight text-white md:text-4xl"
                 text="Explore the OS for free, then pay when the opportunity earns a deeper commitment."
-                delay={0.1}
+                delay={0.45}
                 reduceMotion={!!shouldReduceMotion}
               />
               <TypewriterText
                 as="p"
-                className="max-w-3xl text-lg leading-8 text-slate-50"
+                className="max-w-3xl text-lg leading-8 text-emerald-50"
                 text="The new experience is built to convert interest into action: clearer positioning, stronger pricing, live editorial sections, a visible path through the phases, and a billing layer that supports real monetization."
-                startDelay={0.2}
+                startDelay={0.6}
                 reduceMotion={!!shouldReduceMotion}
               />
-              <div className="flex flex-wrap gap-3 text-sm text-slate-100">
-                <div className="flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-2 text-slate-100 shadow-lg shadow-black/10">
+              <motion.div variants={ctaZoomItem} className="flex flex-wrap gap-3 text-sm text-white">
+                <div className="flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-2 shadow-lg shadow-black/10">
                   <ShieldCheck className="h-4 w-4 text-emerald-300" /> Trusted sign-in and billing
                 </div>
-                <div className="flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-2 text-slate-100 shadow-lg shadow-black/10">
+                <div className="flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-2 shadow-lg shadow-black/10">
                   <BookOpen className="h-4 w-4 text-cyan-300" /> Curated insight and strategy content
                 </div>
-                <div className="flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-2 text-slate-100 shadow-lg shadow-black/10">
+                <div className="flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-2 shadow-lg shadow-black/10">
                   <TrendingUp className="h-4 w-4 text-violet-300" /> Opportunity-led growth path
                 </div>
-              </div>
+              </motion.div>
             </div>
-            <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+            <motion.div variants={ctaZoomItem} className="flex flex-col gap-3 sm:flex-row lg:flex-col">
               <Button
                 size="lg"
                 onClick={handleSignIn}
@@ -1428,7 +1464,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
               >
                 Use email instead
               </Button>
-            </div>
+            </motion.div>
           </div>
         </motion.div>
       </section>
