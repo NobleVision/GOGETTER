@@ -1,0 +1,50 @@
+{
+  "generatedAt": "2026-04-21T05:45:30.856Z",
+  "mode": "test",
+  "results": [
+    {
+      "envVar": "STRIPE_PRICE_LAUNCH_PASS",
+      "plan": "launch_pass",
+      "productId": "prod_UNHVUHcMuKULfU",
+      "productName": "GoGetterOS Launch Pass",
+      "priceId": "price_1TOWwvJxmx1apSDkJgWjf9Vu",
+      "amount": 14900,
+      "currency": "usd",
+      "recurringInterval": null,
+      "source": "existing_env_price"
+    },
+    {
+      "envVar": "STRIPE_PRICE_STARTER_MONTHLY",
+      "plan": "starter",
+      "productId": "prod_UNHVrjvG34B4Kv",
+      "productName": "GoGetterOS Starter",
+      "priceId": "price_1TOWwwJxmx1apSDkalAVSO5p",
+      "amount": 9900,
+      "currency": "usd",
+      "recurringInterval": "month",
+      "source": "existing_env_price"
+    },
+    {
+      "envVar": "STRIPE_PRICE_PRO_MONTHLY",
+      "plan": "pro",
+      "productId": "prod_UNHVNEBlPLxV7B",
+      "productName": "GoGetterOS Pro",
+      "priceId": "price_1TOWwxJxmx1apSDk8BnGKWp7",
+      "amount": 49900,
+      "currency": "usd",
+      "recurringInterval": "month",
+      "source": "existing_env_price"
+    },
+    {
+      "envVar": "STRIPE_PRICE_CREDIT_TOPUP",
+      "plan": "credit_topup",
+      "productId": "prod_UNHVo1zYMyHFo8",
+      "productName": "GoGetterOS Credit Top-Up",
+      "priceId": "price_1TOWwyJxmx1apSDkPgxJokwG",
+      "amount": 10000,
+      "currency": "usd",
+      "recurringInterval": null,
+      "source": "existing_env_price"
+    }
+  ]
+}
