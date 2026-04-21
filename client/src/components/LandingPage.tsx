@@ -350,7 +350,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-[#030712] text-white">
+    <div className="relative min-h-screen overflow-hidden text-white">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.16),transparent_32%),radial-gradient(circle_at_85%_15%,rgba(168,85,247,0.16),transparent_22%),linear-gradient(to_bottom,rgba(2,6,23,0.7),rgba(2,6,23,0.96))]" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:56px_56px] opacity-[0.16]" />
 
