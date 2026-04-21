@@ -1,5 +1,7 @@
 import AccessRestricted from "@/components/AccessRestricted";
 import DashboardLayout from "@/components/DashboardLayout";
+import { motion, useReducedMotion } from "framer-motion";
+import { interiorPageMotion } from "@/lib/interiorMotion";
 import { usePermissions } from "@/_core/hooks/usePermissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -303,14 +305,17 @@ function SettingsContent() {
     window.location.href = '/api/oauth/google/link';
   };
 
+  const shouldReduceMotion = useReducedMotion();
+  const pageMotion = interiorPageMotion(!!shouldReduceMotion);
+
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto space-y-6">
+      <motion.div className="max-w-3xl mx-auto space-y-6" {...pageMotion.container}>
         {/* Header */}
-        <div>
+        <motion.div {...pageMotion.header}>
           <h1 className="text-2xl font-bold text-white">Settings</h1>
-          <p className="text-muted-foreground">Manage your profile and preferences</p>
-        </div>
+          <p className="text-slate-300">Manage your profile and preferences</p>
+        </motion.div>
 
         {/* Subscription Info */}
         <SubscriptionCard />
@@ -627,7 +632,7 @@ function SettingsContent() {
             {updateProfile.isPending ? 'Saving...' : 'Save Changes'}
           </Button>
         </div>
-      </div>
+      </motion.div>
     </DashboardLayout>
   );
 }

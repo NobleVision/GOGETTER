@@ -122,14 +122,20 @@ function WebhooksContent() {
   }
 }`;
 
+  const shouldReduceMotion = useReducedMotion();
+  const pageMotion = interiorPageMotion(!!shouldReduceMotion);
+
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <motion.div className="space-y-6" {...pageMotion.container}>
         {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <motion.div
+          className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+          {...pageMotion.header}
+        >
           <div>
             <h1 className="text-2xl font-bold text-white">Webhooks</h1>
-            <p className="text-muted-foreground">Configure webhook endpoints for real-time business events</p>
+            <p className="text-slate-300">Configure webhook endpoints for real-time business events</p>
           </div>
           <Dialog open={showCreate} onOpenChange={setShowCreate}>
             <DialogTrigger asChild>
@@ -248,7 +254,7 @@ function WebhooksContent() {
               </div>
             </DialogContent>
           </Dialog>
-        </div>
+        </motion.div>
 
         {/* Webhooks List */}
         {isLoading ? (
@@ -369,7 +375,7 @@ function WebhooksContent() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
     </DashboardLayout>
   );
 }
