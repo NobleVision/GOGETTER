@@ -588,48 +588,14 @@ function CatalogContent() {
     return filtered;
   }, [businesses, search, sortBy]);
 
+  const shouldReduceMotion = useReducedMotion();
+  const pageMotion = interiorPageMotion(!!shouldReduceMotion);
+
   const stats = useMemo(() => {
     if (!businesses) return { total: 0, prime: 0, stable: 0, experimental: 0 };
     return {
       total: businesses.length,
       prime: businesses.filter(b => b.scoreTier === 'prime').length,
-      stable: businesses.filter(b => b.scoreTier === 'stable').length,
-      experimental: businesses.filter(b => b.scoreTier === 'experimental').length,
-    };
-  }, [businesses]);
-
-  return (
-    <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-white">Business Catalog</h1>
-            <p className="text-muted-foreground">Discover and deploy autonomous micro-businesses</p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
-              <Star className="mr-1 h-3 w-3" />
-              {stats.prime} Prime
-            </Badge>
-            <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/30">
-              {stats.stable} Stable
-            </Badge>
-            <Badge variant="outline" className="bg-amber-500/10 text-amber-400 border-amber-500/30">
-              {stats.experimental} Experimental
-            </Badge>
-          </div>
-        </div>
-
-        {/* AI-Discovered Opportunities */}
-        {aiOpportunities.length > 0 && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Sparkles className="h-5 w-5 text-emerald-400" />
-                <h2 className="text-xl font-semibold text-white">AI-Discovered Opportunities</h2>
-                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
-                  Personalized for you
                 </Badge>
               </div>
               <Button
