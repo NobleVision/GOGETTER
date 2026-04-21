@@ -77,7 +77,7 @@ function TypewriterText({
 
   return (
     <Wrapper
-      ref={ref as React.RefObject<HTMLParagraphElement>}
+      ref={ref as never}
       className={className}
       aria-label={text}
     >
@@ -1102,7 +1102,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                     <CardHeader className="relative space-y-4">
                       <Badge className="w-fit border border-rose-400/30 bg-rose-500/18 text-rose-50 hover:bg-rose-500/22">Hot 100</Badge>
                       <CardTitle className="text-2xl leading-tight text-white md:text-[2rem]">{hotList.title}</CardTitle>
-                      <CardDescription className="text-base leading-7 text-slate-200">
+                      <CardDescription className="text-base leading-7 text-slate-100">
                         {hotList.summary || "Curated opportunity signals that create urgency, relevance, and premium positioning on the public site."}
                       </CardDescription>
                     </CardHeader>
@@ -1120,7 +1120,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                           </div>
                           <div className="space-y-1.5">
                             <div className="font-semibold leading-6 text-white">{extractHotEntryTitle(entry)}</div>
-                            {entry?.description ? <div className="leading-6 text-slate-300">{String(entry.description)}</div> : null}
+                            {entry?.description ? <div className="leading-6 text-slate-100">{String(entry.description)}</div> : null}
                           </div>
                         </motion.div>
                       ))}
@@ -1140,9 +1140,13 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                   <div className="max-w-3xl space-y-3">
                     <Badge className="border border-emerald-400/30 bg-emerald-500/18 text-emerald-50 hover:bg-emerald-500/24">Blog</Badge>
                     <h3 className="text-3xl font-semibold tracking-tight text-white md:text-5xl md:leading-[1.05]">Editorial content that makes the monetization story feel real.</h3>
-                    <p className="text-lg leading-8 text-slate-200">
-                      Showcase launch strategy, validation logic, and market insight directly on the landing page so visitors see proof of thought leadership before they ever enter the product.
-                    </p>
+                    <TypewriterText
+                      as="p"
+                      className="text-lg leading-8 text-slate-50"
+                      text="Showcase launch strategy, validation logic, and market insight directly on the landing page so visitors see proof of thought leadership before they ever enter the product."
+                      startDelay={0.25}
+                      reduceMotion={!!shouldReduceMotion}
+                    />
                   </div>
                   <Button
                     variant="outline"
@@ -1174,7 +1178,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                           transition={shouldReduceMotion ? undefined : { duration: 9, repeat: Infinity, ease: "easeInOut" }}
                         />
                         <CardHeader className="relative space-y-4">
-                          <div className="flex items-center justify-between gap-3 text-xs text-slate-300">
+                          <div className="flex items-center justify-between gap-3 text-xs text-slate-100">
                             <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2.5 py-1">
                               <Newspaper className="h-3.5 w-3.5 text-emerald-300" />
                               <span>{post.category || "GoGetterOS insight"}</span>
@@ -1182,7 +1186,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                             <span>{formatDate(post.publishedAt)}</span>
                           </div>
                           <CardTitle className="text-xl leading-8 text-white">{post.title}</CardTitle>
-                          <CardDescription className="min-h-24 text-sm leading-7 text-slate-200">
+                          <CardDescription className="min-h-24 text-sm leading-7 text-slate-100">
                             {post.summary || post.content || "Fresh editorial insight from the GoGetterOS launch engine."}
                           </CardDescription>
                         </CardHeader>
@@ -1227,10 +1231,14 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
               <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">
                 Explore the OS for free, then pay when the opportunity earns a deeper commitment.
               </h3>
-              <p className="max-w-3xl text-lg leading-8 text-slate-200">
-                The new experience is built to convert interest into action: clearer positioning, stronger pricing, live editorial sections, a visible path through the phases, and a billing layer that supports real monetization.
-              </p>
-              <div className="flex flex-wrap gap-3 text-sm text-slate-300">
+              <TypewriterText
+                as="p"
+                className="max-w-3xl text-lg leading-8 text-slate-50"
+                text="The new experience is built to convert interest into action: clearer positioning, stronger pricing, live editorial sections, a visible path through the phases, and a billing layer that supports real monetization."
+                startDelay={0.2}
+                reduceMotion={!!shouldReduceMotion}
+              />
+              <div className="flex flex-wrap gap-3 text-sm text-slate-100">
                 <div className="flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-2 text-slate-100 shadow-lg shadow-black/10">
                   <ShieldCheck className="h-4 w-4 text-emerald-300" /> Trusted sign-in and billing
                 </div>
