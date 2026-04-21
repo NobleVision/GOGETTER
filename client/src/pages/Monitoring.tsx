@@ -25,6 +25,8 @@ import {
   ArrowDownRight
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
+import { motion, useReducedMotion } from "framer-motion";
+import { interiorPageMotion, GLASS_PANEL, GLASS_PANEL_SUBTLE } from "@/lib/interiorMotion";
 
 const EVENT_STYLES = {
   revenue: { icon: DollarSign, color: "text-emerald-400", bg: "bg-emerald-500/10" },
@@ -74,6 +76,9 @@ function MonitoringContent() {
     },
     { enabled: !!selectedBusinessId }
   );
+  const shouldReduceMotion = useReducedMotion();
+  const pageMotion = interiorPageMotion(!!shouldReduceMotion);
+
   const { data: stats } = trpc.dashboard.stats.useQuery();
 
   const formatCurrency = (value: string | number | null) => {
@@ -166,16 +171,19 @@ function MonitoringContent() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <motion.div className="space-y-6" {...pageMotion.container}>
         {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <motion.div
+          className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+          {...pageMotion.header}
+        >
           <div>
             <h1 className="text-2xl font-bold text-white">Real-time Monitoring</h1>
-            <p className="text-muted-foreground">Track your business performance and agent activity</p>
+            <p className="text-slate-300">Track your business performance and agent activity</p>
           </div>
           <div className="flex items-center gap-3">
             <Select value={timeRange} onValueChange={(value: '24h' | '7d' | '30d' | '90d') => setTimeRange(value)}>
-              <SelectTrigger className="w-[120px] bg-secondary border-border">
+              <SelectTrigger className="w-[120px] bg-slate-900/70 border-white/10 text-white">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -186,7 +194,7 @@ function MonitoringContent() {
               </SelectContent>
             </Select>
             <Select value={selectedBusinessId} onValueChange={setSelectedBusinessId}>
-              <SelectTrigger className="w-[280px] bg-secondary border-border">
+              <SelectTrigger className="w-[280px] bg-slate-900/70 border-white/10 text-white">
                 <SelectValue placeholder="Select a business" />
               </SelectTrigger>
               <SelectContent>
@@ -201,17 +209,17 @@ function MonitoringContent() {
               variant="outline" 
               size="icon"
               onClick={() => refetchEvents()}
-              className="border-border"
+              className="border-white/10 bg-slate-900/70 text-white hover:bg-slate-800"
             >
               <RefreshCw className="h-4 w-4" />
             </Button>
           </div>
-        </div>
+        </motion.div>
 
         {selectedBusiness ? (
           <>
             {/* KPI Cards */}
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <motion.div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4" variants={pageMotion.section.variants}>
               <Card className="bg-card border-border">
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">Total Revenue</CardTitle>
@@ -285,10 +293,10 @@ function MonitoringContent() {
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            </motion.div>
 
             {/* Charts */}
-            <div className="grid gap-6 lg:grid-cols-2">
+            <motion.div className="grid gap-6 lg:grid-cols-2" variants={pageMotion.section.variants}>
               <Card className="bg-card border-border">
                 <CardHeader>
                   <CardTitle className="text-white">Revenue Over Time</CardTitle>
@@ -405,9 +413,10 @@ function MonitoringContent() {
                   </div>
                 </CardContent>
               </Card>
-            </div>
+            </motion.div>
 
             {/* Event Log */}
+            <motion.div variants={pageMotion.section.variants}>
             <Card className="bg-card border-border">
               <CardHeader>
                 <CardTitle className="text-white">Event Log</CardTitle>
@@ -471,19 +480,22 @@ function MonitoringContent() {
                 </ScrollArea>
               </CardContent>
             </Card>
+            </motion.div>
           </>
         ) : (
-          <Card className="bg-card border-border">
-            <CardContent className="flex flex-col items-center justify-center py-16">
-              <Activity className="h-16 w-16 text-muted-foreground mb-4" />
-              <h3 className="text-xl font-semibold text-white mb-2">Select a Business</h3>
-              <p className="text-muted-foreground text-center max-w-md">
-                Choose a business from the dropdown above to view real-time monitoring data and event logs.
-              </p>
-            </CardContent>
-          </Card>
+          <motion.div variants={pageMotion.section.variants}>
+            <Card className="bg-card border-border">
+              <CardContent className="flex flex-col items-center justify-center py-16">
+                <Activity className="h-16 w-16 text-muted-foreground mb-4" />
+                <h3 className="text-xl font-semibold text-white mb-2">Select a Business</h3>
+                <p className="text-muted-foreground text-center max-w-md">
+                  Choose a business from the dropdown above to view real-time monitoring data and event logs.
+                </p>
+              </CardContent>
+            </Card>
+          </motion.div>
         )}
-      </div>
+      </motion.div>
     </DashboardLayout>
   );
 }
