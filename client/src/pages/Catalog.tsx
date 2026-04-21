@@ -32,6 +32,8 @@ import {
   X
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { motion, useReducedMotion } from "framer-motion";
+import { interiorPageMotion } from "@/lib/interiorMotion";
 
 type Business = {
   id: number;
