@@ -174,10 +174,14 @@ type MaskRevealHeadingProps = {
   reduceMotion?: boolean;
 };
 
-// Per-word mask reveal: each word sits inside an overflow-hidden inline-block
-// box; the word itself slides up from y:"110%" with a slight rotation,
-// springing into place. Descender clipping is absorbed by padding-bottom +
-// negative margin-bottom (preserves outer line-height).
+// Slide-and-settle heading reveal:
+//   hidden  -> entering (per-word spring slide from y:30, fade from opacity:0,
+//                        de-blur from blur(10px), staggered via `perWord`)
+//   entering -> settled (swap to plain <Wrapper>{text}</Wrapper> so kerning
+//                        returns and the text renders crisp at full weight;
+//                        inline-block per-word wrappers dim the visual
+//                        weight otherwise, matching the same bug we solved
+//                        for TypewriterText)
 //
 // Isolated from parent variant cascade by using raw object props on each
 // motion.span (not variant names).
@@ -191,44 +195,62 @@ function MaskRevealHeading({
 }: MaskRevealHeadingProps) {
   const ref = useRef<HTMLElement | null>(null);
   const inView = useInView(ref, { once: true, amount: 0.5 });
+  const words = text.split(" ");
+  const [settled, setSettled] = useState(reduceMotion);
   const Wrapper = as as "h1" | "h2" | "h3";
 
-  if (reduceMotion) {
-    return <Wrapper className={className}>{text}</Wrapper>;
-  }
+  useEffect(() => {
+    if (reduceMotion) {
+      setSettled(true);
+      return;
+    }
+    if (!inView) return;
+    // delay + last word's start + spring settle time (~0.9s for the chosen
+    // stiffness/damping to reach rest within perceptual threshold).
+    const totalMs = (delay + words.length * perWord + 0.95) * 1000;
+    const timer = window.setTimeout(() => setSettled(true), totalMs);
+    return () => window.clearTimeout(timer);
+  }, [inView, reduceMotion, delay, perWord, words.length]);
 
-  const words = text.split(" ");
+  if (reduceMotion || settled) {
+    return (
+      <Wrapper ref={ref as never} className={className}>
+        {text}
+      </Wrapper>
+    );
+  }
 
   return (
     <Wrapper ref={ref as never} className={className} aria-label={text}>
       {words.map((word, i) => (
         <Fragment key={i}>
-          <span
+          <motion.span
             aria-hidden="true"
-            style={{
-              display: "inline-block",
-              overflow: "hidden",
-              verticalAlign: "top",
-              paddingBottom: "0.14em",
-              marginBottom: "-0.14em",
-              lineHeight: "inherit",
+            style={{ display: "inline-block", willChange: "transform, opacity, filter" }}
+            initial={{ y: 30, opacity: 0, filter: "blur(10px)" }}
+            animate={inView ? { y: 0, opacity: 1, filter: "blur(0px)" } : undefined}
+            transition={{
+              y: {
+                type: "spring",
+                damping: 16,
+                stiffness: 130,
+                mass: 0.85,
+                delay: delay + i * perWord,
+              },
+              opacity: {
+                duration: 0.45,
+                ease: "easeOut",
+                delay: delay + i * perWord,
+              },
+              filter: {
+                duration: 0.55,
+                ease: "easeOut",
+                delay: delay + i * perWord,
+              },
             }}
           >
-            <motion.span
-              initial={{ y: "110%", rotate: 3 }}
-              animate={inView ? { y: 0, rotate: 0 } : undefined}
-              transition={{
-                type: "spring",
-                damping: 12,
-                stiffness: 100,
-                mass: 0.9,
-                delay: delay + i * perWord,
-              }}
-              style={{ display: "inline-block", transformOrigin: "0% 100%" }}
-            >
-              {word}
-            </motion.span>
-          </span>
+            {word}
+          </motion.span>
           {i < words.length - 1 ? " " : ""}
         </Fragment>
       ))}
