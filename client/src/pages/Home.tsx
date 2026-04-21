@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,12 +67,31 @@ const WORKFLOW_STEPS = [
 
 export default function Home() {
   const [, setLocation] = useLocation();
-  const { data: stats, isLoading: statsLoading } = trpc.dashboard.stats.useQuery();
-  const { data: userBusinesses, isLoading: businessesLoading } = trpc.userBusinesses.list.useQuery();
-  const { data: interventions } = trpc.events.pendingInterventions.useQuery();
-  const { data: subscription, isLoading: subscriptionLoading, refetch: refetchSubscription } = trpc.subscription.get.useQuery();
-  const { data: plansData } = trpc.subscription.plans.useQuery();
-  const { data: creditHistory } = trpc.subscription.creditHistory.useQuery();
+  const { user, loading: authLoading } = useAuth();
+  const protectedQueryEnabled = Boolean(user) && !authLoading;
+
+  const { data: stats, isLoading: statsQueryLoading } = trpc.dashboard.stats.useQuery(undefined, {
+    enabled: protectedQueryEnabled,
+  });
+  const { data: userBusinesses, isLoading: businessesQueryLoading } = trpc.userBusinesses.list.useQuery(undefined, {
+    enabled: protectedQueryEnabled,
+  });
+  const { data: interventions } = trpc.events.pendingInterventions.useQuery(undefined, {
+    enabled: protectedQueryEnabled,
+  });
+  const { data: subscription, isLoading: subscriptionQueryLoading, refetch: refetchSubscription } = trpc.subscription.get.useQuery(undefined, {
+    enabled: protectedQueryEnabled,
+  });
+  const { data: plansData } = trpc.subscription.plans.useQuery(undefined, {
+    enabled: protectedQueryEnabled,
+  });
+  const { data: creditHistory } = trpc.subscription.creditHistory.useQuery(undefined, {
+    enabled: protectedQueryEnabled,
+  });
+
+  const statsLoading = authLoading || statsQueryLoading;
+  const businessesLoading = authLoading || businessesQueryLoading;
+  const subscriptionLoading = authLoading || subscriptionQueryLoading;
 
   const checkoutMutation = trpc.subscription.createCheckoutSession.useMutation({
     onSuccess: (data) => {

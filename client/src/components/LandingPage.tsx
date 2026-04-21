@@ -287,8 +287,31 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
   const hoverLift = shouldReduceMotion
     ? {}
     : {
-        whileHover: { y: -8, scale: 1.01 },
-        transition: { duration: 0.25, ease: "easeOut" as const },
+        whileHover: {
+          y: -12,
+          scale: 1.018,
+          rotateX: 7,
+          rotateY: -7,
+          filter: "brightness(1.06)",
+        },
+        transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] as const },
+      };
+
+  const foldBackStyle = shouldReduceMotion
+    ? undefined
+    : ({ transformPerspective: 1600 } as const);
+
+  const sectionGlowMotion = shouldReduceMotion
+    ? undefined
+    : {
+        opacity: [0.4, 0.72, 0.48, 0.4],
+        scale: [1, 1.04, 0.99, 1],
+      };
+
+  const marqueeDrift = shouldReduceMotion
+    ? undefined
+    : {
+        x: [0, 18, 0, -12, 0],
       };
 
   const handleSignIn = () => {
@@ -354,7 +377,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
             initial={shouldReduceMotion ? false : { opacity: 0, y: 26 }}
             animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
             transition={revealTransition}
-            className="space-y-8"
+            className="space-y-8 rounded-[32px] border border-white/10 bg-[linear-gradient(145deg,rgba(2,6,23,0.62),rgba(15,23,42,0.38))] p-6 shadow-[0_24px_90px_rgba(2,6,23,0.42)] backdrop-blur-xl md:p-8"
           >
             <div className="flex items-center gap-3">
               <motion.img
@@ -415,14 +438,14 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                   transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : 0.08 + index * 0.06 }}
                   {...hoverLift}
                 >
-                  <Card className="group border-white/10 bg-slate-950/60 backdrop-blur transition-colors hover:border-emerald-400/20 hover:bg-slate-950/80">
+                  <Card className="group border-white/10 bg-[linear-gradient(145deg,rgba(2,6,23,0.86),rgba(15,23,42,0.72))] shadow-[0_16px_50px_rgba(2,6,23,0.32)] backdrop-blur transition-colors hover:border-emerald-400/24 hover:bg-slate-950/88">
                     <CardContent className="flex items-center gap-3 p-4">
                       <div className="rounded-xl bg-emerald-500/15 p-2 text-emerald-300 shadow-lg shadow-emerald-500/10 transition-transform duration-300 group-hover:scale-110">
                         <metric.icon className="h-5 w-5" />
                       </div>
                       <div>
                         <div className="text-xl font-semibold text-white">{metric.value}</div>
-                        <div className="text-xs text-slate-400">{metric.label}</div>
+                        <div className="text-xs text-slate-300">{metric.label}</div>
                       </div>
                     </CardContent>
                   </Card>
@@ -436,14 +459,14 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
             animate={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }}
             transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : 0.12 }}
           >
-            <Card className="relative overflow-hidden border-white/10 bg-slate-950/75 shadow-2xl shadow-black/30 backdrop-blur">
+            <Card className="relative overflow-hidden border-white/12 bg-[linear-gradient(145deg,rgba(2,6,23,0.9),rgba(15,23,42,0.82))] shadow-[0_30px_100px_rgba(0,0,0,0.45)] backdrop-blur-xl">
               <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-r from-emerald-500/10 via-cyan-400/10 to-violet-500/10" />
               <CardHeader className="relative space-y-3">
                 <Badge className="w-fit border border-violet-400/20 bg-violet-500/15 text-violet-100 hover:bg-violet-500/20">
                   Access the platform
                 </Badge>
                 <CardTitle className="text-2xl text-white">Start free. Upgrade when the model proves itself.</CardTitle>
-                <CardDescription className="text-slate-300">
+                <CardDescription className="text-slate-200">
                   Explore the system with a free account, then unlock Launch Pass, Starter, or Pro when you are ready to move from concept to execution.
                 </CardDescription>
               </CardHeader>
@@ -592,11 +615,11 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
             transition={revealTransition}
             className="max-w-3xl space-y-3"
           >
-            <Badge className="border border-white/10 bg-white/10 text-slate-100 hover:bg-white/15">Core value proposition</Badge>
-            <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">
+            <Badge className="border border-white/12 bg-white/10 text-slate-50 hover:bg-white/15">Core value proposition</Badge>
+            <h3 className="text-3xl font-semibold tracking-tight text-white md:text-4xl md:leading-tight">
               The platform is designed to convert curiosity into a structured revenue journey.
             </h3>
-            <p className="text-lg leading-8 text-slate-300">
+            <p className="text-lg leading-8 text-slate-200">
               The landing page sells the promise, the account experience reveals the operating system, and the pricing model nudges users into increasingly serious execution only when the opportunity warrants it.
             </p>
           </motion.div>
@@ -611,7 +634,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                 transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : index * 0.06 }}
                 {...hoverLift}
               >
-                <Card className="group relative overflow-hidden border-white/10 bg-slate-950/65 backdrop-blur">
+                <Card className="group relative overflow-hidden border-white/12 bg-[linear-gradient(145deg,rgba(2,6,23,0.9),rgba(15,23,42,0.76))] shadow-[0_18px_60px_rgba(2,6,23,0.32)] backdrop-blur-xl">
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-transparent to-violet-500/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
                   <CardHeader>
                     <div className="w-fit rounded-xl bg-emerald-500/10 p-3 text-emerald-300 shadow-lg shadow-emerald-500/10 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
@@ -619,7 +642,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                     </div>
                     <CardTitle className="text-white">{item.title}</CardTitle>
                   </CardHeader>
-                  <CardContent className="text-sm leading-7 text-slate-300">{item.description}</CardContent>
+                  <CardContent className="text-sm leading-7 text-slate-200">{item.description}</CardContent>
                 </Card>
               </motion.div>
             ))}
@@ -627,7 +650,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
         </div>
       </section>
 
-      <section className="border-y border-white/10 bg-slate-950/40 px-4 py-16 md:px-8">
+      <section className="border-y border-white/10 bg-[linear-gradient(180deg,rgba(2,6,23,0.52),rgba(2,6,23,0.82))] px-4 py-16 md:px-8">
         <div className="mx-auto max-w-7xl space-y-8">
           <motion.div
             initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
@@ -637,15 +660,15 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
             className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
           >
             <div className="max-w-3xl space-y-3">
-              <Badge className="border border-violet-400/20 bg-violet-500/15 text-violet-100 hover:bg-violet-500/20">Phased monetization model</Badge>
-              <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">Seven phases, one increasingly valuable path.</h3>
-              <p className="text-lg leading-8 text-slate-300">
+              <Badge className="border border-violet-400/24 bg-violet-500/18 text-violet-50 hover:bg-violet-500/24">Phased monetization model</Badge>
+              <h3 className="text-3xl font-semibold tracking-tight text-white md:text-4xl md:leading-tight">Seven phases, one increasingly valuable path.</h3>
+              <p className="text-lg leading-8 text-slate-200">
                 Users start with discovery and pay progressively deeper into the experience. High-touch deployment remains reserved for premium workflows and managed execution.
               </p>
             </div>
             <Button
               variant="outline"
-              className="border-white/10 bg-slate-900/70 text-white hover:bg-slate-800"
+              className="border-white/12 bg-slate-900/80 text-white shadow-lg shadow-violet-500/5 hover:bg-slate-800"
               onClick={() => setLocation("/wizard")}
             >
               Preview the discovery flow
@@ -662,7 +685,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                 transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : index * 0.04 }}
                 {...hoverLift}
               >
-                <Card className="border-white/10 bg-slate-950/70 backdrop-blur">
+                <Card className="border-white/12 bg-[linear-gradient(145deg,rgba(2,6,23,0.9),rgba(15,23,42,0.78))] shadow-[0_18px_60px_rgba(2,6,23,0.28)] backdrop-blur-xl">
                   <CardHeader className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Badge variant="outline" className="border-white/15 text-slate-200">
@@ -671,9 +694,9 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                       <Flame className={`h-4 w-4 ${index < 4 ? "text-emerald-300" : "text-amber-300"}`} />
                     </div>
                     <CardTitle className="text-white">{phase.name}</CardTitle>
-                    <CardDescription className="text-slate-400">{phase.label}</CardDescription>
+                    <CardDescription className="text-slate-200">{phase.label}</CardDescription>
                   </CardHeader>
-                  <CardContent className="text-sm leading-7 text-slate-300">{phase.description}</CardContent>
+                  <CardContent className="text-sm leading-7 text-slate-200">{phase.description}</CardContent>
                 </Card>
               </motion.div>
             ))}
@@ -691,13 +714,13 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
             className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
           >
             <div className="max-w-3xl space-y-3">
-              <Badge className="border border-emerald-400/20 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/20">Pricing that matches commitment</Badge>
-              <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">Start free, launch with confidence, scale when the business earns it.</h3>
-              <p className="text-lg leading-8 text-slate-300">
+              <Badge className="border border-emerald-400/24 bg-emerald-500/18 text-emerald-50 hover:bg-emerald-500/24">Pricing that matches commitment</Badge>
+              <h3 className="text-3xl font-semibold tracking-tight text-white md:text-4xl md:leading-tight">Start free, launch with confidence, scale when the business earns it.</h3>
+              <p className="text-lg leading-8 text-slate-200">
                 The pricing model is structured so the platform can monetize earlier without forcing every user into a high-ticket retainer on day one.
               </p>
             </div>
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-slate-200 backdrop-blur">
+            <div className="rounded-2xl border border-emerald-500/24 bg-[linear-gradient(135deg,rgba(16,185,129,0.12),rgba(15,23,42,0.72))] px-4 py-3 text-sm text-slate-100 shadow-lg shadow-emerald-500/5 backdrop-blur-xl">
               {plansQuery.data?.stripeConfigured
                 ? "Checkout is ready to connect to Stripe."
                 : "Pricing is wired for checkout and can activate once Stripe keys are configured."}
@@ -718,10 +741,10 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                   {...hoverLift}
                 >
                   <Card
-                    className={`relative overflow-hidden border-white/10 ${
+                    className={`relative overflow-hidden border-white/12 ${
                       featured
-                        ? "bg-gradient-to-b from-emerald-500/12 via-slate-950/90 to-slate-950/80 shadow-lg shadow-emerald-500/10"
-                        : "bg-slate-950/70"
+                        ? "bg-[linear-gradient(160deg,rgba(16,185,129,0.18),rgba(15,23,42,0.96)_34%,rgba(15,23,42,0.9))] shadow-[0_24px_90px_rgba(16,185,129,0.14)]"
+                        : "bg-[linear-gradient(145deg,rgba(2,6,23,0.9),rgba(15,23,42,0.78))] shadow-[0_18px_60px_rgba(2,6,23,0.28)]"
                     }`}
                   >
                     {featured ? <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 to-cyan-400" /> : null}
@@ -737,13 +760,13 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                       </div>
                       <div>
                         <CardTitle className="text-white">{tier.name}</CardTitle>
-                        <CardDescription className="mt-2 min-h-16 text-slate-300">{tier.description}</CardDescription>
+                        <CardDescription className="mt-2 min-h-16 text-slate-200">{tier.description}</CardDescription>
                       </div>
                       <div>
                         <div className="text-4xl font-semibold text-white">
                           {isEnterprise ? "$10k+" : tier.price === 0 ? "$0" : `$${tier.price}`}
                         </div>
-                        <div className="text-sm text-slate-400">
+                        <div className="text-sm text-slate-300">
                           {tier.key === "launch_pass"
                             ? "one-time unlock"
                             : tier.key === "enterprise"
@@ -792,184 +815,236 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
         </div>
       </section>
 
-      <section className="border-y border-white/10 bg-slate-950/40 px-4 py-16 md:px-8">
-        <div className="mx-auto max-w-7xl space-y-8">
-          <motion.div
-            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
-            whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.25 }}
-            transition={revealTransition}
-            className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
-          >
-            <div className="max-w-3xl space-y-3">
-              <Badge className="border border-cyan-400/20 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/20">Editorial signal engine</Badge>
-              <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">Why / Who, Hot 100, and Blog now work as a real landing-page intelligence layer.</h3>
-              <p className="text-lg leading-8 text-slate-300">
-                These sections are now powered by the same content-management system used in the admin area, so your public narrative, trend positioning, and editorial content can evolve without hard-coded edits.
-              </p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-slate-900/60 px-4 py-3 text-sm text-slate-300 backdrop-blur">
-              {landingContentQuery.isLoading ? "Syncing curated content…" : "Editorial content is live on the landing page."}
-            </div>
-          </motion.div>
-
-          <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-            <motion.div
-              initial={shouldReduceMotion ? false : { opacity: 0, y: 18 }}
-              whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={revealTransition}
-              {...hoverLift}
-            >
-              <Card className="group relative overflow-hidden border-white/10 bg-slate-950/80 backdrop-blur">
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,197,94,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(6,182,212,0.16),transparent_26%)] opacity-90" />
-                <CardHeader className="relative space-y-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <Badge className="w-fit border border-amber-400/20 bg-amber-500/15 text-amber-100 hover:bg-amber-500/20">Why / Who</Badge>
-                    <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
-                      <Orbit className="h-3.5 w-3.5 text-emerald-300" />
-                      Narrative pulse
-                    </div>
-                  </div>
-                  <CardTitle className="text-white">{dailySignal.title}</CardTitle>
-                  <CardDescription className="text-slate-300">
-                    Updated from the admin editorial workflow and positioned to explain market timing and audience fit in real time.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="relative grid gap-4 md:grid-cols-2">
-                  <div className="rounded-2xl border border-white/10 bg-slate-900/75 p-5 shadow-lg shadow-emerald-500/5">
-                    <div className="mb-2 flex items-center gap-2 text-sm font-medium text-emerald-300">
-                      <TrendingUp className="h-4 w-4" /> Why now
-                    </div>
-                    <p className="text-sm leading-7 text-slate-300">{dailySignal.whyContent}</p>
-                  </div>
-                  <div className="rounded-2xl border border-white/10 bg-slate-900/75 p-5 shadow-lg shadow-cyan-500/5">
-                    <div className="mb-2 flex items-center gap-2 text-sm font-medium text-cyan-300">
-                      <Users className="h-4 w-4" /> Who it serves
-                    </div>
-                    <p className="text-sm leading-7 text-slate-300">{dailySignal.whoContent}</p>
-                  </div>
-                  {dailySignal.marketContext ? (
-                    <div className="md:col-span-2 rounded-2xl border border-white/10 bg-white/5 p-5 text-sm leading-7 text-slate-300">
-                      <div className="mb-2 flex items-center gap-2 text-sm font-medium text-violet-200">
-                        <Target className="h-4 w-4 text-violet-300" /> Market context
-                      </div>
-                      {dailySignal.marketContext}
-                    </div>
-                  ) : null}
-                </CardContent>
-              </Card>
-            </motion.div>
-
-            <motion.div
-              initial={shouldReduceMotion ? false : { opacity: 0, y: 18 }}
-              whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.2 }}
-              transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : 0.08 }}
-              {...hoverLift}
-            >
-              <Card className="group relative overflow-hidden border-white/10 bg-slate-950/80 backdrop-blur">
-                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,63,94,0.16),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.14),transparent_28%)] opacity-90" />
-                <CardHeader className="relative">
-                  <Badge className="w-fit border border-rose-400/20 bg-rose-500/15 text-rose-100 hover:bg-rose-500/20">Hot 100</Badge>
-                  <CardTitle className="mt-3 text-white">{hotList.title}</CardTitle>
-                  <CardDescription className="text-slate-300">
-                    {hotList.summary || "Curated opportunity signals that create urgency, relevance, and premium positioning on the public site."}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="relative space-y-3">
-                  {hotEntries.slice(0, 6).map((entry, index) => (
-                    <motion.div
-                      key={`${extractHotEntryTitle(entry)}-${index}`}
-                      className="flex items-start gap-3 rounded-2xl border border-white/10 bg-slate-900/72 p-4 text-sm text-slate-200"
-                      whileHover={shouldReduceMotion ? undefined : { x: 4 }}
-                    >
-                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-500/10 font-semibold text-rose-200">
-                        {entry?.rank ?? index + 1}
-                      </div>
-                      <div className="space-y-1">
-                        <div className="font-medium text-white">{extractHotEntryTitle(entry)}</div>
-                        {entry?.description ? <div className="leading-6 text-slate-400">{String(entry.description)}</div> : null}
-                      </div>
-                    </motion.div>
-                  ))}
-                </CardContent>
-              </Card>
-            </motion.div>
-          </div>
-
-          <motion.div
-            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
-            whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
-            viewport={{ once: true, amount: 0.2 }}
-            transition={revealTransition}
-            className="space-y-6"
-          >
-            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-              <div className="max-w-3xl space-y-3">
-                <Badge className="border border-emerald-400/20 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/20">Blog</Badge>
-                <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">Editorial content that makes the monetization story feel real.</h3>
-                <p className="text-lg leading-8 text-slate-300">
-                  Showcase launch strategy, validation logic, and market insight directly on the landing page so visitors see proof of thought leadership before they ever enter the product.
-                </p>
-              </div>
-              <Button
-                variant="outline"
-                onClick={handleSignIn}
-                className="border-white/10 bg-slate-900/60 text-white hover:bg-slate-800"
+      <section className="relative border-y border-white/10 bg-[linear-gradient(180deg,rgba(2,6,23,0.65),rgba(2,6,23,0.92))] px-4 py-16 md:px-8">
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute left-[10%] top-20 h-72 w-72 rounded-full bg-emerald-500/16 blur-3xl"
+          animate={sectionGlowMotion}
+          transition={shouldReduceMotion ? undefined : { duration: 11, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute right-[12%] top-28 h-80 w-80 rounded-full bg-violet-500/14 blur-3xl"
+          animate={shouldReduceMotion ? undefined : { opacity: [0.34, 0.6, 0.42, 0.34], y: [0, -10, 8, 0] }}
+          transition={shouldReduceMotion ? undefined : { duration: 13, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <div className="mx-auto max-w-7xl">
+          <div className="relative overflow-hidden rounded-[32px] border border-white/10 bg-slate-950/72 p-6 shadow-[0_35px_120px_rgba(2,6,23,0.6)] backdrop-blur-xl md:p-10">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(34,197,94,0.16),transparent_24%),radial-gradient(circle_at_top_right,rgba(59,130,246,0.12),transparent_22%),radial-gradient(circle_at_bottom_right,rgba(168,85,247,0.14),transparent_22%)]" />
+            <div className="relative space-y-8">
+              <motion.div
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+                whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.25 }}
+                transition={revealTransition}
+                className="flex flex-col gap-4 rounded-[28px] border border-white/10 bg-slate-950/70 p-6 md:flex-row md:items-end md:justify-between"
               >
-                Unlock the full operating system
-                <ArrowUpRight className="ml-2 h-4 w-4" />
-              </Button>
-            </div>
+                <div className="max-w-3xl space-y-3">
+                  <motion.div animate={marqueeDrift} transition={shouldReduceMotion ? undefined : { duration: 12, repeat: Infinity, ease: "easeInOut" }}>
+                    <Badge className="border border-cyan-400/30 bg-cyan-500/18 text-cyan-50 hover:bg-cyan-500/24">Editorial signal engine</Badge>
+                  </motion.div>
+                  <h3 className="max-w-4xl text-3xl font-semibold tracking-tight text-white md:text-5xl md:leading-[1.05]">
+                    Why / Who, Hot 100, and Blog now work as a real landing-page intelligence layer.
+                  </h3>
+                  <p className="max-w-3xl text-lg leading-8 text-slate-200">
+                    These sections are now powered by the same content-management system used in the admin area, so your public narrative, trend positioning, and editorial content can evolve without hard-coded edits.
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-white/12 bg-white/8 px-4 py-3 text-sm font-medium text-slate-100 shadow-lg shadow-emerald-500/5 backdrop-blur">
+                  {landingContentQuery.isLoading ? "Syncing curated content…" : "Editorial content is live on the landing page."}
+                </div>
+              </motion.div>
 
-            <div className="grid gap-4 lg:grid-cols-3">
-              {blogPosts.slice(0, 3).map((post, index) => (
+              <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
                 <motion.div
-                  key={`${post.slug ?? post.title}-${index}`}
-                  initial={shouldReduceMotion ? false : { opacity: 0, y: 18 }}
-                  whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+                  initial={shouldReduceMotion ? false : { opacity: 0, x: -70, rotateX: 8 }}
+                  whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0, rotateX: 0 }}
                   viewport={{ once: true, amount: 0.2 }}
-                  transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : index * 0.08 }}
+                  transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : 0.02 }}
+                  style={foldBackStyle}
                   {...hoverLift}
                 >
-                  <Card className="group relative h-full overflow-hidden border-white/10 bg-slate-950/80 backdrop-blur">
-                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-transparent to-cyan-500/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                  <Card className="group relative overflow-hidden border-white/12 bg-slate-950/88 shadow-[0_24px_80px_rgba(15,23,42,0.55)] backdrop-blur-xl">
+                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,197,94,0.26),transparent_30%),radial-gradient(circle_at_bottom_left,rgba(6,182,212,0.22),transparent_28%)] opacity-95" />
+                    <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.08),transparent_22%,transparent_70%,rgba(255,255,255,0.03))] opacity-70" />
                     <CardHeader className="relative space-y-4">
-                      <div className="flex items-center justify-between gap-3 text-xs text-slate-400">
-                        <div className="flex items-center gap-2">
-                          <Newspaper className="h-3.5 w-3.5 text-emerald-300" />
-                          <span>{post.category || "GoGetterOS insight"}</span>
-                        </div>
-                        <span>{formatDate(post.publishedAt)}</span>
+                      <div className="flex items-center justify-between gap-3">
+                        <Badge className="w-fit border border-amber-400/30 bg-amber-500/18 text-amber-50 hover:bg-amber-500/22">Why / Who</Badge>
+                        <motion.div
+                          animate={marqueeDrift}
+                          transition={shouldReduceMotion ? undefined : { duration: 10, repeat: Infinity, ease: "easeInOut" }}
+                          className="flex items-center gap-2 rounded-full border border-white/12 bg-black/30 px-3 py-1 text-xs text-slate-100 shadow-lg shadow-emerald-500/5"
+                        >
+                          <Orbit className="h-3.5 w-3.5 text-emerald-300" />
+                          Narrative pulse
+                        </motion.div>
                       </div>
-                      <CardTitle className="text-xl leading-8 text-white">{post.title}</CardTitle>
-                      <CardDescription className="min-h-24 text-sm leading-7 text-slate-300">
-                        {post.summary || post.content || "Fresh editorial insight from the GoGetterOS launch engine."}
+                      <CardTitle className="text-2xl leading-tight text-white md:text-[2rem]">{dailySignal.title}</CardTitle>
+                      <CardDescription className="text-base leading-7 text-slate-200">
+                        Updated from the admin editorial workflow and positioned to explain market timing and audience fit in real time.
                       </CardDescription>
                     </CardHeader>
-                    <CardContent className="relative flex h-full flex-col justify-between gap-4">
-                      <div className="flex flex-wrap gap-2">
-                        {(post.tags ?? []).slice(0, 3).map((tag) => (
-                          <Badge key={tag} variant="outline" className="border-white/10 bg-white/5 text-slate-200">
-                            #{tag}
-                          </Badge>
-                        ))}
-                      </div>
-                      <Button
-                        variant="ghost"
-                        onClick={handleSignIn}
-                        className="-ml-4 justify-start text-emerald-300 hover:bg-transparent hover:text-emerald-200"
+                    <CardContent className="relative grid gap-4 md:grid-cols-2">
+                      <motion.div
+                        whileHover={shouldReduceMotion ? undefined : { rotateX: -5, rotateY: 6, scale: 1.015 }}
+                        transition={{ duration: 0.25 }}
+                        style={foldBackStyle}
+                        className="rounded-[24px] border border-emerald-400/18 bg-slate-900/86 p-5 shadow-[0_18px_60px_rgba(16,185,129,0.08)]"
                       >
-                        Read inside GoGetterOS
-                        <ArrowRight className="ml-2 h-4 w-4" />
-                      </Button>
+                        <div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-emerald-200">
+                          <TrendingUp className="h-4 w-4" /> Why now
+                        </div>
+                        <p className="text-sm leading-7 text-slate-100">{dailySignal.whyContent}</p>
+                      </motion.div>
+                      <motion.div
+                        whileHover={shouldReduceMotion ? undefined : { rotateX: -5, rotateY: -6, scale: 1.015 }}
+                        transition={{ duration: 0.25 }}
+                        style={foldBackStyle}
+                        className="rounded-[24px] border border-cyan-400/18 bg-slate-900/86 p-5 shadow-[0_18px_60px_rgba(34,211,238,0.08)]"
+                      >
+                        <div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-cyan-200">
+                          <Users className="h-4 w-4" /> Who it serves
+                        </div>
+                        <p className="text-sm leading-7 text-slate-100">{dailySignal.whoContent}</p>
+                      </motion.div>
+                      {dailySignal.marketContext ? (
+                        <motion.div
+                          whileHover={shouldReduceMotion ? undefined : { y: -4, scale: 1.01 }}
+                          transition={{ duration: 0.25 }}
+                          className="md:col-span-2 rounded-[24px] border border-violet-400/16 bg-[linear-gradient(135deg,rgba(15,23,42,0.92),rgba(30,41,59,0.84))] p-5 text-sm leading-7 text-slate-100 shadow-[0_18px_60px_rgba(168,85,247,0.08)]"
+                        >
+                          <div className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.18em] text-violet-100">
+                            <Target className="h-4 w-4 text-violet-300" /> Market context
+                          </div>
+                          {dailySignal.marketContext}
+                        </motion.div>
+                      ) : null}
                     </CardContent>
                   </Card>
                 </motion.div>
-              ))}
+
+                <motion.div
+                  initial={shouldReduceMotion ? false : { opacity: 0, x: 70, rotateX: 8 }}
+                  whileInView={shouldReduceMotion ? undefined : { opacity: 1, x: 0, rotateX: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : 0.08 }}
+                  style={foldBackStyle}
+                  {...hoverLift}
+                >
+                  <Card className="group relative overflow-hidden border-white/12 bg-slate-950/88 shadow-[0_24px_80px_rgba(15,23,42,0.55)] backdrop-blur-xl">
+                    <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,63,94,0.22),transparent_26%),radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.18),transparent_30%)] opacity-95" />
+                    <div className="pointer-events-none absolute inset-y-0 right-0 w-32 bg-gradient-to-l from-rose-500/8 to-transparent" />
+                    <CardHeader className="relative space-y-4">
+                      <Badge className="w-fit border border-rose-400/30 bg-rose-500/18 text-rose-50 hover:bg-rose-500/22">Hot 100</Badge>
+                      <CardTitle className="text-2xl leading-tight text-white md:text-[2rem]">{hotList.title}</CardTitle>
+                      <CardDescription className="text-base leading-7 text-slate-200">
+                        {hotList.summary || "Curated opportunity signals that create urgency, relevance, and premium positioning on the public site."}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="relative space-y-3">
+                      {hotEntries.slice(0, 6).map((entry, index) => (
+                        <motion.div
+                          key={`${extractHotEntryTitle(entry)}-${index}`}
+                          className="flex items-start gap-3 rounded-[22px] border border-white/12 bg-[linear-gradient(135deg,rgba(15,23,42,0.92),rgba(30,41,59,0.86))] p-4 text-sm text-slate-100 shadow-[0_18px_50px_rgba(15,23,42,0.35)]"
+                          whileHover={shouldReduceMotion ? undefined : { x: 8, rotateX: -4, rotateY: 5, scale: 1.012 }}
+                          transition={{ duration: 0.22 }}
+                          style={foldBackStyle}
+                        >
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-rose-300/16 bg-rose-500/14 font-semibold text-rose-100 shadow-lg shadow-rose-500/10">
+                            {entry?.rank ?? index + 1}
+                          </div>
+                          <div className="space-y-1.5">
+                            <div className="font-semibold leading-6 text-white">{extractHotEntryTitle(entry)}</div>
+                            {entry?.description ? <div className="leading-6 text-slate-300">{String(entry.description)}</div> : null}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              </div>
+
+              <motion.div
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+                whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={revealTransition}
+                className="space-y-6"
+              >
+                <div className="flex flex-col gap-4 rounded-[28px] border border-white/10 bg-slate-950/70 p-6 md:flex-row md:items-end md:justify-between">
+                  <div className="max-w-3xl space-y-3">
+                    <Badge className="border border-emerald-400/30 bg-emerald-500/18 text-emerald-50 hover:bg-emerald-500/24">Blog</Badge>
+                    <h3 className="text-3xl font-semibold tracking-tight text-white md:text-5xl md:leading-[1.05]">Editorial content that makes the monetization story feel real.</h3>
+                    <p className="text-lg leading-8 text-slate-200">
+                      Showcase launch strategy, validation logic, and market insight directly on the landing page so visitors see proof of thought leadership before they ever enter the product.
+                    </p>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={handleSignIn}
+                    className="border-white/12 bg-slate-900/80 text-white shadow-lg shadow-emerald-500/5 hover:bg-slate-800"
+                  >
+                    Unlock the full operating system
+                    <ArrowUpRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+
+                <div className="grid gap-4 lg:grid-cols-3">
+                  {blogPosts.slice(0, 3).map((post, index) => (
+                    <motion.div
+                      key={`${post.slug ?? post.title}-${index}`}
+                      initial={shouldReduceMotion ? false : { opacity: 0, y: 32, x: index % 2 === 0 ? -38 : 38 }}
+                      whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0, x: 0 }}
+                      viewport={{ once: true, amount: 0.2 }}
+                      transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : index * 0.08 }}
+                      style={foldBackStyle}
+                      {...hoverLift}
+                    >
+                      <Card className="group relative h-full overflow-hidden border-white/12 bg-slate-950/90 shadow-[0_24px_80px_rgba(15,23,42,0.45)] backdrop-blur-xl">
+                        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(135deg,rgba(16,185,129,0.12),transparent_26%,transparent_74%,rgba(34,211,238,0.1))] opacity-75 transition-opacity duration-500 group-hover:opacity-100" />
+                        <motion.div
+                          aria-hidden
+                          className="pointer-events-none absolute -right-12 top-0 h-40 w-40 rounded-full bg-emerald-400/10 blur-3xl"
+                          animate={sectionGlowMotion}
+                          transition={shouldReduceMotion ? undefined : { duration: 9, repeat: Infinity, ease: "easeInOut" }}
+                        />
+                        <CardHeader className="relative space-y-4">
+                          <div className="flex items-center justify-between gap-3 text-xs text-slate-300">
+                            <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-2.5 py-1">
+                              <Newspaper className="h-3.5 w-3.5 text-emerald-300" />
+                              <span>{post.category || "GoGetterOS insight"}</span>
+                            </div>
+                            <span>{formatDate(post.publishedAt)}</span>
+                          </div>
+                          <CardTitle className="text-xl leading-8 text-white">{post.title}</CardTitle>
+                          <CardDescription className="min-h-24 text-sm leading-7 text-slate-200">
+                            {post.summary || post.content || "Fresh editorial insight from the GoGetterOS launch engine."}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="relative flex h-full flex-col justify-between gap-4">
+                          <div className="flex flex-wrap gap-2">
+                            {(post.tags ?? []).slice(0, 3).map((tag) => (
+                              <Badge key={tag} variant="outline" className="border-white/12 bg-white/6 text-slate-100">
+                                #{tag}
+                              </Badge>
+                            ))}
+                          </div>
+                          <Button
+                            variant="ghost"
+                            onClick={handleSignIn}
+                            className="-ml-4 justify-start text-emerald-200 hover:bg-transparent hover:text-white"
+                          >
+                            Read inside GoGetterOS
+                            <ArrowRight className="ml-2 h-4 w-4" />
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
             </div>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -987,17 +1062,17 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
               <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">
                 Explore the OS for free, then pay when the opportunity earns a deeper commitment.
               </h3>
-              <p className="max-w-3xl text-lg leading-8 text-slate-300">
+              <p className="max-w-3xl text-lg leading-8 text-slate-200">
                 The new experience is built to convert interest into action: clearer positioning, stronger pricing, live editorial sections, a visible path through the phases, and a billing layer that supports real monetization.
               </p>
               <div className="flex flex-wrap gap-3 text-sm text-slate-300">
-                <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
+                <div className="flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-2 text-slate-100 shadow-lg shadow-black/10">
                   <ShieldCheck className="h-4 w-4 text-emerald-300" /> Trusted sign-in and billing
                 </div>
-                <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
+                <div className="flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-2 text-slate-100 shadow-lg shadow-black/10">
                   <BookOpen className="h-4 w-4 text-cyan-300" /> Curated insight and strategy content
                 </div>
-                <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
+                <div className="flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-2 text-slate-100 shadow-lg shadow-black/10">
                   <TrendingUp className="h-4 w-4 text-violet-300" /> Opportunity-led growth path
                 </div>
               </div>
@@ -1006,7 +1081,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
               <Button
                 size="lg"
                 onClick={handleSignIn}
-                className="bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 text-white hover:from-emerald-400 hover:via-teal-300 hover:to-cyan-300"
+                className="bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 text-white shadow-[0_18px_60px_rgba(16,185,129,0.22)] hover:from-emerald-400 hover:via-teal-300 hover:to-cyan-300"
               >
                 Create free account
               </Button>
@@ -1014,7 +1089,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                 size="lg"
                 variant="outline"
                 onClick={() => setShowEmailForm(true)}
-                className="border-white/10 bg-slate-900/60 text-white hover:bg-slate-800"
+                className="border-white/12 bg-slate-900/70 text-white shadow-lg shadow-black/10 hover:bg-slate-800"
               >
                 Use email instead
               </Button>
