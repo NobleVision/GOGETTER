@@ -1,5 +1,7 @@
 import AccessRestricted from "@/components/AccessRestricted";
 import DashboardLayout from "@/components/DashboardLayout";
+import { motion, useReducedMotion } from "framer-motion";
+import { interiorPageMotion } from "@/lib/interiorMotion";
 import { usePermissions } from "@/_core/hooks/usePermissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -80,14 +82,20 @@ function MyBusinessesContent() {
     });
   };
 
+  const shouldReduceMotion = useReducedMotion();
+  const pageMotion = interiorPageMotion(!!shouldReduceMotion);
+
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <motion.div className="space-y-6" {...pageMotion.container}>
         {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <motion.div
+          className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+          {...pageMotion.header}
+        >
           <div>
             <h1 className="text-2xl font-bold text-white">My Businesses</h1>
-            <p className="text-muted-foreground">Manage your deployed autonomous businesses</p>
+            <p className="text-slate-300">Manage your deployed autonomous businesses</p>
           </div>
           <Button 
             onClick={() => setLocation('/catalog')}
@@ -96,7 +104,7 @@ function MyBusinessesContent() {
             <Plus className="mr-2 h-4 w-4" />
             Deploy New Business
           </Button>
-        </div>
+        </motion.div>
 
         {/* Business List */}
         {isLoading ? (
@@ -238,7 +246,7 @@ function MyBusinessesContent() {
                 onClick={() => setLocation('/catalog')}
                 className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0"
               >
-                <Rocket className="mr-2 h-4 w-4" />
+        motion.        <Rocket className="mr-2 h-4 w-4" />
                 Browse Business Catalog
               </Button>
             </CardContent>
