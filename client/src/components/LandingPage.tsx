@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { motion, useInView, useReducedMotion, type Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -50,11 +50,19 @@ type TypewriterTextProps = {
   perChar?: number;
   startDelay?: number;
   reduceMotion?: boolean;
+  shimmer?: boolean;
 };
 
-// Character-level typewriter reveal. Each char is an isolated motion.span
-// using raw object props (not variant names) so it does NOT participate in
-// any parent container's variant cascade. That isolation is load-bearing.
+// Three-phase paragraph reveal:
+//   hidden  -> typing (char-by-char motion spans)
+//   typing  -> settled (swap to continuous text so kerning + anti-aliasing
+//                       restore full weight; inline-block per-char rendering
+//                       visually reads as "faded" even at opacity 1)
+//   settled -> shimmer (slow repeating light sweep via mix-blend-mode, one
+//                       pass every ~9s, purely decorative).
+//
+// Each char uses raw object props (not variant names), isolating it from
+// any parent variant cascade. That isolation is load-bearing.
 function TypewriterText({
   text,
   className,
@@ -62,18 +70,57 @@ function TypewriterText({
   perChar = 0.018,
   startDelay = 0,
   reduceMotion = false,
+  shimmer = true,
 }: TypewriterTextProps) {
   const ref = useRef<HTMLElement | null>(null);
   const inView = useInView(ref, { once: true, amount: 0.3 });
+  const [settled, setSettled] = useState(reduceMotion);
+  const Wrapper = as as "p" | "span" | "div";
+
+  useEffect(() => {
+    if (reduceMotion) {
+      setSettled(true);
+      return;
+    }
+    if (!inView) return;
+    const totalMs = (startDelay + text.length * perChar + 0.5) * 1000;
+    const timer = window.setTimeout(() => setSettled(true), totalMs);
+    return () => window.clearTimeout(timer);
+  }, [inView, reduceMotion, startDelay, text.length, perChar]);
 
   if (reduceMotion) {
-    const El = as as "p" | "span" | "div";
-    return <El className={className}>{text}</El>;
+    return <Wrapper className={className}>{text}</Wrapper>;
+  }
+
+  if (settled) {
+    return (
+      <Wrapper
+        ref={ref as never}
+        className={`${className ?? ""} relative overflow-hidden`}
+      >
+        <span className="relative z-10">{text}</span>
+        {shimmer ? (
+          <motion.span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-y-0 left-0 w-[45%] bg-[linear-gradient(110deg,transparent_0%,rgba(255,255,255,0.0)_30%,rgba(255,255,255,0.42)_50%,rgba(255,255,255,0.0)_70%,transparent_100%)]"
+            style={{ mixBlendMode: "screen" }}
+            initial={{ x: "-120%" }}
+            animate={{ x: "260%" }}
+            transition={{
+              duration: 2.2,
+              ease: "easeInOut",
+              repeat: Infinity,
+              repeatDelay: 7,
+              delay: 0.2,
+            }}
+          />
+        ) : null}
+      </Wrapper>
+    );
   }
 
   const words = text.split(" ");
   let charCounter = 0;
-  const Wrapper = as as "p" | "span" | "div";
 
   return (
     <Wrapper
