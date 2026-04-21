@@ -1,6 +1,6 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { motion, useReducedMotion } from "framer-motion";
+import { motion, useInView, useReducedMotion, type Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,6 +41,80 @@ import {
 
 interface LandingPageProps {
   errorMessage?: string | null;
+}
+
+type TypewriterTextProps = {
+  text: string;
+  className?: string;
+  as?: "p" | "span" | "div";
+  perChar?: number;
+  startDelay?: number;
+  reduceMotion?: boolean;
+};
+
+// Character-level typewriter reveal. Each char is an isolated motion.span
+// using raw object props (not variant names) so it does NOT participate in
+// any parent container's variant cascade. That isolation is load-bearing.
+function TypewriterText({
+  text,
+  className,
+  as = "p",
+  perChar = 0.018,
+  startDelay = 0,
+  reduceMotion = false,
+}: TypewriterTextProps) {
+  const ref = useRef<HTMLElement | null>(null);
+  const inView = useInView(ref, { once: true, amount: 0.3 });
+
+  if (reduceMotion) {
+    const El = as as "p" | "span" | "div";
+    return <El className={className}>{text}</El>;
+  }
+
+  const words = text.split(" ");
+  let charCounter = 0;
+  const Wrapper = as as "p" | "span" | "div";
+
+  return (
+    <Wrapper
+      ref={ref as React.RefObject<HTMLParagraphElement>}
+      className={className}
+      aria-label={text}
+    >
+      {words.map((word, wi) => {
+        const chars = Array.from(word);
+        return (
+          <span
+            key={wi}
+            aria-hidden="true"
+            style={{ display: "inline-block", whiteSpace: "nowrap" }}
+          >
+            {chars.map((ch) => {
+              const i = charCounter++;
+              return (
+                <motion.span
+                  key={i}
+                  initial={{ opacity: 0, y: 6 }}
+                  animate={inView ? { opacity: 1, y: 0 } : undefined}
+                  transition={{
+                    delay: startDelay + i * perChar,
+                    type: "spring",
+                    stiffness: 260,
+                    damping: 24,
+                    mass: 0.6,
+                  }}
+                  style={{ display: "inline-block" }}
+                >
+                  {ch}
+                </motion.span>
+              );
+            })}
+            {wi < words.length - 1 ? "\u00A0" : null}
+          </span>
+        );
+      })}
+    </Wrapper>
+  );
 }
 
 type PricingTierKey = "free" | "launch_pass" | "starter" | "pro" | "enterprise" | "unlimited";
@@ -284,6 +358,35 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
     ? { duration: 0 }
     : { duration: 0.65, ease: [0.22, 1, 0.36, 1] as const };
 
+  const springReveal = shouldReduceMotion
+    ? { duration: 0 }
+    : ({ type: "spring", stiffness: 130, damping: 20, mass: 0.7 } as const);
+
+  const sectionStagger: Variants = {
+    hidden: {},
+    visible: {
+      transition: {
+        staggerChildren: shouldReduceMotion ? 0 : 0.12,
+        delayChildren: shouldReduceMotion ? 0 : 0.05,
+      },
+    },
+  };
+
+  const itemFromBelow: Variants = {
+    hidden: shouldReduceMotion ? { opacity: 1 } : { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: springReveal },
+  };
+
+  const itemFromLeft: Variants = {
+    hidden: shouldReduceMotion ? { opacity: 1 } : { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0, transition: springReveal },
+  };
+
+  const itemFromRight: Variants = {
+    hidden: shouldReduceMotion ? { opacity: 1 } : { opacity: 0, x: 20 },
+    visible: { opacity: 1, x: 0, transition: springReveal },
+  };
+
   const hoverLift = shouldReduceMotion
     ? {}
     : {
@@ -402,9 +505,13 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
               <h2 className="max-w-4xl text-4xl font-semibold leading-tight text-white md:text-6xl">
                 Build, price, validate, and scale AI-powered businesses with a premium path to revenue.
               </h2>
-              <p className="max-w-3xl text-lg leading-8 text-slate-300 md:text-xl">
-                GoGetterOS turns entrepreneurial ambition into a phased execution engine. Explore for free, unlock deeper layers when the signal is real, and move from discovery into monetized operations with more speed and less waste.
-              </p>
+              <TypewriterText
+                as="p"
+                className="max-w-3xl text-lg leading-8 text-slate-50 md:text-xl"
+                text="GoGetterOS turns entrepreneurial ambition into a phased execution engine. Explore for free, unlock deeper layers when the signal is real, and move from discovery into monetized operations with more speed and less waste."
+                startDelay={0.25}
+                reduceMotion={!!shouldReduceMotion}
+              />
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -445,7 +552,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                       </div>
                       <div>
                         <div className="text-xl font-semibold text-white">{metric.value}</div>
-                        <div className="text-xs text-slate-300">{metric.label}</div>
+                        <div className="text-xs text-slate-100">{metric.label}</div>
                       </div>
                     </CardContent>
                   </Card>
@@ -466,7 +573,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                   Access the platform
                 </Badge>
                 <CardTitle className="text-2xl text-white">Start free. Upgrade when the model proves itself.</CardTitle>
-                <CardDescription className="text-slate-200">
+                <CardDescription className="text-slate-50">
                   Explore the system with a free account, then unlock Launch Pass, Starter, or Pro when you are ready to move from concept to execution.
                 </CardDescription>
               </CardHeader>
@@ -597,7 +704,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                   </form>
                 )}
 
-                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-slate-200">
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-emerald-50">
                   Free accounts can browse, run one discovery flow, and preview the monetized GoGetterOS experience before upgrading.
                 </div>
               </CardContent>
@@ -609,19 +716,28 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
       <section className="px-4 py-16 md:px-8">
         <div className="mx-auto max-w-7xl space-y-8">
           <motion.div
-            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
-            whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+            initial={shouldReduceMotion ? false : "hidden"}
+            whileInView={shouldReduceMotion ? undefined : "visible"}
             viewport={{ once: true, amount: 0.3 }}
-            transition={revealTransition}
+            variants={sectionStagger}
             className="max-w-3xl space-y-3"
           >
-            <Badge className="border border-white/12 bg-white/10 text-slate-50 hover:bg-white/15">Core value proposition</Badge>
-            <h3 className="text-3xl font-semibold tracking-tight text-white md:text-4xl md:leading-tight">
+            <motion.div variants={itemFromBelow}>
+              <Badge className="border border-white/12 bg-white/10 text-slate-50 hover:bg-white/15">Core value proposition</Badge>
+            </motion.div>
+            <motion.h3
+              variants={itemFromBelow}
+              className="text-3xl font-semibold tracking-tight text-white md:text-4xl md:leading-tight"
+            >
               The platform is designed to convert curiosity into a structured revenue journey.
-            </h3>
-            <p className="text-lg leading-8 text-slate-200">
-              The landing page sells the promise, the account experience reveals the operating system, and the pricing model nudges users into increasingly serious execution only when the opportunity warrants it.
-            </p>
+            </motion.h3>
+            <TypewriterText
+              as="p"
+              className="text-lg leading-8 text-slate-50"
+              text="The landing page sells the promise, the account experience reveals the operating system, and the pricing model nudges users into increasingly serious execution only when the opportunity warrants it."
+              startDelay={0.35}
+              reduceMotion={!!shouldReduceMotion}
+            />
           </motion.div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -642,7 +758,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                     </div>
                     <CardTitle className="text-white">{item.title}</CardTitle>
                   </CardHeader>
-                  <CardContent className="text-sm leading-7 text-slate-200">{item.description}</CardContent>
+                  <CardContent className="text-sm leading-7 text-slate-100">{item.description}</CardContent>
                 </Card>
               </motion.div>
             ))}
@@ -659,13 +775,30 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
             transition={revealTransition}
             className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
           >
-            <div className="max-w-3xl space-y-3">
-              <Badge className="border border-violet-400/24 bg-violet-500/18 text-violet-50 hover:bg-violet-500/24">Phased monetization model</Badge>
-              <h3 className="text-3xl font-semibold tracking-tight text-white md:text-4xl md:leading-tight">Seven phases, one increasingly valuable path.</h3>
-              <p className="text-lg leading-8 text-slate-200">
-                Users start with discovery and pay progressively deeper into the experience. High-touch deployment remains reserved for premium workflows and managed execution.
-              </p>
-            </div>
+            <motion.div
+              initial={shouldReduceMotion ? false : "hidden"}
+              whileInView={shouldReduceMotion ? undefined : "visible"}
+              viewport={{ once: true, amount: 0.3 }}
+              variants={sectionStagger}
+              className="max-w-3xl space-y-3"
+            >
+              <motion.div variants={itemFromLeft}>
+                <Badge className="border border-violet-400/24 bg-violet-500/18 text-violet-50 hover:bg-violet-500/24">Phased monetization model</Badge>
+              </motion.div>
+              <motion.h3
+                variants={itemFromLeft}
+                className="text-3xl font-semibold tracking-tight text-white md:text-4xl md:leading-tight"
+              >
+                Seven phases, one increasingly valuable path.
+              </motion.h3>
+              <TypewriterText
+                as="p"
+                className="text-lg leading-8 text-slate-50"
+                text="Users start with discovery and pay progressively deeper into the experience. High-touch deployment remains reserved for premium workflows and managed execution."
+                startDelay={0.35}
+                reduceMotion={!!shouldReduceMotion}
+              />
+            </motion.div>
             <Button
               variant="outline"
               className="border-white/12 bg-slate-900/80 text-white shadow-lg shadow-violet-500/5 hover:bg-slate-800"
@@ -688,15 +821,15 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                 <Card className="border-white/12 bg-[linear-gradient(145deg,rgba(2,6,23,0.9),rgba(15,23,42,0.78))] shadow-[0_18px_60px_rgba(2,6,23,0.28)] backdrop-blur-xl">
                   <CardHeader className="space-y-3">
                     <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="border-white/15 text-slate-200">
+                      <Badge variant="outline" className="border-white/15 text-slate-50">
                         Phase {index + 1}
                       </Badge>
                       <Flame className={`h-4 w-4 ${index < 4 ? "text-emerald-300" : "text-amber-300"}`} />
                     </div>
                     <CardTitle className="text-white">{phase.name}</CardTitle>
-                    <CardDescription className="text-slate-200">{phase.label}</CardDescription>
+                    <CardDescription className="text-slate-100">{phase.label}</CardDescription>
                   </CardHeader>
-                  <CardContent className="text-sm leading-7 text-slate-200">{phase.description}</CardContent>
+                  <CardContent className="text-sm leading-7 text-slate-100">{phase.description}</CardContent>
                 </Card>
               </motion.div>
             ))}
@@ -713,13 +846,30 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
             transition={revealTransition}
             className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
           >
-            <div className="max-w-3xl space-y-3">
-              <Badge className="border border-emerald-400/24 bg-emerald-500/18 text-emerald-50 hover:bg-emerald-500/24">Pricing that matches commitment</Badge>
-              <h3 className="text-3xl font-semibold tracking-tight text-white md:text-4xl md:leading-tight">Start free, launch with confidence, scale when the business earns it.</h3>
-              <p className="text-lg leading-8 text-slate-200">
-                The pricing model is structured so the platform can monetize earlier without forcing every user into a high-ticket retainer on day one.
-              </p>
-            </div>
+            <motion.div
+              initial={shouldReduceMotion ? false : "hidden"}
+              whileInView={shouldReduceMotion ? undefined : "visible"}
+              viewport={{ once: true, amount: 0.3 }}
+              variants={sectionStagger}
+              className="max-w-3xl space-y-3"
+            >
+              <motion.div variants={itemFromRight}>
+                <Badge className="border border-emerald-400/24 bg-emerald-500/18 text-emerald-50 hover:bg-emerald-500/24">Pricing that matches commitment</Badge>
+              </motion.div>
+              <motion.h3
+                variants={itemFromRight}
+                className="text-3xl font-semibold tracking-tight text-white md:text-4xl md:leading-tight"
+              >
+                Start free, launch with confidence, scale when the business earns it.
+              </motion.h3>
+              <TypewriterText
+                as="p"
+                className="text-lg leading-8 text-slate-50"
+                text="The pricing model is structured so the platform can monetize earlier without forcing every user into a high-ticket retainer on day one."
+                startDelay={0.35}
+                reduceMotion={!!shouldReduceMotion}
+              />
+            </motion.div>
             <div className="rounded-2xl border border-emerald-500/24 bg-[linear-gradient(135deg,rgba(16,185,129,0.12),rgba(15,23,42,0.72))] px-4 py-3 text-sm text-slate-100 shadow-lg shadow-emerald-500/5 backdrop-blur-xl">
               {plansQuery.data?.stripeConfigured
                 ? "Checkout is ready to connect to Stripe."
@@ -750,7 +900,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                     {featured ? <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 to-cyan-400" /> : null}
                     <CardHeader className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <Badge variant="outline" className="border-white/10 text-slate-200 capitalize">
+                        <Badge variant="outline" className="border-white/10 text-slate-50 capitalize">
                           {tier.name}
                         </Badge>
                         {tier.key === "pro" ? <Crown className="h-4 w-4 text-amber-300" /> : null}
@@ -760,13 +910,13 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                       </div>
                       <div>
                         <CardTitle className="text-white">{tier.name}</CardTitle>
-                        <CardDescription className="mt-2 min-h-16 text-slate-200">{tier.description}</CardDescription>
+                        <CardDescription className="mt-2 min-h-16 text-slate-100">{tier.description}</CardDescription>
                       </div>
                       <div>
                         <div className="text-4xl font-semibold text-white">
                           {isEnterprise ? "$10k+" : tier.price === 0 ? "$0" : `$${tier.price}`}
                         </div>
-                        <div className="text-sm text-slate-300">
+                        <div className="text-sm text-slate-100">
                           {tier.key === "launch_pass"
                             ? "one-time unlock"
                             : tier.key === "enterprise"
@@ -777,7 +927,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                         </div>
                       </div>
                     </CardHeader>
-                    <CardContent className="space-y-4 text-sm text-slate-200">
+                    <CardContent className="space-y-4 text-sm text-slate-100">
                       <div className="space-y-3">
                         <div className="flex items-center gap-2">
                           <CheckCircle2 className="h-4 w-4 text-emerald-300" /> {tier.monthlyCredits.toLocaleString()} credits
@@ -839,17 +989,32 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                 transition={revealTransition}
                 className="flex flex-col gap-4 rounded-[28px] border border-white/10 bg-slate-950/70 p-6 md:flex-row md:items-end md:justify-between"
               >
-                <div className="max-w-3xl space-y-3">
-                  <motion.div animate={marqueeDrift} transition={shouldReduceMotion ? undefined : { duration: 12, repeat: Infinity, ease: "easeInOut" }}>
-                    <Badge className="border border-cyan-400/30 bg-cyan-500/18 text-cyan-50 hover:bg-cyan-500/24">Editorial signal engine</Badge>
+                <motion.div
+                  initial={shouldReduceMotion ? false : "hidden"}
+                  whileInView={shouldReduceMotion ? undefined : "visible"}
+                  viewport={{ once: true, amount: 0.3 }}
+                  variants={sectionStagger}
+                  className="max-w-3xl space-y-3"
+                >
+                  <motion.div variants={itemFromBelow}>
+                    <motion.div animate={marqueeDrift} transition={shouldReduceMotion ? undefined : { duration: 12, repeat: Infinity, ease: "easeInOut" }}>
+                      <Badge className="border border-cyan-400/30 bg-cyan-500/18 text-cyan-50 hover:bg-cyan-500/24">Editorial signal engine</Badge>
+                    </motion.div>
                   </motion.div>
-                  <h3 className="max-w-4xl text-3xl font-semibold tracking-tight text-white md:text-5xl md:leading-[1.05]">
+                  <motion.h3
+                    variants={itemFromBelow}
+                    className="max-w-4xl text-3xl font-semibold tracking-tight text-white md:text-5xl md:leading-[1.05]"
+                  >
                     Why / Who, Hot 100, and Blog now work as a real landing-page intelligence layer.
-                  </h3>
-                  <p className="max-w-3xl text-lg leading-8 text-slate-200">
-                    These sections are now powered by the same content-management system used in the admin area, so your public narrative, trend positioning, and editorial content can evolve without hard-coded edits.
-                  </p>
-                </div>
+                  </motion.h3>
+                  <TypewriterText
+                    as="p"
+                    className="max-w-3xl text-lg leading-8 text-slate-50"
+                    text="These sections are now powered by the same content-management system used in the admin area, so your public narrative, trend positioning, and editorial content can evolve without hard-coded edits."
+                    startDelay={0.35}
+                    reduceMotion={!!shouldReduceMotion}
+                  />
+                </motion.div>
                 <div className="rounded-2xl border border-white/12 bg-white/8 px-4 py-3 text-sm font-medium text-slate-100 shadow-lg shadow-emerald-500/5 backdrop-blur">
                   {landingContentQuery.isLoading ? "Syncing curated content…" : "Editorial content is live on the landing page."}
                 </div>
@@ -880,7 +1045,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                         </motion.div>
                       </div>
                       <CardTitle className="text-2xl leading-tight text-white md:text-[2rem]">{dailySignal.title}</CardTitle>
-                      <CardDescription className="text-base leading-7 text-slate-200">
+                      <CardDescription className="text-base leading-7 text-slate-100">
                         Updated from the admin editorial workflow and positioned to explain market timing and audience fit in real time.
                       </CardDescription>
                     </CardHeader>
