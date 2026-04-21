@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
+import { motion, useReducedMotion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,14 +12,14 @@ import { toast } from "sonner";
 import MediaControls from "./MediaControls";
 import {
   ArrowRight,
+  ArrowUpRight,
   BadgeDollarSign,
+  BookOpen,
   Bot,
   Brain,
   Briefcase,
   CheckCircle2,
   ChevronRight,
-  CircleDollarSign,
-  Clock3,
   Cpu,
   Crown,
   Flame,
@@ -27,11 +28,14 @@ import {
   Layers3,
   Loader2,
   Lock,
+  Newspaper,
+  Orbit,
   Rocket,
   ShieldCheck,
   Sparkles,
+  Target,
   TrendingUp,
-  Wallet,
+  Users,
   Zap,
 } from "lucide-react";
 
@@ -50,6 +54,32 @@ type PricingTier = {
   wizardUses: number;
   tokenRateLimit: number;
   description: string;
+};
+
+type LandingBlogPost = {
+  id?: number;
+  title: string;
+  slug?: string;
+  summary?: string | null;
+  content?: string | null;
+  category?: string | null;
+  tags?: string[] | null;
+  imageUrl?: string | null;
+  publishedAt?: string | Date | null;
+};
+
+type LandingDailySignal = {
+  title: string;
+  whyContent: string;
+  whoContent: string;
+  marketContext?: string | null;
+  sourceUrls?: string[] | null;
+};
+
+type LandingHotList = {
+  title: string;
+  summary?: string | null;
+  entries?: Array<Record<string, any>> | null;
 };
 
 const PLATFORM_METRICS = [
@@ -124,22 +154,79 @@ const PHASES = [
   },
 ];
 
-const DAILY_SIGNAL = {
+const DEFAULT_DAILY_SIGNAL: LandingDailySignal = {
   title: "Why now / who wins today",
-  why: "Lean teams, solo operators, and founders are under pressure to move faster with less capital. The best opportunities are no longer hidden in complexity; they are hidden in execution speed.",
-  who: "GoGetterOS fits builders who want AI-assisted business formation, monetization experiments, and a direct path from research to launch.",
+  whyContent:
+    "Lean teams, solo operators, and founders are under pressure to move faster with less capital. The best opportunities are no longer hidden in complexity; they are hidden in execution speed.",
+  whoContent:
+    "GoGetterOS fits builders who want AI-assisted business formation, monetization experiments, and a direct path from research to launch.",
+  marketContext:
+    "Teams that can move from signal to launch faster are outperforming larger but slower competitors.",
+  sourceUrls: [],
 };
 
-const HOT_OPPORTUNITIES = [
-  "AI appointment-setting agencies for local service businesses",
-  "Micro-SaaS audit tools for creators and consultants",
-  "Voice-based customer recovery workflows for SMB sales teams",
-  "Niche compliance dashboards with recurring reporting retainers",
-  "Prompt-powered offer generators for coaches and experts",
+const DEFAULT_HOT_LIST: LandingHotList = {
+  title: "Hot 100 opportunities",
+  summary: "Curated ideas GoGetterOS can help validate, prototype, and scale.",
+  entries: [
+    { rank: 1, title: "AI appointment-setting agencies for local service businesses" },
+    { rank: 2, title: "Micro-SaaS audit tools for creators and consultants" },
+    { rank: 3, title: "Voice-based customer recovery workflows for SMB sales teams" },
+    { rank: 4, title: "Niche compliance dashboards with recurring reporting retainers" },
+    { rank: 5, title: "Prompt-powered offer generators for coaches and experts" },
+    { rank: 6, title: "Automated outbound systems for premium local operators" },
+  ],
+};
+
+const DEFAULT_BLOG_POSTS: LandingBlogPost[] = [
+  {
+    title: "How GoGetterOS turns business discovery into an operating system",
+    summary:
+      "A look at how the platform converts research, validation, and monetization into a single execution path.",
+    category: "Launch Strategy",
+    tags: ["go-to-market", "ai ops"],
+  },
+  {
+    title: "What to validate before paying for build-out and deployment",
+    summary:
+      "The highest-leverage questions to answer before committing real capital, code, and operational overhead.",
+    category: "Validation",
+    tags: ["validation", "pricing"],
+  },
+  {
+    title: "Why AI-assisted operators are winning smaller markets faster",
+    summary:
+      "A premium positioning piece on why lean builders can now launch faster and monetize sooner than legacy teams.",
+    category: "Market Signals",
+    tags: ["opportunity", "automation"],
+  },
 ];
+
+function formatDate(value?: string | Date | null) {
+  if (!value) return "Fresh insight";
+  const date = value instanceof Date ? value : new Date(value);
+  if (Number.isNaN(date.getTime())) return "Fresh insight";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+function extractHotEntryTitle(entry: Record<string, any>) {
+  return (
+    entry?.title ??
+    entry?.name ??
+    entry?.opportunity ??
+    entry?.label ??
+    entry?.description ??
+    "Untitled opportunity"
+  );
+}
 
 export default function LandingPage({ errorMessage }: LandingPageProps) {
   const [, setLocation] = useLocation();
+  const shouldReduceMotion = useReducedMotion();
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -151,6 +238,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
   });
 
   const plansQuery = trpc.subscription.plans.useQuery();
+  const landingContentQuery = trpc.content.landingPage.useQuery();
 
   const registerMutation = trpc.auth.register.useMutation({
     onSuccess: (data) => {
@@ -176,23 +264,32 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
 
   const pricingTiers = useMemo(() => {
     const tiers = (plansQuery.data?.tiers ?? []) as PricingTier[];
-    const preferredOrder: PricingTierKey[] = [
-      "free",
-      "launch_pass",
-      "starter",
-      "pro",
-      "enterprise",
-    ];
+    const preferredOrder: PricingTierKey[] = ["free", "launch_pass", "starter", "pro", "enterprise"];
 
     return tiers
       .filter((tier) => preferredOrder.includes(tier.key))
-      .sort(
-        (a, b) =>
-          preferredOrder.indexOf(a.key) - preferredOrder.indexOf(b.key),
-      );
+      .sort((a, b) => preferredOrder.indexOf(a.key) - preferredOrder.indexOf(b.key));
   }, [plansQuery.data]);
 
   const isSubmitting = registerMutation.isPending || loginMutation.isPending;
+
+  const blogPosts = (landingContentQuery.data?.blogs?.length
+    ? landingContentQuery.data.blogs
+    : DEFAULT_BLOG_POSTS) as LandingBlogPost[];
+  const dailySignal = (landingContentQuery.data?.dailySignal ?? DEFAULT_DAILY_SIGNAL) as LandingDailySignal;
+  const hotList = (landingContentQuery.data?.hotList ?? DEFAULT_HOT_LIST) as LandingHotList;
+  const hotEntries = Array.isArray(hotList.entries) && hotList.entries.length > 0 ? hotList.entries : DEFAULT_HOT_LIST.entries ?? [];
+
+  const revealTransition = shouldReduceMotion
+    ? { duration: 0 }
+    : { duration: 0.65, ease: [0.22, 1, 0.36, 1] as const };
+
+  const hoverLift = shouldReduceMotion
+    ? {}
+    : {
+        whileHover: { y: -8, scale: 1.01 },
+        transition: { duration: 0.25, ease: "easeOut" as const },
+      };
 
   const handleSignIn = () => {
     window.location.href = getGoogleLoginUrl();
@@ -230,26 +327,45 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
   };
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top,#123a32_0%,rgba(15,23,42,0.92)_32%,#020617_75%)] text-white">
+    <div className="relative min-h-screen overflow-hidden bg-[#030712] text-white">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.16),transparent_32%),radial-gradient(circle_at_85%_15%,rgba(168,85,247,0.16),transparent_22%),linear-gradient(to_bottom,rgba(2,6,23,0.7),rgba(2,6,23,0.96))]" />
+      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.035)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.035)_1px,transparent_1px)] bg-[size:56px_56px] opacity-[0.16]" />
+
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute left-[8%] top-28 h-72 w-72 rounded-full bg-emerald-500/18 blur-3xl"
+        animate={shouldReduceMotion ? undefined : { scale: [1, 1.08, 0.98, 1], opacity: [0.35, 0.55, 0.42, 0.35] }}
+        transition={shouldReduceMotion ? undefined : { duration: 12, repeat: Infinity, ease: "easeInOut" }}
+      />
+      <motion.div
+        aria-hidden
+        className="pointer-events-none absolute right-[8%] top-48 h-80 w-80 rounded-full bg-violet-500/14 blur-3xl"
+        animate={shouldReduceMotion ? undefined : { y: [0, -24, 0], scale: [1, 1.05, 1] }}
+        transition={shouldReduceMotion ? undefined : { duration: 14, repeat: Infinity, ease: "easeInOut" }}
+      />
+
       <div className="fixed right-4 top-4 z-50">
         <MediaControls showVolumeSlider />
       </div>
 
-      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,rgba(16,185,129,0.12),transparent_35%,rgba(15,23,42,0.3))] pointer-events-none" />
-
       <section className="relative border-b border-white/10 px-4 pb-20 pt-24 md:px-8">
-        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-          <div className="space-y-8">
+        <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.18fr_0.82fr] lg:items-center">
+          <motion.div
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 26 }}
+            animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+            transition={revealTransition}
+            className="space-y-8"
+          >
             <div className="flex items-center gap-3">
-              <img
+              <motion.img
                 src="/logo-256x256.png"
                 alt="GO-GETTER OS"
                 className="h-14 w-14 rounded-2xl shadow-2xl shadow-emerald-500/30"
+                animate={shouldReduceMotion ? undefined : { rotate: [0, -3, 0, 3, 0] }}
+                transition={shouldReduceMotion ? undefined : { duration: 9, repeat: Infinity, ease: "easeInOut" }}
               />
               <div>
-                <p className="text-xs uppercase tracking-[0.3em] text-emerald-300/80">
-                  Monetized AI business operating system
-                </p>
+                <p className="text-xs uppercase tracking-[0.3em] text-emerald-300/80">Monetized AI business operating system</p>
                 <h1 className="text-3xl font-semibold tracking-tight md:text-5xl">
                   GO-GETTER <span className="text-emerald-400">OS</span>
                 </h1>
@@ -257,14 +373,14 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
             </div>
 
             <div className="space-y-4">
-              <Badge className="bg-emerald-500/15 text-emerald-300 hover:bg-emerald-500/20">
+              <Badge className="border border-emerald-400/20 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/20">
                 From exploration to launch-ready revenue systems
               </Badge>
               <h2 className="max-w-4xl text-4xl font-semibold leading-tight text-white md:text-6xl">
-                Build, test, price, and scale AI-powered businesses with a clearer path to revenue.
+                Build, price, validate, and scale AI-powered businesses with a premium path to revenue.
               </h2>
               <p className="max-w-3xl text-lg leading-8 text-slate-300 md:text-xl">
-                GoGetterOS turns entrepreneurial ambition into a phased operating system. Users can explore for free, pay when momentum appears, and graduate into high-touch execution only when a concept proves worthy.
+                GoGetterOS turns entrepreneurial ambition into a phased execution engine. Explore for free, unlock deeper layers when the signal is real, and move from discovery into monetized operations with more speed and less waste.
               </p>
             </div>
 
@@ -272,216 +388,240 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
               <Button
                 size="lg"
                 onClick={handleSignIn}
-                className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-lg shadow-emerald-500/20 hover:from-emerald-400 hover:to-teal-400"
+                className="relative overflow-hidden bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 text-white shadow-lg shadow-emerald-500/20 hover:from-emerald-400 hover:via-teal-300 hover:to-cyan-300"
               >
-                Continue with Google
-                <ArrowRight className="ml-2 h-4 w-4" />
+                <span className="relative z-10 flex items-center">
+                  Continue with Google
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </span>
               </Button>
               <Button
                 size="lg"
                 variant="outline"
                 onClick={() => setShowEmailForm(true)}
-                className="border-white/15 bg-slate-900/60 text-slate-100 hover:bg-slate-800"
+                className="border-white/15 bg-slate-900/60 text-slate-100 backdrop-blur hover:bg-slate-800"
               >
                 Use email instead
               </Button>
             </div>
 
             <div className="grid gap-4 md:grid-cols-4">
-              {PLATFORM_METRICS.map((metric) => (
-                <Card key={metric.label} className="border-white/10 bg-slate-950/60 backdrop-blur">
-                  <CardContent className="flex items-center gap-3 p-4">
-                    <div className="rounded-xl bg-emerald-500/15 p-2 text-emerald-300">
-                      <metric.icon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <div className="text-xl font-semibold text-white">{metric.value}</div>
-                      <div className="text-xs text-slate-400">{metric.label}</div>
-                    </div>
-                  </CardContent>
-                </Card>
+              {PLATFORM_METRICS.map((metric, index) => (
+                <motion.div
+                  key={metric.label}
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 24 }}
+                  whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.3 }}
+                  transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : 0.08 + index * 0.06 }}
+                  {...hoverLift}
+                >
+                  <Card className="group border-white/10 bg-slate-950/60 backdrop-blur transition-colors hover:border-emerald-400/20 hover:bg-slate-950/80">
+                    <CardContent className="flex items-center gap-3 p-4">
+                      <div className="rounded-xl bg-emerald-500/15 p-2 text-emerald-300 shadow-lg shadow-emerald-500/10 transition-transform duration-300 group-hover:scale-110">
+                        <metric.icon className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="text-xl font-semibold text-white">{metric.value}</div>
+                        <div className="text-xs text-slate-400">{metric.label}</div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
             </div>
-          </div>
+          </motion.div>
 
-          <Card className="border-white/10 bg-slate-950/75 shadow-2xl shadow-black/30 backdrop-blur">
-            <CardHeader className="space-y-3">
-              <Badge className="w-fit bg-violet-500/15 text-violet-200 hover:bg-violet-500/20">
-                Access the platform
-              </Badge>
-              <CardTitle className="text-2xl text-white">
-                Start free. Upgrade when the model proves itself.
-              </CardTitle>
-              <CardDescription className="text-slate-300">
-                Explore the system with a free account, then unlock Launch Pass, Starter, or Pro when you are ready to move from concept to execution.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {errorMessage ? (
-                <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">
-                  {errorMessage}
-                </div>
-              ) : null}
+          <motion.div
+            initial={shouldReduceMotion ? false : { opacity: 0, x: 22 }}
+            animate={shouldReduceMotion ? undefined : { opacity: 1, x: 0 }}
+            transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : 0.12 }}
+          >
+            <Card className="relative overflow-hidden border-white/10 bg-slate-950/75 shadow-2xl shadow-black/30 backdrop-blur">
+              <div className="pointer-events-none absolute inset-x-0 top-0 h-28 bg-gradient-to-r from-emerald-500/10 via-cyan-400/10 to-violet-500/10" />
+              <CardHeader className="relative space-y-3">
+                <Badge className="w-fit border border-violet-400/20 bg-violet-500/15 text-violet-100 hover:bg-violet-500/20">
+                  Access the platform
+                </Badge>
+                <CardTitle className="text-2xl text-white">Start free. Upgrade when the model proves itself.</CardTitle>
+                <CardDescription className="text-slate-300">
+                  Explore the system with a free account, then unlock Launch Pass, Starter, or Pro when you are ready to move from concept to execution.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="relative space-y-5">
+                {errorMessage ? (
+                  <div className="rounded-xl border border-red-500/30 bg-red-500/10 p-4 text-sm text-red-200">{errorMessage}</div>
+                ) : null}
 
-              {!showEmailForm ? (
-                <div className="space-y-3">
-                  <Button
-                    onClick={handleSignIn}
-                    className="h-12 w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-base text-white hover:from-emerald-400 hover:to-teal-400"
-                  >
-                    Continue with Google
-                  </Button>
-                  <Button
-                    onClick={() => setShowEmailForm(true)}
-                    variant="outline"
-                    className="h-12 w-full border-white/10 bg-slate-900/60 text-slate-100 hover:bg-slate-800"
-                  >
-                    Continue with email
-                  </Button>
-                </div>
-              ) : (
-                <form className="space-y-4" onSubmit={handleEmailSubmit}>
-                  <div className="flex items-center gap-2 rounded-xl bg-slate-900/80 p-1 text-sm">
-                    <button
-                      type="button"
-                      onClick={() => setAuthMode("signin")}
-                      className={`flex-1 rounded-lg px-3 py-2 transition ${
-                        authMode === "signin"
-                          ? "bg-emerald-500/20 text-white"
-                          : "text-slate-400 hover:text-white"
-                      }`}
+                {!showEmailForm ? (
+                  <div className="space-y-3">
+                    <Button
+                      onClick={handleSignIn}
+                      className="h-12 w-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 text-base text-white hover:from-emerald-400 hover:via-teal-300 hover:to-cyan-300"
                     >
-                      Sign in
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setAuthMode("signup")}
-                      className={`flex-1 rounded-lg px-3 py-2 transition ${
-                        authMode === "signup"
-                          ? "bg-emerald-500/20 text-white"
-                          : "text-slate-400 hover:text-white"
-                      }`}
+                      Continue with Google
+                    </Button>
+                    <Button
+                      onClick={() => setShowEmailForm(true)}
+                      variant="outline"
+                      className="h-12 w-full border-white/10 bg-slate-900/60 text-slate-100 hover:bg-slate-800"
                     >
-                      Create account
-                    </button>
+                      Continue with email
+                    </Button>
                   </div>
-
-                  {authMode === "signup" ? (
-                    <div className="space-y-2">
-                      <Label htmlFor="landing-name">Full name</Label>
-                      <Input
-                        id="landing-name"
-                        value={formData.name}
-                        onChange={(e) => updateField("name", e.target.value)}
-                        className="border-white/10 bg-slate-900/70"
-                        placeholder="Your name"
-                        required
-                      />
-                    </div>
-                  ) : null}
-
-                  <div className="space-y-2">
-                    <Label htmlFor="landing-email">Email</Label>
-                    <Input
-                      id="landing-email"
-                      type="email"
-                      value={formData.email}
-                      onChange={(e) => updateField("email", e.target.value)}
-                      className="border-white/10 bg-slate-900/70"
-                      placeholder="you@example.com"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="landing-password">Password</Label>
-                    <div className="relative">
-                      <Input
-                        id="landing-password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.password}
-                        onChange={(e) => updateField("password", e.target.value)}
-                        className="border-white/10 bg-slate-900/70 pr-11"
-                        placeholder="Minimum 8 characters"
-                        required
-                      />
+                ) : (
+                  <form className="space-y-4" onSubmit={handleEmailSubmit}>
+                    <div className="flex items-center gap-2 rounded-xl bg-slate-900/80 p-1 text-sm">
                       <button
                         type="button"
-                        onClick={() => setShowPassword((prev) => !prev)}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                        onClick={() => setAuthMode("signin")}
+                        className={`flex-1 rounded-lg px-3 py-2 transition ${
+                          authMode === "signin" ? "bg-emerald-500/20 text-white" : "text-slate-400 hover:text-white"
+                        }`}
                       >
-                        {showPassword ? <Lock className="h-4 w-4" /> : <ChevronRight className="h-4 w-4 rotate-90" />}
+                        Sign in
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAuthMode("signup")}
+                        className={`flex-1 rounded-lg px-3 py-2 transition ${
+                          authMode === "signup" ? "bg-emerald-500/20 text-white" : "text-slate-400 hover:text-white"
+                        }`}
+                      >
+                        Create account
                       </button>
                     </div>
-                  </div>
 
-                  {authMode === "signup" ? (
+                    {authMode === "signup" ? (
+                      <div className="space-y-2">
+                        <Label htmlFor="landing-name">Full name</Label>
+                        <Input
+                          id="landing-name"
+                          value={formData.name}
+                          onChange={(e) => updateField("name", e.target.value)}
+                          className="border-white/10 bg-slate-900/70"
+                          placeholder="Your name"
+                          required
+                        />
+                      </div>
+                    ) : null}
+
                     <div className="space-y-2">
-                      <Label htmlFor="landing-confirm-password">Confirm password</Label>
+                      <Label htmlFor="landing-email">Email</Label>
                       <Input
-                        id="landing-confirm-password"
-                        type={showPassword ? "text" : "password"}
-                        value={formData.confirmPassword}
-                        onChange={(e) => updateField("confirmPassword", e.target.value)}
+                        id="landing-email"
+                        type="email"
+                        value={formData.email}
+                        onChange={(e) => updateField("email", e.target.value)}
                         className="border-white/10 bg-slate-900/70"
-                        placeholder="Repeat your password"
+                        placeholder="you@example.com"
                         required
                       />
                     </div>
-                  ) : null}
 
-                  <Button
-                    type="submit"
-                    className="h-12 w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-base text-white hover:from-emerald-400 hover:to-teal-400"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    {authMode === "signup" ? "Create my account" : "Sign in"}
-                  </Button>
+                    <div className="space-y-2">
+                      <Label htmlFor="landing-password">Password</Label>
+                      <div className="relative">
+                        <Input
+                          id="landing-password"
+                          type={showPassword ? "text" : "password"}
+                          value={formData.password}
+                          onChange={(e) => updateField("password", e.target.value)}
+                          className="border-white/10 bg-slate-900/70 pr-11"
+                          placeholder="Minimum 8 characters"
+                          required
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white"
+                        >
+                          {showPassword ? <Lock className="h-4 w-4" /> : <ChevronRight className="h-4 w-4 rotate-90" />}
+                        </button>
+                      </div>
+                    </div>
 
-                  <button
-                    type="button"
-                    onClick={() => setShowEmailForm(false)}
-                    className="w-full text-sm text-slate-400 transition hover:text-white"
-                  >
-                    Back to Google sign-in options
-                  </button>
-                </form>
-              )}
+                    {authMode === "signup" ? (
+                      <div className="space-y-2">
+                        <Label htmlFor="landing-confirm-password">Confirm password</Label>
+                        <Input
+                          id="landing-confirm-password"
+                          type={showPassword ? "text" : "password"}
+                          value={formData.confirmPassword}
+                          onChange={(e) => updateField("confirmPassword", e.target.value)}
+                          className="border-white/10 bg-slate-900/70"
+                          placeholder="Repeat your password"
+                          required
+                        />
+                      </div>
+                    ) : null}
 
-              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-slate-200">
-                Free accounts can browse, run one discovery flow, and preview the monetized GoGetterOS experience before upgrading.
-              </div>
-            </CardContent>
-          </Card>
+                    <Button
+                      type="submit"
+                      className="h-12 w-full bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 text-base text-white hover:from-emerald-400 hover:via-teal-300 hover:to-cyan-300"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                      {authMode === "signup" ? "Create my account" : "Sign in"}
+                    </Button>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowEmailForm(false)}
+                      className="w-full text-sm text-slate-400 transition hover:text-white"
+                    >
+                      Back to Google sign-in options
+                    </button>
+                  </form>
+                )}
+
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm text-slate-200">
+                  Free accounts can browse, run one discovery flow, and preview the monetized GoGetterOS experience before upgrading.
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
         </div>
       </section>
 
       <section className="px-4 py-16 md:px-8">
         <div className="mx-auto max-w-7xl space-y-8">
-          <div className="max-w-3xl space-y-3">
-            <Badge className="bg-white/10 text-slate-200 hover:bg-white/15">Core value proposition</Badge>
+          <motion.div
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+            whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={revealTransition}
+            className="max-w-3xl space-y-3"
+          >
+            <Badge className="border border-white/10 bg-white/10 text-slate-100 hover:bg-white/15">Core value proposition</Badge>
             <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">
               The platform is designed to convert curiosity into a structured revenue journey.
             </h3>
             <p className="text-lg leading-8 text-slate-300">
               The landing page sells the promise, the account experience reveals the operating system, and the pricing model nudges users into increasingly serious execution only when the opportunity warrants it.
             </p>
-          </div>
+          </motion.div>
 
           <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            {CORE_CAPABILITIES.map((item) => (
-              <Card key={item.title} className="border-white/10 bg-slate-950/60">
-                <CardHeader>
-                  <div className="w-fit rounded-xl bg-emerald-500/10 p-3 text-emerald-300">
-                    <item.icon className="h-5 w-5" />
-                  </div>
-                  <CardTitle className="text-white">{item.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="text-sm leading-7 text-slate-300">
-                  {item.description}
-                </CardContent>
-              </Card>
+            {CORE_CAPABILITIES.map((item, index) => (
+              <motion.div
+                key={item.title}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 22 }}
+                whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.25 }}
+                transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : index * 0.06 }}
+                {...hoverLift}
+              >
+                <Card className="group relative overflow-hidden border-white/10 bg-slate-950/65 backdrop-blur">
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-transparent to-violet-500/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                  <CardHeader>
+                    <div className="w-fit rounded-xl bg-emerald-500/10 p-3 text-emerald-300 shadow-lg shadow-emerald-500/10 transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3">
+                      <item.icon className="h-5 w-5" />
+                    </div>
+                    <CardTitle className="text-white">{item.title}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="text-sm leading-7 text-slate-300">{item.description}</CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -489,9 +629,15 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
 
       <section className="border-y border-white/10 bg-slate-950/40 px-4 py-16 md:px-8">
         <div className="mx-auto max-w-7xl space-y-8">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <motion.div
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+            whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={revealTransition}
+            className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
+          >
             <div className="max-w-3xl space-y-3">
-              <Badge className="bg-violet-500/15 text-violet-200 hover:bg-violet-500/20">Phased monetization model</Badge>
+              <Badge className="border border-violet-400/20 bg-violet-500/15 text-violet-100 hover:bg-violet-500/20">Phased monetization model</Badge>
               <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">Seven phases, one increasingly valuable path.</h3>
               <p className="text-lg leading-8 text-slate-300">
                 Users start with discovery and pay progressively deeper into the experience. High-touch deployment remains reserved for premium workflows and managed execution.
@@ -504,23 +650,32 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
             >
               Preview the discovery flow
             </Button>
-          </div>
+          </motion.div>
 
           <div className="grid gap-4 lg:grid-cols-7">
             {PHASES.map((phase, index) => (
-              <Card key={phase.name} className="border-white/10 bg-slate-950/70">
-                <CardHeader className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline" className="border-white/15 text-slate-200">
-                      Phase {index + 1}
-                    </Badge>
-                    <Flame className={`h-4 w-4 ${index < 4 ? "text-emerald-300" : "text-amber-300"}`} />
-                  </div>
-                  <CardTitle className="text-white">{phase.name}</CardTitle>
-                  <CardDescription className="text-slate-400">{phase.label}</CardDescription>
-                </CardHeader>
-                <CardContent className="text-sm leading-7 text-slate-300">{phase.description}</CardContent>
-              </Card>
+              <motion.div
+                key={phase.name}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 18 }}
+                whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+                viewport={{ once: true, amount: 0.2 }}
+                transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : index * 0.04 }}
+                {...hoverLift}
+              >
+                <Card className="border-white/10 bg-slate-950/70 backdrop-blur">
+                  <CardHeader className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="border-white/15 text-slate-200">
+                        Phase {index + 1}
+                      </Badge>
+                      <Flame className={`h-4 w-4 ${index < 4 ? "text-emerald-300" : "text-amber-300"}`} />
+                    </div>
+                    <CardTitle className="text-white">{phase.name}</CardTitle>
+                    <CardDescription className="text-slate-400">{phase.label}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="text-sm leading-7 text-slate-300">{phase.description}</CardContent>
+                </Card>
+              </motion.div>
             ))}
           </div>
         </div>
@@ -528,69 +683,109 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
 
       <section className="px-4 py-16 md:px-8">
         <div className="mx-auto max-w-7xl space-y-8">
-          <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <motion.div
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+            whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.3 }}
+            transition={revealTransition}
+            className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
+          >
             <div className="max-w-3xl space-y-3">
-              <Badge className="bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/20">Pricing that matches commitment</Badge>
+              <Badge className="border border-emerald-400/20 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/20">Pricing that matches commitment</Badge>
               <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">Start free, launch with confidence, scale when the business earns it.</h3>
               <p className="text-lg leading-8 text-slate-300">
                 The pricing model is structured so the platform can monetize earlier without forcing every user into a high-ticket retainer on day one.
               </p>
             </div>
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-slate-200">
-              {plansQuery.data?.stripeConfigured ? "Checkout is ready to connect to Stripe." : "Pricing is wired for checkout and can activate once Stripe keys are configured."}
+            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3 text-sm text-slate-200 backdrop-blur">
+              {plansQuery.data?.stripeConfigured
+                ? "Checkout is ready to connect to Stripe."
+                : "Pricing is wired for checkout and can activate once Stripe keys are configured."}
             </div>
-          </div>
+          </motion.div>
 
           <div className="grid gap-4 xl:grid-cols-5">
-            {pricingTiers.map((tier) => {
+            {pricingTiers.map((tier, index) => {
               const featured = tier.key === "starter" || tier.key === "pro";
               const isEnterprise = tier.key === "enterprise";
               return (
-                <Card
+                <motion.div
                   key={tier.key}
-                  className={`relative overflow-hidden border-white/10 ${featured ? "bg-gradient-to-b from-emerald-500/10 to-slate-950/80 shadow-lg shadow-emerald-500/10" : "bg-slate-950/70"}`}
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 18 }}
+                  whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : index * 0.05 }}
+                  {...hoverLift}
                 >
-                  {featured ? (
-                    <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 to-teal-400" />
-                  ) : null}
-                  <CardHeader className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="border-white/10 text-slate-200 capitalize">
-                        {tier.name}
-                      </Badge>
-                      {tier.key === "pro" ? <Crown className="h-4 w-4 text-amber-300" /> : null}
-                      {tier.key === "launch_pass" ? <Rocket className="h-4 w-4 text-emerald-300" /> : null}
-                      {tier.key === "free" ? <Sparkles className="h-4 w-4 text-violet-300" /> : null}
-                      {tier.key === "enterprise" ? <Gem className="h-4 w-4 text-cyan-300" /> : null}
-                    </div>
-                    <div>
-                      <CardTitle className="text-white">{tier.name}</CardTitle>
-                      <CardDescription className="mt-2 min-h-16 text-slate-300">{tier.description}</CardDescription>
-                    </div>
-                    <div>
-                      <div className="text-4xl font-semibold text-white">
-                        {isEnterprise ? "$10k+" : tier.price === 0 ? "$0" : `$${tier.price}`}
+                  <Card
+                    className={`relative overflow-hidden border-white/10 ${
+                      featured
+                        ? "bg-gradient-to-b from-emerald-500/12 via-slate-950/90 to-slate-950/80 shadow-lg shadow-emerald-500/10"
+                        : "bg-slate-950/70"
+                    }`}
+                  >
+                    {featured ? <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 to-cyan-400" /> : null}
+                    <CardHeader className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline" className="border-white/10 text-slate-200 capitalize">
+                          {tier.name}
+                        </Badge>
+                        {tier.key === "pro" ? <Crown className="h-4 w-4 text-amber-300" /> : null}
+                        {tier.key === "launch_pass" ? <Rocket className="h-4 w-4 text-emerald-300" /> : null}
+                        {tier.key === "free" ? <Sparkles className="h-4 w-4 text-violet-300" /> : null}
+                        {tier.key === "enterprise" ? <Gem className="h-4 w-4 text-cyan-300" /> : null}
                       </div>
-                      <div className="text-sm text-slate-400">
-                        {tier.key === "launch_pass" ? "one-time unlock" : tier.key === "enterprise" ? "managed monthly retainer" : tier.price === 0 ? "start exploring" : "per month"}
+                      <div>
+                        <CardTitle className="text-white">{tier.name}</CardTitle>
+                        <CardDescription className="mt-2 min-h-16 text-slate-300">{tier.description}</CardDescription>
                       </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="space-y-4 text-sm text-slate-200">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-300" /> {tier.monthlyCredits.toLocaleString()} credits</div>
-                      <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-300" /> {tier.activeBusinesses === 999999 ? "Unlimited active businesses" : `${tier.activeBusinesses} active business${tier.activeBusinesses === 1 ? "" : "es"}`}</div>
-                      <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-300" /> {tier.wizardUses === 999999 ? "Unlimited discovery runs" : `${tier.wizardUses} discovery runs`}</div>
-                      <div className="flex items-center gap-2"><CheckCircle2 className="h-4 w-4 text-emerald-300" /> Token capacity: {tier.tokenRateLimit.toLocaleString()}</div>
-                    </div>
-                    <Button
-                      className={`w-full ${featured ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-400 hover:to-teal-400" : "bg-slate-800 text-white hover:bg-slate-700"}`}
-                      onClick={handleSignIn}
-                    >
-                      {tier.key === "free" ? "Start free" : isEnterprise ? "Talk to GoGetterOS" : `Choose ${tier.name}`}
-                    </Button>
-                  </CardContent>
-                </Card>
+                      <div>
+                        <div className="text-4xl font-semibold text-white">
+                          {isEnterprise ? "$10k+" : tier.price === 0 ? "$0" : `$${tier.price}`}
+                        </div>
+                        <div className="text-sm text-slate-400">
+                          {tier.key === "launch_pass"
+                            ? "one-time unlock"
+                            : tier.key === "enterprise"
+                              ? "managed monthly retainer"
+                              : tier.price === 0
+                                ? "start exploring"
+                                : "per month"}
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4 text-sm text-slate-200">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-300" /> {tier.monthlyCredits.toLocaleString()} credits
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+                          {tier.activeBusinesses === 999999
+                            ? "Unlimited active businesses"
+                            : `${tier.activeBusinesses} active business${tier.activeBusinesses === 1 ? "" : "es"}`}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-300" />
+                          {tier.wizardUses === 999999 ? "Unlimited discovery runs" : `${tier.wizardUses} discovery runs`}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="h-4 w-4 text-emerald-300" /> Token capacity: {tier.tokenRateLimit.toLocaleString()}
+                        </div>
+                      </div>
+                      <Button
+                        className={`w-full ${
+                          featured
+                            ? "bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 text-white hover:from-emerald-400 hover:via-teal-300 hover:to-cyan-300"
+                            : "bg-slate-800 text-white hover:bg-slate-700"
+                        }`}
+                        onClick={handleSignIn}
+                      >
+                        {tier.key === "free" ? "Start free" : isEnterprise ? "Talk to GoGetterOS" : `Choose ${tier.name}`}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               );
             })}
           </div>
@@ -598,70 +793,220 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
       </section>
 
       <section className="border-y border-white/10 bg-slate-950/40 px-4 py-16 md:px-8">
-        <div className="mx-auto grid max-w-7xl gap-6 lg:grid-cols-[1.1fr_0.9fr]">
-          <Card className="border-white/10 bg-slate-950/70">
-            <CardHeader>
-              <Badge className="w-fit bg-amber-500/15 text-amber-200 hover:bg-amber-500/20">Daily narrative engine</Badge>
-              <CardTitle className="text-white">{DAILY_SIGNAL.title}</CardTitle>
-              <CardDescription className="text-slate-300">
-                This area is designed to become a dynamic Why/Who section driven by scheduled content generation and admin curation.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid gap-4 md:grid-cols-2">
-              <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-5">
-                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-emerald-300">
-                  <TrendingUp className="h-4 w-4" /> Why now
-                </div>
-                <p className="text-sm leading-7 text-slate-300">{DAILY_SIGNAL.why}</p>
-              </div>
-              <div className="rounded-2xl border border-white/10 bg-slate-900/70 p-5">
-                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-cyan-300">
-                  <Globe className="h-4 w-4" /> Who it serves
-                </div>
-                <p className="text-sm leading-7 text-slate-300">{DAILY_SIGNAL.who}</p>
-              </div>
-            </CardContent>
-          </Card>
+        <div className="mx-auto max-w-7xl space-y-8">
+          <motion.div
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+            whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.25 }}
+            transition={revealTransition}
+            className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
+          >
+            <div className="max-w-3xl space-y-3">
+              <Badge className="border border-cyan-400/20 bg-cyan-500/15 text-cyan-100 hover:bg-cyan-500/20">Editorial signal engine</Badge>
+              <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">Why / Who, Hot 100, and Blog now work as a real landing-page intelligence layer.</h3>
+              <p className="text-lg leading-8 text-slate-300">
+                These sections are now powered by the same content-management system used in the admin area, so your public narrative, trend positioning, and editorial content can evolve without hard-coded edits.
+              </p>
+            </div>
+            <div className="rounded-xl border border-white/10 bg-slate-900/60 px-4 py-3 text-sm text-slate-300 backdrop-blur">
+              {landingContentQuery.isLoading ? "Syncing curated content…" : "Editorial content is live on the landing page."}
+            </div>
+          </motion.div>
 
-          <Card className="border-white/10 bg-slate-950/70">
-            <CardHeader>
-              <Badge className="w-fit bg-rose-500/15 text-rose-200 hover:bg-rose-500/20">Top opportunities</Badge>
-              <CardTitle className="text-white">Hot business opportunities to showcase</CardTitle>
-              <CardDescription className="text-slate-300">
-                This panel is prepared for the dynamic Hot 100 / Top 10 content layer the admin tools will manage.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              {HOT_OPPORTUNITIES.map((item, index) => (
-                <div key={item} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-slate-900/70 p-4 text-sm text-slate-200">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-rose-500/10 font-semibold text-rose-200">
-                    {index + 1}
+          <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
+            <motion.div
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 18 }}
+              whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={revealTransition}
+              {...hoverLift}
+            >
+              <Card className="group relative overflow-hidden border-white/10 bg-slate-950/80 backdrop-blur">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(34,197,94,0.18),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(6,182,212,0.16),transparent_26%)] opacity-90" />
+                <CardHeader className="relative space-y-4">
+                  <div className="flex items-center justify-between gap-3">
+                    <Badge className="w-fit border border-amber-400/20 bg-amber-500/15 text-amber-100 hover:bg-amber-500/20">Why / Who</Badge>
+                    <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-slate-300">
+                      <Orbit className="h-3.5 w-3.5 text-emerald-300" />
+                      Narrative pulse
+                    </div>
                   </div>
-                  <div className="leading-7">{item}</div>
-                </div>
+                  <CardTitle className="text-white">{dailySignal.title}</CardTitle>
+                  <CardDescription className="text-slate-300">
+                    Updated from the admin editorial workflow and positioned to explain market timing and audience fit in real time.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="relative grid gap-4 md:grid-cols-2">
+                  <div className="rounded-2xl border border-white/10 bg-slate-900/75 p-5 shadow-lg shadow-emerald-500/5">
+                    <div className="mb-2 flex items-center gap-2 text-sm font-medium text-emerald-300">
+                      <TrendingUp className="h-4 w-4" /> Why now
+                    </div>
+                    <p className="text-sm leading-7 text-slate-300">{dailySignal.whyContent}</p>
+                  </div>
+                  <div className="rounded-2xl border border-white/10 bg-slate-900/75 p-5 shadow-lg shadow-cyan-500/5">
+                    <div className="mb-2 flex items-center gap-2 text-sm font-medium text-cyan-300">
+                      <Users className="h-4 w-4" /> Who it serves
+                    </div>
+                    <p className="text-sm leading-7 text-slate-300">{dailySignal.whoContent}</p>
+                  </div>
+                  {dailySignal.marketContext ? (
+                    <div className="md:col-span-2 rounded-2xl border border-white/10 bg-white/5 p-5 text-sm leading-7 text-slate-300">
+                      <div className="mb-2 flex items-center gap-2 text-sm font-medium text-violet-200">
+                        <Target className="h-4 w-4 text-violet-300" /> Market context
+                      </div>
+                      {dailySignal.marketContext}
+                    </div>
+                  ) : null}
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 18 }}
+              whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : 0.08 }}
+              {...hoverLift}
+            >
+              <Card className="group relative overflow-hidden border-white/10 bg-slate-950/80 backdrop-blur">
+                <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(244,63,94,0.16),transparent_24%),radial-gradient(circle_at_bottom_right,rgba(249,115,22,0.14),transparent_28%)] opacity-90" />
+                <CardHeader className="relative">
+                  <Badge className="w-fit border border-rose-400/20 bg-rose-500/15 text-rose-100 hover:bg-rose-500/20">Hot 100</Badge>
+                  <CardTitle className="mt-3 text-white">{hotList.title}</CardTitle>
+                  <CardDescription className="text-slate-300">
+                    {hotList.summary || "Curated opportunity signals that create urgency, relevance, and premium positioning on the public site."}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="relative space-y-3">
+                  {hotEntries.slice(0, 6).map((entry, index) => (
+                    <motion.div
+                      key={`${extractHotEntryTitle(entry)}-${index}`}
+                      className="flex items-start gap-3 rounded-2xl border border-white/10 bg-slate-900/72 p-4 text-sm text-slate-200"
+                      whileHover={shouldReduceMotion ? undefined : { x: 4 }}
+                    >
+                      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-rose-500/10 font-semibold text-rose-200">
+                        {entry?.rank ?? index + 1}
+                      </div>
+                      <div className="space-y-1">
+                        <div className="font-medium text-white">{extractHotEntryTitle(entry)}</div>
+                        {entry?.description ? <div className="leading-6 text-slate-400">{String(entry.description)}</div> : null}
+                      </div>
+                    </motion.div>
+                  ))}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
+
+          <motion.div
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+            whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={revealTransition}
+            className="space-y-6"
+          >
+            <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div className="max-w-3xl space-y-3">
+                <Badge className="border border-emerald-400/20 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/20">Blog</Badge>
+                <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">Editorial content that makes the monetization story feel real.</h3>
+                <p className="text-lg leading-8 text-slate-300">
+                  Showcase launch strategy, validation logic, and market insight directly on the landing page so visitors see proof of thought leadership before they ever enter the product.
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={handleSignIn}
+                className="border-white/10 bg-slate-900/60 text-white hover:bg-slate-800"
+              >
+                Unlock the full operating system
+                <ArrowUpRight className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+
+            <div className="grid gap-4 lg:grid-cols-3">
+              {blogPosts.slice(0, 3).map((post, index) => (
+                <motion.div
+                  key={`${post.slug ?? post.title}-${index}`}
+                  initial={shouldReduceMotion ? false : { opacity: 0, y: 18 }}
+                  whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+                  viewport={{ once: true, amount: 0.2 }}
+                  transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : index * 0.08 }}
+                  {...hoverLift}
+                >
+                  <Card className="group relative h-full overflow-hidden border-white/10 bg-slate-950/80 backdrop-blur">
+                    <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-emerald-500/0 via-transparent to-cyan-500/0 opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+                    <CardHeader className="relative space-y-4">
+                      <div className="flex items-center justify-between gap-3 text-xs text-slate-400">
+                        <div className="flex items-center gap-2">
+                          <Newspaper className="h-3.5 w-3.5 text-emerald-300" />
+                          <span>{post.category || "GoGetterOS insight"}</span>
+                        </div>
+                        <span>{formatDate(post.publishedAt)}</span>
+                      </div>
+                      <CardTitle className="text-xl leading-8 text-white">{post.title}</CardTitle>
+                      <CardDescription className="min-h-24 text-sm leading-7 text-slate-300">
+                        {post.summary || post.content || "Fresh editorial insight from the GoGetterOS launch engine."}
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="relative flex h-full flex-col justify-between gap-4">
+                      <div className="flex flex-wrap gap-2">
+                        {(post.tags ?? []).slice(0, 3).map((tag) => (
+                          <Badge key={tag} variant="outline" className="border-white/10 bg-white/5 text-slate-200">
+                            #{tag}
+                          </Badge>
+                        ))}
+                      </div>
+                      <Button
+                        variant="ghost"
+                        onClick={handleSignIn}
+                        className="-ml-4 justify-start text-emerald-300 hover:bg-transparent hover:text-emerald-200"
+                      >
+                        Read inside GoGetterOS
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
               ))}
-            </CardContent>
-          </Card>
+            </div>
+          </motion.div>
         </div>
       </section>
 
       <section className="px-4 py-16 md:px-8">
-        <div className="mx-auto max-w-7xl rounded-3xl border border-white/10 bg-gradient-to-r from-slate-950 to-slate-900 p-8 shadow-2xl shadow-black/20">
+        <motion.div
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 20 }}
+          whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.2 }}
+          transition={revealTransition}
+          className="mx-auto max-w-7xl rounded-3xl border border-white/10 bg-gradient-to-r from-slate-950/95 via-slate-900/95 to-slate-950/95 p-8 shadow-2xl shadow-black/20"
+        >
           <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div className="space-y-4">
-              <Badge className="bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/20">Ready to start cooking?</Badge>
+              <Badge className="border border-emerald-400/20 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/20">Ready to start cooking?</Badge>
               <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">
                 Explore the OS for free, then pay when the opportunity earns a deeper commitment.
               </h3>
               <p className="max-w-3xl text-lg leading-8 text-slate-300">
-                The new experience is built to convert interest into action: clearer positioning, stronger pricing, a visible path through the phases, and a billing layer that supports real monetization.
+                The new experience is built to convert interest into action: clearer positioning, stronger pricing, live editorial sections, a visible path through the phases, and a billing layer that supports real monetization.
               </p>
+              <div className="flex flex-wrap gap-3 text-sm text-slate-300">
+                <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
+                  <ShieldCheck className="h-4 w-4 text-emerald-300" /> Trusted sign-in and billing
+                </div>
+                <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
+                  <BookOpen className="h-4 w-4 text-cyan-300" /> Curated insight and strategy content
+                </div>
+                <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-2">
+                  <TrendingUp className="h-4 w-4 text-violet-300" /> Opportunity-led growth path
+                </div>
+              </div>
             </div>
             <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
               <Button
                 size="lg"
                 onClick={handleSignIn}
-                className="bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-400 hover:to-teal-400"
+                className="bg-gradient-to-r from-emerald-500 via-teal-400 to-cyan-400 text-white hover:from-emerald-400 hover:via-teal-300 hover:to-cyan-300"
               >
                 Create free account
               </Button>
@@ -675,7 +1020,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
               </Button>
             </div>
           </div>
-        </div>
+        </motion.div>
       </section>
     </div>
   );

@@ -624,6 +624,22 @@ export const appRouter = router({
       }),
   }),
 
+  content: router({
+    landingPage: publicProcedure.query(async () => {
+      const [blogs, whyWhoEntries, hotLists] = await Promise.all([
+        db.listBlogPosts(3),
+        db.listDailyWhyWho(1),
+        db.listHot100Entries(1),
+      ]);
+
+      return {
+        blogs,
+        dailySignal: whyWhoEntries[0] ?? null,
+        hotList: hotLists[0] ?? null,
+      };
+    }),
+  }),
+
   // ============ ADMIN ROUTES ============
 
   admin: router({
