@@ -36,6 +36,8 @@ import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from "./DashboardLayoutSkeleton";
 import { Button } from "@/components/ui/button";
+import BackgroundVideo from "./BackgroundVideo";
+import { GLASS_HERO } from "@/lib/interiorMotion";
 
 const adminMenuItems: Array<{
   icon: any;
@@ -102,24 +104,28 @@ export default function AdminLayout({
   // Access control: admin only
   if (!user || (user as any).role !== "admin") {
     return (
-      <div className="flex items-center justify-center h-screen bg-slate-950">
-        <div className="text-center space-y-4">
-          <ShieldAlert className="h-16 w-16 text-red-400 mx-auto" />
-          <h1 className="text-2xl font-bold text-white">
-            Access Denied
-          </h1>
-          <p className="text-slate-400">
-            You do not have admin privileges to access this area.
-          </p>
-          <Button
-            variant="outline"
-            onClick={() => (window.location.href = "/")}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Dashboard
-          </Button>
+      <>
+        <BackgroundVideo overlayOpacity={0.82} />
+        <div className="relative z-10 flex items-center justify-center h-screen">
+          <div className={`${GLASS_HERO} text-center space-y-4 p-10`}>
+            <ShieldAlert className="h-16 w-16 text-red-400 mx-auto" />
+            <h1 className="text-2xl font-bold text-white">
+              Access Denied
+            </h1>
+            <p className="text-slate-200">
+              You do not have admin privileges to access this area.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => (window.location.href = "/")}
+              className="border-white/10 bg-slate-900/70 text-white hover:bg-slate-800"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back to Dashboard
+            </Button>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
@@ -188,20 +194,21 @@ function AdminLayoutContent({
 
   return (
     <>
-      <div className="relative" ref={sidebarRef}>
+      <BackgroundVideo overlayOpacity={0.8} />
+      <div className="relative z-10" ref={sidebarRef}>
         <Sidebar
           collapsible="icon"
-          className="border-r-0 bg-slate-900"
+          className="border-r-0 bg-slate-900/82 backdrop-blur-xl"
           disableTransition={isResizing}
         >
-          <SidebarHeader className="h-16 justify-center border-b border-slate-800">
+          <SidebarHeader className="h-16 justify-center border-b border-white/10">
             <div className="flex items-center gap-3 px-2 transition-all w-full">
               <button
                 onClick={toggleSidebar}
-                className="h-8 w-8 flex items-center justify-center hover:bg-slate-800 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 shrink-0"
+                className="h-8 w-8 flex items-center justify-center hover:bg-white/8 rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 shrink-0"
                 aria-label="Toggle navigation"
               >
-                <PanelLeft className="h-4 w-4 text-slate-400" />
+                <PanelLeft className="h-4 w-4 text-slate-300" />
               </button>
               {!isCollapsed && (
                 <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -214,7 +221,7 @@ function AdminLayoutContent({
             </div>
           </SidebarHeader>
 
-          <SidebarContent className="gap-0 bg-slate-900">
+          <SidebarContent className="gap-0 bg-transparent">
             <SidebarMenu className="px-2 py-2">
               {adminMenuItems.map((item) => {
                 const isActive = location === item.path;
@@ -232,19 +239,19 @@ function AdminLayoutContent({
                       }
                       className={`h-10 transition-all font-normal ${
                         item.disabled
-                          ? "text-slate-600 cursor-not-allowed"
+                          ? "text-slate-500 cursor-not-allowed"
                           : isActive
-                            ? "bg-violet-500/10 text-violet-400 hover:bg-violet-500/20"
-                            : "text-slate-400 hover:text-white hover:bg-slate-800"
+                            ? "bg-violet-500/15 text-violet-300 hover:bg-violet-500/20"
+                            : "text-slate-300 hover:text-white hover:bg-white/8"
                       }`}
                     >
                       <item.icon
-                        className={`h-4 w-4 ${isActive ? "text-violet-400" : ""}`}
+                        className={`h-4 w-4 ${isActive ? "text-violet-300" : ""}`}
                       />
                       <span>
                         {item.label}
                         {item.disabled && (
-                          <span className="ml-1.5 text-[10px] text-slate-600">
+                          <span className="ml-1.5 text-[10px] text-slate-500">
                             Soon
                           </span>
                         )}
@@ -256,11 +263,11 @@ function AdminLayoutContent({
             </SidebarMenu>
           </SidebarContent>
 
-          <SidebarFooter className="p-3 bg-slate-900 border-t border-slate-800">
+          <SidebarFooter className="p-3 bg-transparent border-t border-white/10">
             <Button
               variant="ghost"
               size="sm"
-              className="w-full justify-start text-slate-400 hover:text-white mb-2 group-data-[collapsible=icon]:justify-center"
+              className="w-full justify-start text-slate-300 hover:text-white mb-2 group-data-[collapsible=icon]:justify-center"
               onClick={() => setLocation("/")}
             >
               <ArrowLeft className="h-4 w-4 mr-2 group-data-[collapsible=icon]:mr-0" />
@@ -270,8 +277,8 @@ function AdminLayoutContent({
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-slate-800 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500">
-                  <Avatar className="h-9 w-9 border border-slate-700 shrink-0">
+                <button className="flex items-center gap-3 rounded-lg px-1 py-1 hover:bg-white/8 transition-colors w-full text-left group-data-[collapsible=icon]:justify-center focus:outline-none focus-visible:ring-2 focus-visible:ring-violet-500">
+                  <Avatar className="h-9 w-9 border border-white/10 shrink-0">
                     {(user as any)?.pictureUrl && (
                       <AvatarImage
                         src={(user as any).pictureUrl}
@@ -286,7 +293,7 @@ function AdminLayoutContent({
                     <p className="text-sm font-medium truncate leading-none text-white">
                       {user?.name || "-"}
                     </p>
-                    <p className="text-xs text-slate-500 truncate mt-1.5">
+                    <p className="text-xs text-slate-400 truncate mt-1.5">
                       {user?.email || "-"}
                     </p>
                   </div>
@@ -314,11 +321,11 @@ function AdminLayoutContent({
         />
       </div>
 
-      <SidebarInset className="bg-slate-950/80">
+      <SidebarInset className="relative z-10 bg-transparent">
         {isMobile && (
-          <div className="flex border-b border-slate-800 h-14 items-center justify-between bg-slate-900/95 px-2 backdrop-blur supports-[backdrop-filter]:backdrop-blur sticky top-0 z-40">
+          <div className="flex border-b border-white/10 h-14 items-center justify-between bg-slate-950/75 px-2 backdrop-blur-xl sticky top-0 z-40">
             <div className="flex items-center gap-2">
-              <SidebarTrigger className="h-9 w-9 rounded-lg bg-slate-800 text-white" />
+              <SidebarTrigger className="h-9 w-9 rounded-lg bg-white/8 text-white" />
               <span className="tracking-tight text-white">
                 {activeMenuItem?.label ?? "Admin"}
               </span>

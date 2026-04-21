@@ -4,6 +4,26 @@ This document tracks completed work, in-progress features, and planned enhanceme
 
 ---
 
+## Completed (April 2026 — Phase 4: Public Landing, Billing & Media Polish)
+
+### Public Landing & Conversion Experience
+- [x] **Premium landing-page redesign** — stronger contrast, premium depth, richer motion, polished pricing, and an upgraded closing CTA
+- [x] **CMS-backed editorial sections** — `Why / Who`, `Hot 100`, and `Blog` now hydrate from the admin-managed content system via `trpc.content.landingPage`
+- [x] **Public auth entry** — unauthenticated users are routed into `LandingPage` from `DashboardLayout` with Google OAuth + native email auth
+- [x] **Route-aware media controls** — visitors can toggle background video and music from the landing-page shell
+
+### Background Video & B-roll
+- [x] **New B-roll library integration** — refreshed clips mapped into public video slots 1–50 and served from the existing `/video` path
+- [x] **Main-page video visibility fix** — background video stacking, preload behavior, and fallback recovery corrected so hero B-roll displays reliably
+- [x] **ASCII-safe filename normalization** — problematic clip names normalized to prevent path-resolution issues
+
+### Billing & Request Hygiene
+- [x] **Hosted Stripe billing flows** — checkout sessions for Launch Pass, Starter, and Pro; billing portal; and credit top-up sessions are implemented when Stripe environment variables are configured
+- [x] **Public plan metadata** — pricing tiers are exposed through `subscription.plans` for the landing page and in-app upgrade surfaces
+- [x] **Auth-gated protected queries** — Home-page protected requests now wait for auth state, reducing avoidable unauthenticated console noise
+
+---
+
 ## Completed (April 2026 — Phase 3: Voice Assistant Operations Centre)
 
 ### Voice Assistant Admin Module (`/admin/voice-assistant`)
@@ -173,6 +193,7 @@ This document tracks completed work, in-progress features, and planned enhanceme
 
 ### Vercel Deployment Validation
 - [ ] Deploy latest changes to Vercel production
+- [ ] Verify homepage B-roll rotation, autoplay, and media controls in production across desktop and mobile
 - [ ] Verify SMTP email sending works from Vercel serverless functions
 - [ ] Verify cookie domain works correctly on `gogetteros.com` and `www.gogetteros.com`
 - [ ] Test Google OAuth + Email auth both work in production
@@ -207,7 +228,11 @@ This document tracks completed work, in-progress features, and planned enhanceme
 - [ ] Executive summary charts and documentation generation
 
 ### Payment & Billing Integration
-- [ ] Stripe integration for subscription billing and recurring payments
+- [x] Hosted Stripe checkout for Launch Pass, Starter, and Pro
+- [x] Stripe billing portal session for recurring self-serve plans
+- [x] Credit top-up checkout flow
+- [x] Billing readiness surfaced in app state and public pricing metadata
+- [ ] Production Stripe webhook and checkout smoke-test validation
 - [ ] Retainer payment processing ($10k minimum)
 - [ ] A-la-carte add-on purchase flow
 - [ ] Invoice generation and payment history

@@ -27,6 +27,8 @@ import {
 } from "lucide-react";
 import { useMemo } from "react";
 import { useLocation } from "wouter";
+import { motion, useReducedMotion } from "framer-motion";
+import { interiorPageMotion, GLASS_HERO, GLASS_PANEL } from "@/lib/interiorMotion";
 
 type SubscriptionTierKey = "free" | "launch_pass" | "starter" | "pro" | "enterprise" | "unlimited";
 
@@ -172,9 +174,9 @@ export default function Home() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-          <Card className="border-white/10 bg-gradient-to-br from-slate-950 via-slate-900 to-emerald-950/40">
+      <motion.div className="space-y-6" {...pageMotion.container}>
+        <motion.div className="grid gap-6 xl:grid-cols-[1.15fr_0.85fr]" variants={pageMotion.section.variants}>
+          <Card className={`${GLASS_HERO} bg-gradient-to-br from-slate-950/80 via-slate-900/75 to-emerald-950/50`}>
             <CardHeader className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -225,7 +227,7 @@ export default function Home() {
             </CardContent>
           </Card>
 
-          <Card className="border-white/10 bg-slate-950/80">
+          <Card className={`${GLASS_PANEL} backdrop-blur-xl bg-slate-950/78`}>
             <CardHeader>
               <div className="flex items-center justify-between gap-3">
                 <div>
@@ -334,9 +336,9 @@ export default function Home() {
               )}
             </CardContent>
           </Card>
-        </div>
+        </motion.div>
 
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <motion.div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" variants={pageMotion.section.variants}>
           <Card className="border-white/10 bg-slate-950/70">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-slate-400">Active Businesses</CardTitle>
@@ -526,8 +528,8 @@ export default function Home() {
               </div>
             </CardContent>
           </Card>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     </DashboardLayout>
   );
 }

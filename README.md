@@ -128,14 +128,16 @@ GO-GETTER OS includes a full-service business consultancy pipeline that takes cu
 
 ### Subscription Tiers
 
-| Tier | Price | Wizard Uses/Month | Description |
-|------|-------|--------------------|-------------|
-| **Free** | $0 | 1 | Try GoGetter OS with a single Business Wizard usage |
-| **Starter** | $100/mo | 5 | For early-stage business exploration |
-| **Pro** | $500/mo | 20 | For serious business builders |
-| **Unlimited** | $1,000/mo | Unlimited | Full platform access with token rate limits |
+| Tier | Price | Discovery Runs | Credits | Description |
+|------|-------|----------------|---------|-------------|
+| **Free** | $0 | 1 | 10 | Browse GoGetterOS, explore the public experience, and run one discovery flow |
+| **Launch Pass** | $149 one-time | 5 | 100 | One-time access for one business through Genesis to Prototype |
+| **Starter** | $99/mo | 5 | 100 | Monthly access for one active business with recurring credits |
+| **Pro** | $499/mo | 20 | 500 | Scale up to five active businesses with advanced product features |
+| **Enterprise** | $10,000+/mo | Unlimited | Unlimited | Retainer-based deployment, scaling, and professional services |
+| **Legacy Unlimited** | Legacy only | Unlimited | Unlimited | Backward-compatible historical tier retained for existing accounts |
 
-Self-serve users (tiers 0-2) experience a trimmed-down version of phases 00-03. All paid tiers include token rate limits to prevent API oversubscription.
+Self-serve plans are centered on Genesis through Prototype, while Enterprise is reserved for retainer-led activation, deployment, and managed execution. Launch Pass is a one-time purchase, Starter and Pro are recurring subscriptions, and the hosted Stripe checkout flow currently targets Launch Pass, Starter, and Pro when billing environment variables are configured.
 
 ### Business Rules & Profit Sharing
 
@@ -157,7 +159,7 @@ The admin interface is accessible at `/admin` (no links from the main UI). Acces
 - **User Administration**: Unified user management with role promotion/demotion and per-user granular permission toggles (7 feature flags)
 - **Analytics**: Phase distribution, status breakdown, pipeline funnel charts
 - **Voice Assistant Console** (`/admin/voice-assistant`): Six-tab AI voice operations centre covering Zoom/AI scheduling, agent configuration, contact profiles, live-call monitoring, log analysis, and content management. Integrated with Twilio, ElevenLabs Conversational AI, Zoom Server-to-Server OAuth, Cloudinary, and experimental Pika video dial-in. See [Voice Assistant Console](#voice-assistant-console) below.
-- **Content Assistant Tools**: Coming soon (NotebookLM + Broll generation)
+- **Content & Editorial CMS**: Admin-managed blog posts, daily signal / why-who content, hot-list entries, and landing-page narrative blocks are live today; advanced NotebookLM and B-roll assistant tooling remains on the roadmap
 
 ## Core Features
 
@@ -207,6 +209,13 @@ The admin interface is accessible at `/admin` (no links from the main UI). Acces
 - **Email Deliverability** - SPF, DKIM, and DMARC DNS records for reliable inbox delivery
 - **Environment Validation** - Comprehensive security checks and configuration validation
 
+### 📰 Public Landing Experience & Editorial CMS
+
+- **Conversion-focused public entry** - Unauthenticated visitors are routed into a full premium landing page through `DashboardLayout`
+- **Live editorial content** - Blog cards, daily signal / why-who content, and hot-list entries are managed in admin and surfaced through `content.landingPage`
+- **Phased monetization story** - The public site now mirrors the Genesis-to-Hero path and the current self-serve-to-retainer pricing ladder
+- **Global media controls** - Visitors can toggle background video and route-aware music from the public landing experience and app shell
+
 ### ⚙️ Multi-Model API Configuration
 
 - **Universal AI Integration** - Support for OpenAI, Anthropic, Perplexity, Gemini, Grok, and Manus
@@ -216,11 +225,11 @@ The admin interface is accessible at `/admin` (no links from the main UI). Acces
 
 ### 🎨 Premium User Experience
 
-- **Modern Dark Theme** - Professional, data-driven design optimized for extended use
-- **Responsive Layout** - Seamless experience across desktop, tablet, and mobile devices
-- **Smart Loading States** - Skeleton loaders and progress indicators for smooth interactions
-- **Error Boundaries** - Graceful error handling with user-friendly recovery options
-- **Real-Time Updates** - Live data synchronization without page refreshes
+- **Premium dark interface** - Layered gradients, glass surfaces, and higher-contrast composition across the public landing page and authenticated app
+- **Cinematic background media** - Global B-roll playback with accessible controls, resilient fallback handling, and route-based category selection
+- **Reduced-motion-aware animation** - Motion-heavy sections gracefully degrade when the user prefers less animation
+- **Responsive conversion surfaces** - Landing, pricing, and CTA sections are tuned for desktop, tablet, and mobile readability
+- **Error boundaries & query gating** - Graceful recovery plus auth-aware request gating for protected dashboard data
 
 ## System Architecture
 
@@ -721,6 +730,14 @@ go-getter-os/
 
 ## Recent Major Enhancements (April 2026)
 
+### Public Landing, Media & Billing Readiness (Phase 4)
+- **Premium public landing page** - Refined hero composition, stronger contrast, richer motion, a phased monetization narrative, and upgraded pricing / CTA presentation
+- **CMS-backed editorial sections** - Public `Why / Who`, `Hot 100`, and `Blog` blocks now hydrate from `trpc.content.landingPage`
+- **Background media system** - Global B-roll playback with route-aware media controls and a refreshed 1-50 public video library
+- **Main-page video recovery fix** - Background video stacking and fallback handling were corrected so landing-page B-roll remains visible and resilient
+- **Auth-aware public queries** - Protected Home-page queries now wait for auth state before firing, reducing avoidable unauthenticated request noise
+- **Self-serve billing flows** - Public plan metadata, Stripe checkout, billing portal, and credit top-ups are implemented for configured environments
+
 ### Native Email Auth, OTP Verification & RBAC (Phase 2)
 - **Native Email Registration** - Email/password sign-up alongside Google OAuth with tabbed landing page UI
 - **OTP Email Verification** - 6-digit code via SMTP (info@gogetteros.com) with 10-minute TTL, branded HTML email
@@ -775,7 +792,7 @@ A complete AI voice operations centre at `/admin/voice-assistant`, gated by `adm
 - **Phase Advancement**: Server-enforced business rules (retainer checks, expiration dates, POC validation)
 - **Admin User Management**: Master admin (nobviz@gmail.com) can promote/demote other admins with `masterAdminProcedure` guard
 - **Pipeline Analytics**: Phase distribution charts, status breakdown pie chart, pipeline funnel visualization (Recharts)
-- **Subscription Tier System**: Free/Starter/Pro/Unlimited tiers with wizard usage gating and token rate limits
+- **Subscription Tier System**: Free, Launch Pass, Starter, Pro, Enterprise, and Legacy Unlimited compatibility with wizard usage gating, credits, and token rate limits
 - **Wizard Usage Enforcement**: Discovery wizard checks subscription limits before executing, increments on success
 - **User-Facing Subscription Info**: Usage banner on wizard page, subscription card in settings
 

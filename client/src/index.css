@@ -43,6 +43,7 @@
 }
 
 :root {
+  /* Brand + charts (unchanged) */
   --primary: oklch(0.696 0.17 162.48);
   --primary-foreground: oklch(0.145 0.015 285);
   --sidebar-primary: oklch(0.696 0.17 162.48);
@@ -53,28 +54,32 @@
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
   --radius: 0.5rem;
-  --background: oklch(0.145 0.015 285);
+
+  /* Surfaces — dark glass palette aligned with landing page.
+     --card/--popover are translucent so the route-mapped BackgroundVideo
+     is visible through them once each layout renders the video layer. */
+  --background: oklch(0.10 0.02 235);                  /* ~#0b1220 slate-950 */
   --foreground: oklch(0.985 0.005 285);
-  --card: oklch(0.175 0.015 285);
+  --card: oklch(0.17 0.02 235 / 0.72);                 /* translucent glass tile */
   --card-foreground: oklch(0.985 0.005 285);
-  --popover: oklch(0.175 0.015 285);
+  --popover: oklch(0.17 0.02 235 / 0.96);              /* near-opaque for menus */
   --popover-foreground: oklch(0.985 0.005 285);
-  --secondary: oklch(0.269 0.015 285);
+  --secondary: oklch(0.22 0.02 235);
   --secondary-foreground: oklch(0.985 0.005 285);
-  --muted: oklch(0.269 0.015 285);
-  --muted-foreground: oklch(0.708 0.015 285);
-  --accent: oklch(0.269 0.015 285);
+  --muted: oklch(0.22 0.02 235);
+  --muted-foreground: oklch(0.85 0.01 235);            /* bumped one step for contrast over video */
+  --accent: oklch(0.24 0.02 235);
   --accent-foreground: oklch(0.985 0.005 285);
   --destructive: oklch(0.396 0.141 25.723);
   --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0.015 285);
-  --input: oklch(0.269 0.015 285);
+  --border: oklch(1 0 0 / 0.1);                        /* white/10 parity with landing */
+  --input: oklch(1 0 0 / 0.08);
   --ring: oklch(0.696 0.17 162.48);
-  --sidebar: oklch(0.12 0.015 285);
+  --sidebar: oklch(0.09 0.02 235 / 0.85);              /* translucent for backdrop-blur */
   --sidebar-foreground: oklch(0.985 0.005 285);
-  --sidebar-accent: oklch(0.2 0.015 285);
+  --sidebar-accent: oklch(0.2 0.02 235);
   --sidebar-accent-foreground: oklch(0.985 0.005 285);
-  --sidebar-border: oklch(0.22 0.015 285);
+  --sidebar-border: oklch(1 0 0 / 0.1);
   --sidebar-ring: oklch(0.696 0.17 162.48);
 }
 
@@ -83,33 +88,33 @@
   --primary-foreground: oklch(0.145 0.015 285);
   --sidebar-primary: oklch(0.696 0.17 162.48);
   --sidebar-primary-foreground: oklch(0.145 0.015 285);
-  --background: oklch(0.145 0.015 285);
+  --background: oklch(0.10 0.02 235);
   --foreground: oklch(0.985 0.005 285);
-  --card: oklch(0.175 0.015 285);
+  --card: oklch(0.17 0.02 235 / 0.72);
   --card-foreground: oklch(0.985 0.005 285);
-  --popover: oklch(0.175 0.015 285);
+  --popover: oklch(0.17 0.02 235 / 0.96);
   --popover-foreground: oklch(0.985 0.005 285);
-  --secondary: oklch(0.269 0.015 285);
+  --secondary: oklch(0.22 0.02 235);
   --secondary-foreground: oklch(0.985 0.005 285);
-  --muted: oklch(0.269 0.015 285);
-  --muted-foreground: oklch(0.708 0.015 285);
-  --accent: oklch(0.269 0.015 285);
+  --muted: oklch(0.22 0.02 235);
+  --muted-foreground: oklch(0.85 0.01 235);
+  --accent: oklch(0.24 0.02 235);
   --accent-foreground: oklch(0.985 0.005 285);
   --destructive: oklch(0.396 0.141 25.723);
   --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0.015 285);
-  --input: oklch(0.269 0.015 285);
+  --border: oklch(1 0 0 / 0.1);
+  --input: oklch(1 0 0 / 0.08);
   --ring: oklch(0.696 0.17 162.48);
   --chart-1: oklch(0.696 0.17 162.48);
   --chart-2: oklch(0.628 0.12 184.704);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.12 0.015 285);
+  --sidebar: oklch(0.09 0.02 235 / 0.85);
   --sidebar-foreground: oklch(0.985 0.005 285);
-  --sidebar-accent: oklch(0.2 0.015 285);
+  --sidebar-accent: oklch(0.2 0.02 235);
   --sidebar-accent-foreground: oklch(0.985 0.005 285);
-  --sidebar-border: oklch(0.22 0.015 285);
+  --sidebar-border: oklch(1 0 0 / 0.1);
   --sidebar-ring: oklch(0.696 0.17 162.48);
 }
 
