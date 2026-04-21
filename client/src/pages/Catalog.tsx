@@ -183,7 +183,7 @@ function AIOpportunityCard({ opportunity, onDismiss, onSave }: { opportunity: AI
               variant="ghost"
               size="sm"
               onClick={onDismiss}
-              className="h-6 w-6 p-0 text-muted-foreground hover:text-red-400"
+              className="h-6 w-6 p-0 text-slate-300 hover:text-red-400"
             >
               <X className="h-4 w-4" />
             </Button>
@@ -645,7 +645,7 @@ function CatalogContent() {
                   setAiOpportunities([]);
                   sessionStorage.removeItem('aiDiscoveredOpportunities');
                 }}
-                className="text-muted-foreground hover:text-red-400"
+                className="text-slate-300 hover:text-red-400"
               >
                 <X className="h-4 w-4 mr-1" />
                 Dismiss All
@@ -664,25 +664,26 @@ function CatalogContent() {
                 />
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
 
         {/* Filters */}
+        <motion.div variants={pageMotion.section.variants}>
         <Card className="bg-card border-border">
           <CardContent className="p-4">
             <div className="flex flex-col gap-4 md:flex-row md:items-center">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                 <Input
                   placeholder="Search businesses..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-10 bg-secondary border-border"
+                  className="pl-10 bg-slate-900/70 border-white/10 text-white placeholder:text-slate-500"
                 />
               </div>
               <div className="flex gap-3">
                 <Select value={vertical} onValueChange={setVertical}>
-                  <SelectTrigger className="w-[180px] bg-secondary border-border">
+                  <SelectTrigger className="w-[180px] bg-slate-900/70 border-white/10 text-white">
                     <Filter className="mr-2 h-4 w-4" />
                     <SelectValue placeholder="Vertical" />
                   </SelectTrigger>
@@ -693,7 +694,7 @@ function CatalogContent() {
                   </SelectContent>
                 </Select>
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-[160px] bg-secondary border-border">
+                  <SelectTrigger className="w-[160px] bg-slate-900/70 border-white/10 text-white">
                     <TrendingUp className="mr-2 h-4 w-4" />
                     <SelectValue placeholder="Sort by" />
                   </SelectTrigger>
@@ -708,8 +709,10 @@ function CatalogContent() {
             </div>
           </CardContent>
         </Card>
+        </motion.div>
 
         {/* Business Grid */}
+        <motion.div variants={pageMotion.section.variants}>
         {isLoading ? (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3, 4, 5, 6].map(i => (
@@ -737,13 +740,14 @@ function CatalogContent() {
         ) : (
           <Card className="bg-card border-border">
             <CardContent className="flex flex-col items-center justify-center py-12">
-              <Search className="h-12 w-12 text-muted-foreground mb-4" />
+              <Search className="h-12 w-12 text-slate-400 mb-4" />
               <p className="text-lg font-medium text-white mb-2">No businesses found</p>
-              <p className="text-muted-foreground">Try adjusting your search or filters</p>
+              <p className="text-slate-300">Try adjusting your search or filters</p>
             </CardContent>
           </Card>
         )}
-      </div>
+        </motion.div>
+      </motion.div>
     </DashboardLayout>
   );
 }
