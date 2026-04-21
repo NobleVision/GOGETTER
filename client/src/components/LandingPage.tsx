@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { motion, useInView, useReducedMotion, type Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -160,6 +160,77 @@ function TypewriterText({
           </span>
         );
       })}
+    </Wrapper>
+  );
+}
+
+type MaskRevealHeadingProps = {
+  text: string;
+  className?: string;
+  as?: "h1" | "h2" | "h3";
+  delay?: number;
+  perWord?: number;
+  reduceMotion?: boolean;
+};
+
+// Per-word mask reveal: each word sits inside an overflow-hidden inline-block
+// box; the word itself slides up from y:"110%" with a slight rotation,
+// springing into place. Descender clipping is absorbed by padding-bottom +
+// negative margin-bottom (preserves outer line-height).
+//
+// Isolated from parent variant cascade by using raw object props on each
+// motion.span (not variant names).
+function MaskRevealHeading({
+  text,
+  className,
+  as = "h3",
+  delay = 0,
+  perWord = 0.06,
+  reduceMotion = false,
+}: MaskRevealHeadingProps) {
+  const ref = useRef<HTMLElement | null>(null);
+  const inView = useInView(ref, { once: true, amount: 0.5 });
+  const Wrapper = as as "h1" | "h2" | "h3";
+
+  if (reduceMotion) {
+    return <Wrapper className={className}>{text}</Wrapper>;
+  }
+
+  const words = text.split(" ");
+
+  return (
+    <Wrapper ref={ref as never} className={className} aria-label={text}>
+      {words.map((word, i) => (
+        <Fragment key={i}>
+          <span
+            aria-hidden="true"
+            style={{
+              display: "inline-block",
+              overflow: "hidden",
+              verticalAlign: "top",
+              paddingBottom: "0.14em",
+              marginBottom: "-0.14em",
+              lineHeight: "inherit",
+            }}
+          >
+            <motion.span
+              initial={{ y: "110%", rotate: 3 }}
+              animate={inView ? { y: 0, rotate: 0 } : undefined}
+              transition={{
+                type: "spring",
+                damping: 12,
+                stiffness: 100,
+                mass: 0.9,
+                delay: delay + i * perWord,
+              }}
+              style={{ display: "inline-block", transformOrigin: "0% 100%" }}
+            >
+              {word}
+            </motion.span>
+          </span>
+          {i < words.length - 1 ? " " : ""}
+        </Fragment>
+      ))}
     </Wrapper>
   );
 }
@@ -549,9 +620,14 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
               <Badge className="border border-emerald-400/20 bg-emerald-500/15 text-emerald-200 hover:bg-emerald-500/20">
                 From exploration to launch-ready revenue systems
               </Badge>
-              <h2 className="max-w-4xl text-4xl font-semibold leading-tight text-white md:text-6xl">
-                Build, price, validate, and scale AI-powered businesses with a premium path to revenue.
-              </h2>
+              <MaskRevealHeading
+                as="h2"
+                className="max-w-4xl text-4xl font-semibold leading-tight text-white md:text-6xl"
+                text="Build, price, validate, and scale AI-powered businesses with a premium path to revenue."
+                delay={0.1}
+                perWord={0.05}
+                reduceMotion={!!shouldReduceMotion}
+              />
               <TypewriterText
                 as="p"
                 className="max-w-3xl text-lg leading-8 text-slate-50 md:text-xl"
@@ -772,12 +848,13 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
             <motion.div variants={itemFromBelow}>
               <Badge className="border border-white/12 bg-white/10 text-slate-50 hover:bg-white/15">Core value proposition</Badge>
             </motion.div>
-            <motion.h3
-              variants={itemFromBelow}
+            <MaskRevealHeading
+              as="h3"
               className="text-3xl font-semibold tracking-tight text-white md:text-4xl md:leading-tight"
-            >
-              The platform is designed to convert curiosity into a structured revenue journey.
-            </motion.h3>
+              text="The platform is designed to convert curiosity into a structured revenue journey."
+              delay={0.18}
+              reduceMotion={!!shouldReduceMotion}
+            />
             <TypewriterText
               as="p"
               className="text-lg leading-8 text-slate-50"
@@ -832,12 +909,13 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
               <motion.div variants={itemFromLeft}>
                 <Badge className="border border-violet-400/24 bg-violet-500/18 text-violet-50 hover:bg-violet-500/24">Phased monetization model</Badge>
               </motion.div>
-              <motion.h3
-                variants={itemFromLeft}
+              <MaskRevealHeading
+                as="h3"
                 className="text-3xl font-semibold tracking-tight text-white md:text-4xl md:leading-tight"
-              >
-                Seven phases, one increasingly valuable path.
-              </motion.h3>
+                text="Seven phases, one increasingly valuable path."
+                delay={0.18}
+                reduceMotion={!!shouldReduceMotion}
+              />
               <TypewriterText
                 as="p"
                 className="text-lg leading-8 text-slate-50"
@@ -903,12 +981,13 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
               <motion.div variants={itemFromRight}>
                 <Badge className="border border-emerald-400/24 bg-emerald-500/18 text-emerald-50 hover:bg-emerald-500/24">Pricing that matches commitment</Badge>
               </motion.div>
-              <motion.h3
-                variants={itemFromRight}
+              <MaskRevealHeading
+                as="h3"
                 className="text-3xl font-semibold tracking-tight text-white md:text-4xl md:leading-tight"
-              >
-                Start free, launch with confidence, scale when the business earns it.
-              </motion.h3>
+                text="Start free, launch with confidence, scale when the business earns it."
+                delay={0.18}
+                reduceMotion={!!shouldReduceMotion}
+              />
               <TypewriterText
                 as="p"
                 className="text-lg leading-8 text-slate-50"
@@ -1048,12 +1127,14 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                       <Badge className="border border-cyan-400/30 bg-cyan-500/18 text-cyan-50 hover:bg-cyan-500/24">Editorial signal engine</Badge>
                     </motion.div>
                   </motion.div>
-                  <motion.h3
-                    variants={itemFromBelow}
+                  <MaskRevealHeading
+                    as="h3"
                     className="max-w-4xl text-3xl font-semibold tracking-tight text-white md:text-5xl md:leading-[1.05]"
-                  >
-                    Why / Who, Hot 100, and Blog now work as a real landing-page intelligence layer.
-                  </motion.h3>
+                    text="Why / Who, Hot 100, and Blog now work as a real landing-page intelligence layer."
+                    delay={0.2}
+                    perWord={0.05}
+                    reduceMotion={!!shouldReduceMotion}
+                  />
                   <TypewriterText
                     as="p"
                     className="max-w-3xl text-lg leading-8 text-slate-50"
@@ -1186,7 +1267,14 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                 <div className="flex flex-col gap-4 rounded-[28px] border border-white/10 bg-slate-950/70 p-6 md:flex-row md:items-end md:justify-between">
                   <div className="max-w-3xl space-y-3">
                     <Badge className="border border-emerald-400/30 bg-emerald-500/18 text-emerald-50 hover:bg-emerald-500/24">Blog</Badge>
-                    <h3 className="text-3xl font-semibold tracking-tight text-white md:text-5xl md:leading-[1.05]">Editorial content that makes the monetization story feel real.</h3>
+                    <MaskRevealHeading
+                      as="h3"
+                      className="text-3xl font-semibold tracking-tight text-white md:text-5xl md:leading-[1.05]"
+                      text="Editorial content that makes the monetization story feel real."
+                      delay={0.1}
+                      perWord={0.05}
+                      reduceMotion={!!shouldReduceMotion}
+                    />
                     <TypewriterText
                       as="p"
                       className="text-lg leading-8 text-slate-50"
@@ -1275,9 +1363,13 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
           <div className="grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div className="space-y-4">
               <Badge className="border border-emerald-400/20 bg-emerald-500/15 text-emerald-100 hover:bg-emerald-500/20">Ready to start cooking?</Badge>
-              <h3 className="text-3xl font-semibold tracking-tight md:text-4xl">
-                Explore the OS for free, then pay when the opportunity earns a deeper commitment.
-              </h3>
+              <MaskRevealHeading
+                as="h3"
+                className="text-3xl font-semibold tracking-tight text-white md:text-4xl"
+                text="Explore the OS for free, then pay when the opportunity earns a deeper commitment."
+                delay={0.1}
+                reduceMotion={!!shouldReduceMotion}
+              />
               <TypewriterText
                 as="p"
                 className="max-w-3xl text-lg leading-8 text-slate-50"
