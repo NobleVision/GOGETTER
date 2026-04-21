@@ -97,6 +97,7 @@ function TypewriterText({
       <Wrapper
         ref={ref as never}
         className={`${className ?? ""} relative overflow-hidden`}
+        style={{ isolation: "isolate" }}
       >
         <span className="relative z-10">{text}</span>
         {shimmer ? (
@@ -857,7 +858,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
             />
             <TypewriterText
               as="p"
-              className="text-lg leading-8 text-slate-50"
+              className="text-lg leading-8 text-white"
               text="The landing page sells the promise, the account experience reveals the operating system, and the pricing model nudges users into increasingly serious execution only when the opportunity warrants it."
               startDelay={0.35}
               reduceMotion={!!shouldReduceMotion}
@@ -918,7 +919,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
               />
               <TypewriterText
                 as="p"
-                className="text-lg leading-8 text-slate-50"
+                className="text-lg leading-8 text-white"
                 text="Users start with discovery and pay progressively deeper into the experience. High-touch deployment remains reserved for premium workflows and managed execution."
                 startDelay={0.35}
                 reduceMotion={!!shouldReduceMotion}
@@ -990,7 +991,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
               />
               <TypewriterText
                 as="p"
-                className="text-lg leading-8 text-slate-50"
+                className="text-lg leading-8 text-white"
                 text="The pricing model is structured so the platform can monetize earlier without forcing every user into a high-ticket retainer on day one."
                 startDelay={0.35}
                 reduceMotion={!!shouldReduceMotion}
