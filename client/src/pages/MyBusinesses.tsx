@@ -246,13 +246,13 @@ function MyBusinessesContent() {
                 onClick={() => setLocation('/catalog')}
                 className="bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white border-0"
               >
-        motion.        <Rocket className="mr-2 h-4 w-4" />
+                <Rocket className="mr-2 h-4 w-4" />
                 Browse Business Catalog
               </Button>
             </CardContent>
           </Card>
         )}
-      </div>
+      </motion.div>
     </DashboardLayout>
   );
 }
