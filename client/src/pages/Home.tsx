@@ -95,6 +95,9 @@ export default function Home() {
   const businessesLoading = authLoading || businessesQueryLoading;
   const subscriptionLoading = authLoading || subscriptionQueryLoading;
 
+  const shouldReduceMotion = useReducedMotion();
+  const pageMotion = interiorPageMotion(!!shouldReduceMotion);
+
   const checkoutMutation = trpc.subscription.createCheckoutSession.useMutation({
     onSuccess: (data) => {
       if (data.url) {
