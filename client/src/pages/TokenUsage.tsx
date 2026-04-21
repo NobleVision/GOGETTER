@@ -1,5 +1,7 @@
 import AccessRestricted from "@/components/AccessRestricted";
 import DashboardLayout from "@/components/DashboardLayout";
+import { motion, useReducedMotion } from "framer-motion";
+import { interiorPageMotion } from "@/lib/interiorMotion";
 import { usePermissions } from "@/_core/hooks/usePermissions";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -134,17 +136,23 @@ function TokenUsageContent() {
   const totalCost = parseFloat(summary?.totalCost || '0');
   const budgetUsed = (totalCost / monthlyBudget) * 100;
 
+  const shouldReduceMotion = useReducedMotion();
+  const pageMotion = interiorPageMotion(!!shouldReduceMotion);
+
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <motion.div className="space-y-6" {...pageMotion.container}>
         {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <motion.div
+          className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+          {...pageMotion.header}
+        >
           <div>
             <h1 className="text-2xl font-bold text-white">Token Usage</h1>
-            <p className="text-muted-foreground">Monitor AI model costs and optimize token efficiency</p>
+            <p className="text-slate-300">Monitor AI model costs and optimize token efficiency</p>
           </div>
           <Select value={timeRange} onValueChange={(value: '7d' | '30d' | '90d') => setTimeRange(value)}>
-            <SelectTrigger className="w-[140px] bg-secondary border-border">
+            <SelectTrigger className="w-[140px] bg-slate-900/70 border-white/10 text-white">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -153,7 +161,7 @@ function TokenUsageContent() {
               <SelectItem value="90d">Last 90 Days</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </motion.div>
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -481,7 +489,7 @@ function TokenUsageContent() {
             </ScrollArea>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
     </DashboardLayout>
   );
 }
