@@ -978,7 +978,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
       </section>
 
       <Dialog open={introOpen} onOpenChange={setIntroOpen}>
-        <DialogContent className="w-[min(92vw,350px)] max-w-[350px] border-white/12 bg-slate-950/95 p-0 shadow-[0_30px_120px_rgba(2,6,23,0.65)] backdrop-blur-xl sm:rounded-2xl">
+        <DialogContent className="w-[min(92vw,350px)] max-w-[350px] gap-0 overflow-hidden rounded-2xl border-white/12 bg-slate-950/95 p-0 shadow-[0_30px_120px_rgba(2,6,23,0.65)] backdrop-blur-xl">
           <DialogTitle className="sr-only">GoGetterOS intro video</DialogTitle>
           {introOpen && (
             <video
