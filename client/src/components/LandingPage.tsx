@@ -1707,6 +1707,39 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
           </div>
         </motion.div>
       </section>
+
+      <footer className="border-t border-white/10 bg-slate-950/70 px-4 py-10 backdrop-blur-xl md:px-8">
+        <div className="mx-auto flex max-w-7xl flex-col items-center gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <img
+              src="/logo-256x256.png"
+              alt="GO-GETTER OS"
+              className="h-10 w-10 rounded-xl shadow-lg shadow-emerald-500/20"
+            />
+            <div>
+              <p className="text-sm font-semibold text-white">GO-GETTER OS</p>
+              <p className="text-xs text-slate-400">Monetized AI business operating system</p>
+            </div>
+          </div>
+          <nav aria-label="Social" className="flex items-center gap-3">
+            {SOCIAL_LINKS.map(({ label, href, Icon }) => (
+              <a
+                key={label}
+                href={href}
+                target="_blank"
+                rel="noreferrer"
+                aria-label={label}
+                className="flex h-10 w-10 items-center justify-center rounded-full border border-white/12 bg-slate-950/70 text-slate-100 transition-colors hover:border-emerald-400/40 hover:bg-slate-950/85 hover:text-white"
+              >
+                <Icon className="h-4 w-4" />
+              </a>
+            ))}
+          </nav>
+          <p className="text-xs text-slate-400">
+            © {new Date().getFullYear()} GoGetterOS. All rights reserved.
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }
