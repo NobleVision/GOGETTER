@@ -131,14 +131,17 @@ function ApiConfigContent() {
     setShowKey(prev => ({ ...prev, [providerId]: !prev[providerId] }));
   };
 
+  const shouldReduceMotion = useReducedMotion();
+  const pageMotion = interiorPageMotion(!!shouldReduceMotion);
+
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <motion.div className="space-y-6" {...pageMotion.container}>
         {/* Header */}
-        <div>
+        <motion.div {...pageMotion.header}>
           <h1 className="text-2xl font-bold text-white">API Configuration</h1>
-          <p className="text-muted-foreground">Configure AI model providers for your autonomous businesses</p>
-        </div>
+          <p className="text-slate-300">Configure AI model providers for your autonomous businesses</p>
+        </motion.div>
 
         {/* Info Card */}
         <Card className="bg-emerald-500/10 border-emerald-500/30">
@@ -350,7 +353,7 @@ function ApiConfigContent() {
             </div>
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
     </DashboardLayout>
   );
 }

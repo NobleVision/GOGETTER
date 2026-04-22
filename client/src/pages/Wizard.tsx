@@ -709,6 +709,3 @@ export default function Wizard() {
     </DashboardLayout>
   );
 }
-    </DashboardLayout>
-  );
-}

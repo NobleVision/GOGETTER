@@ -123,14 +123,20 @@ volumes:
   redis_data:`;
   };
 
+  const shouldReduceMotion = useReducedMotion();
+  const pageMotion = interiorPageMotion(!!shouldReduceMotion);
+
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <motion.div className="space-y-6" {...pageMotion.container}>
         {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <motion.div
+          className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
+          {...pageMotion.header}
+        >
           <div>
             <h1 className="text-2xl font-bold text-white">Deployment Blueprints</h1>
-            <p className="text-muted-foreground">Step-by-step guides for implementing autonomous businesses</p>
+            <p className="text-slate-300">Step-by-step guides for implementing autonomous businesses</p>
           </div>
           <Select value={selectedBusinessId} onValueChange={setSelectedBusinessId}>
             <SelectTrigger className="w-[280px] bg-secondary border-border">
