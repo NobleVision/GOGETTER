@@ -968,6 +968,154 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
         </div>
       </section>
 
+      <Dialog open={introOpen} onOpenChange={setIntroOpen}>
+        <DialogContent className="max-w-4xl border-white/12 bg-slate-950/95 p-0 shadow-[0_30px_120px_rgba(2,6,23,0.65)] backdrop-blur-xl">
+          <DialogTitle className="sr-only">GoGetterOS intro video</DialogTitle>
+          {introOpen && (
+            <video
+              ref={introVideoRef}
+              controls
+              preload="auto"
+              playsInline
+              poster="/logo-256x256.png"
+              className="aspect-video w-full rounded-lg bg-slate-950"
+            >
+              <source src="/video-intros/GoGetterOS_Intro.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <section className="relative border-b border-white/10 bg-[linear-gradient(180deg,rgba(2,6,23,0.62),rgba(2,6,23,0.92))] px-4 py-20 md:px-8">
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute right-[12%] top-16 h-64 w-64 rounded-full bg-emerald-500/14 blur-3xl"
+          animate={shouldReduceMotion ? undefined : { y: [0, -18, 0], scale: [1, 1.05, 1] }}
+          transition={shouldReduceMotion ? undefined : { duration: 12, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div
+          aria-hidden
+          className="pointer-events-none absolute left-[8%] bottom-10 h-56 w-56 rounded-full bg-violet-500/12 blur-3xl"
+          animate={shouldReduceMotion ? undefined : { y: [0, 16, 0], scale: [1, 0.96, 1] }}
+          transition={shouldReduceMotion ? undefined : { duration: 15, repeat: Infinity, ease: "easeInOut" }}
+        />
+
+        <motion.div
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 24 }}
+          whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.25 }}
+          transition={revealTransition}
+          className="relative mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.25fr_1fr] lg:items-start"
+        >
+          <div className="flex flex-col gap-6">
+            <motion.div
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+              whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : 0.08 }}
+              className="relative w-full overflow-hidden rounded-3xl border border-white/12 bg-slate-950/80 shadow-[0_30px_100px_rgba(2,6,23,0.55)]"
+              style={{ paddingTop: "56.25%" }}
+            >
+              <iframe
+                src={`https://www.youtube.com/embed/${COMMERCIAL_YOUTUBE_ID}`}
+                title="Grandpa Uses AI to Save His Granddaughter's Lemonade Stand"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="strict-origin-when-cross-origin"
+                className="absolute inset-0 h-full w-full"
+              />
+            </motion.div>
+          </div>
+
+          <div className="flex flex-col gap-6">
+            <motion.div
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 16 }}
+              whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : 0.04 }}
+              className="space-y-4"
+            >
+              <Badge className="w-fit border border-violet-400/25 bg-violet-500/15 text-violet-100 hover:bg-violet-500/20">
+                Featured story · Our first commercial
+              </Badge>
+              <MaskRevealHeading
+                as="h3"
+                className="text-3xl font-semibold leading-tight text-white md:text-4xl"
+                text="Grandpa Uses AI to Save His Granddaughter's Lemonade Stand"
+                delay={0.05}
+                reduceMotion={!!shouldReduceMotion}
+              />
+              <TypewriterText
+                as="p"
+                className="max-w-2xl text-base leading-7 text-slate-50 md:text-lg"
+                text="Little Emma's lemonade stand was failing — until her grandfather used AI to change everything. Watch how one simple call to GoGetterOS turned tears into lines around the corner."
+                startDelay={0.2}
+                reduceMotion={!!shouldReduceMotion}
+              />
+            </motion.div>
+
+            <motion.div
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 14 }}
+              whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : 0.16 }}
+              className="space-y-3"
+            >
+              <p className="text-xs font-medium uppercase tracking-[0.28em] text-emerald-300/80">
+                Jump to a moment
+              </p>
+              <div className="grid gap-2 sm:grid-cols-2">
+                {COMMERCIAL_TIMESTAMPS.map((stamp) => (
+                  <a
+                    key={stamp.seconds}
+                    href={`https://youtu.be/${COMMERCIAL_YOUTUBE_ID}?t=${stamp.seconds}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="group flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/60 px-3 py-2 text-left text-sm text-slate-100 transition-colors hover:border-emerald-400/35 hover:bg-slate-950/82"
+                  >
+                    <span className="font-mono text-xs text-emerald-300 tabular-nums">{stamp.time}</span>
+                    <span className="flex-1 truncate">{stamp.label}</span>
+                    <ArrowUpRight className="h-3.5 w-3.5 text-slate-400 transition-colors group-hover:text-emerald-300" />
+                  </a>
+                ))}
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
+              whileInView={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : 0.22 }}
+              className="flex flex-wrap items-center gap-3 pt-2"
+            >
+              <span className="text-xs uppercase tracking-[0.24em] text-slate-400">Also on</span>
+              <a
+                href={COMMERCIAL_POSTS.x}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="View this commercial on X"
+                className="flex items-center gap-2 rounded-full border border-white/12 bg-slate-950/70 px-3 py-1.5 text-xs text-slate-100 transition-colors hover:border-emerald-400/40 hover:bg-slate-950/85"
+              >
+                <XLogo className="h-3.5 w-3.5" />
+                View on X
+              </a>
+              <a
+                href={COMMERCIAL_POSTS.linkedin}
+                target="_blank"
+                rel="noreferrer"
+                aria-label="View this commercial on LinkedIn"
+                className="flex items-center gap-2 rounded-full border border-white/12 bg-slate-950/70 px-3 py-1.5 text-xs text-slate-100 transition-colors hover:border-emerald-400/40 hover:bg-slate-950/85"
+              >
+                <Linkedin className="h-3.5 w-3.5" />
+                View on LinkedIn
+              </a>
+            </motion.div>
+          </div>
+        </motion.div>
+      </section>
+
       <section className="px-4 py-16 md:px-8">
         <div className="mx-auto max-w-7xl space-y-8">
           <motion.div
@@ -1522,6 +1670,21 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
                 <div className="flex items-center gap-2 rounded-full border border-white/12 bg-white/8 px-3 py-2 shadow-lg shadow-black/10">
                   <TrendingUp className="h-4 w-4 text-violet-300" /> Opportunity-led growth path
                 </div>
+              </motion.div>
+              <motion.div variants={ctaZoomItem} className="flex flex-wrap items-center gap-2 pt-1">
+                <span className="text-xs uppercase tracking-[0.24em] text-slate-400">Follow along</span>
+                {SOCIAL_LINKS.map(({ label, href, Icon }) => (
+                  <a
+                    key={label}
+                    href={href}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label={label}
+                    className="flex h-9 w-9 items-center justify-center rounded-full border border-white/12 bg-slate-950/70 text-slate-100 shadow-lg shadow-black/10 transition-colors hover:border-emerald-400/40 hover:bg-slate-950/85 hover:text-white"
+                  >
+                    <Icon className="h-4 w-4" />
+                  </a>
+                ))}
               </motion.div>
             </div>
             <motion.div variants={ctaZoomItem} className="flex flex-col gap-3 sm:flex-row lg:flex-col">
