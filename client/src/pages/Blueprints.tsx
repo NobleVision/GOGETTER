@@ -1,4 +1,6 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import { motion, useReducedMotion } from "framer-motion";
+import { interiorPageMotion } from "@/lib/interiorMotion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -139,7 +141,7 @@ volumes:
             <p className="text-slate-300">Step-by-step guides for implementing autonomous businesses</p>
           </div>
           <Select value={selectedBusinessId} onValueChange={setSelectedBusinessId}>
-            <SelectTrigger className="w-[280px] bg-secondary border-border">
+            <SelectTrigger className="w-[280px] bg-slate-900/70 border-white/10 text-white">
               <SelectValue placeholder="Select a business" />
             </SelectTrigger>
             <SelectContent>
@@ -150,7 +152,7 @@ volumes:
               ))}
             </SelectContent>
           </Select>
-        </div>
+        </motion.div>
 
         {selectedBusiness ? (
           <>
@@ -507,7 +509,7 @@ volumes:
             </CardContent>
           </Card>
         )}
-      </div>
+      </motion.div>
     </DashboardLayout>
   );
 }

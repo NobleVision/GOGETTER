@@ -1,4 +1,6 @@
 import AdminLayout from "@/components/AdminLayout";
+import { motion, useReducedMotion } from "framer-motion";
+import { interiorPageMotion } from "@/lib/interiorMotion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import PhaseBadge from "@/components/admin/PhaseBadge";
@@ -45,17 +47,20 @@ export default function AdminDashboard() {
       phase: p.phase,
     })) ?? [];
 
+  const shouldReduceMotion = useReducedMotion();
+  const pageMotion = interiorPageMotion(!!shouldReduceMotion);
+
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div>
+      <motion.div className="space-y-6" {...pageMotion.container}>
+        <motion.div {...pageMotion.header}>
           <h1 className="text-2xl font-bold text-white">
             Admin Dashboard
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-300 text-sm mt-1">
             GoGetterOS ZERO to HERO Pipeline Overview
           </p>
-        </div>
+        </motion.div>
 
         {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -255,7 +260,7 @@ export default function AdminDashboard() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </motion.div>
     </AdminLayout>
   );
 }

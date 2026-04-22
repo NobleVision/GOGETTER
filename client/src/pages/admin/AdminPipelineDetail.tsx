@@ -1,5 +1,7 @@
 import { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
+import { motion, useReducedMotion } from "framer-motion";
+import { interiorPageMotion } from "@/lib/interiorMotion";
 import {
   Card,
   CardContent,
@@ -170,11 +172,14 @@ export default function AdminPipelineDetail() {
 
   const addOns = (project.addOns ?? {}) as any;
 
+  const shouldReduceMotion = useReducedMotion();
+  const pageMotion = interiorPageMotion(!!shouldReduceMotion);
+
   return (
     <AdminLayout>
-      <div className="space-y-6">
+      <motion.div className="space-y-6" {...pageMotion.container}>
         {/* Header */}
-        <div className="flex items-center gap-4">
+        <motion.div className="flex items-center gap-4" {...pageMotion.header}>
           <Button
             variant="ghost"
             size="sm"

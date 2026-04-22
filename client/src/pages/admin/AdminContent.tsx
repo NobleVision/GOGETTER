@@ -1,5 +1,7 @@
 import { useMemo, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
+import { motion, useReducedMotion } from "framer-motion";
+import { interiorPageMotion } from "@/lib/interiorMotion";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -102,18 +104,21 @@ export default function AdminContent() {
       .map((item) => item.trim())
       .filter(Boolean);
 
+  const shouldReduceMotion = useReducedMotion();
+  const pageMotion = interiorPageMotion(!!shouldReduceMotion);
+
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="space-y-2">
+      <motion.div className="space-y-6" {...pageMotion.container}>
+        <motion.div className="space-y-2" {...pageMotion.header}>
           <Badge className="bg-violet-500/15 text-violet-200 hover:bg-violet-500/20">
             Monetization and narrative controls
           </Badge>
           <h1 className="text-3xl font-bold text-white">Content Tools</h1>
-          <p className="max-w-4xl text-sm leading-7 text-slate-400">
+          <p className="max-w-4xl text-sm leading-7 text-slate-300">
             Manage the landing-page story, daily Why/Who guidance, Hot 100 opportunity lists, and subscription visibility from one operational admin screen.
           </p>
-        </div>
+        </motion.div>
 
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
           <MetricCard
@@ -406,7 +411,7 @@ export default function AdminContent() {
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
+      </motion.div>
     </AdminLayout>
   );
 }

@@ -24,6 +24,8 @@ import {
   YAxis,
 } from "recharts";
 import AdminLayout from "@/components/AdminLayout";
+import { motion, useReducedMotion } from "framer-motion";
+import { interiorPageMotion } from "@/lib/interiorMotion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -363,10 +365,16 @@ export default function AdminVoiceAssistant() {
     );
   }, [contentFilter, contentItems.data]);
 
+  const shouldReduceMotion = useReducedMotion();
+  const pageMotion = interiorPageMotion(!!shouldReduceMotion);
+
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <motion.div className="space-y-6" {...pageMotion.container}>
+        <motion.div
+          className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between"
+          {...pageMotion.header}
+        >
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-violet-500/20 bg-violet-500/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-violet-300">
               <Sparkles className="h-3.5 w-3.5" />
@@ -375,7 +383,7 @@ export default function AdminVoiceAssistant() {
             <h1 className="mt-3 text-3xl font-bold text-white">
               GoGetterOS Voice Assistant Administration
             </h1>
-            <p className="mt-2 max-w-3xl text-sm text-slate-400">
+            <p className="mt-2 max-w-3xl text-sm text-slate-300">
               Schedule AI-led Zoom sessions, manage ElevenLabs agents, keep caller profiles current, monitor live activity, and review transcripts tied back to the Zero to Hero pipeline.
             </p>
           </div>
@@ -397,7 +405,7 @@ export default function AdminVoiceAssistant() {
               Seed Demo Data
             </Button>
           </div>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-5">
           {loading ? (
@@ -1313,7 +1321,7 @@ export default function AdminVoiceAssistant() {
             </div>
           </TabsContent>
         </Tabs>
-      </div>
+      </motion.div>
     </AdminLayout>
   );
 }

@@ -1,4 +1,6 @@
 import AdminLayout from "@/components/AdminLayout";
+import { motion, useReducedMotion } from "framer-motion";
+import { interiorPageMotion } from "@/lib/interiorMotion";
 import {
   Card,
   CardContent,
@@ -73,18 +75,21 @@ export default function AdminAnalytics() {
       };
     }) ?? [];
 
+  const shouldReduceMotion = useReducedMotion();
+  const pageMotion = interiorPageMotion(!!shouldReduceMotion);
+
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div>
+      <motion.div className="space-y-6" {...pageMotion.container}>
+        <motion.div {...pageMotion.header}>
           <h1 className="text-2xl font-bold text-white flex items-center gap-2">
             <BarChart3 className="h-6 w-6 text-violet-400" />
             Pipeline Analytics
           </h1>
-          <p className="text-slate-400 text-sm mt-1">
+          <p className="text-slate-300 text-sm mt-1">
             Insights into the ZERO to HERO business pipeline
           </p>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="bg-card border-border">
@@ -288,7 +293,7 @@ export default function AdminAnalytics() {
             </CardContent>
           </Card>
         </div>
-      </div>
+      </motion.div>
     </AdminLayout>
   );
 }

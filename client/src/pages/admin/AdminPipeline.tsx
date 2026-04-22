@@ -1,5 +1,7 @@
 import { useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
+import { motion, useReducedMotion } from "framer-motion";
+import { interiorPageMotion } from "@/lib/interiorMotion";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -51,22 +53,25 @@ export default function AdminPipeline() {
       { refetchOnWindowFocus: false }
     );
 
+  const shouldReduceMotion = useReducedMotion();
+  const pageMotion = interiorPageMotion(!!shouldReduceMotion);
+
   return (
     <AdminLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <motion.div className="space-y-6" {...pageMotion.container}>
+        <motion.div className="flex items-center justify-between" {...pageMotion.header}>
           <div>
             <h1 className="text-2xl font-bold text-white flex items-center gap-2">
               <Rocket className="h-6 w-6 text-violet-400" />
               Business Creation Pipeline
             </h1>
-            <p className="text-slate-400 text-sm mt-1">
+            <p className="text-slate-300 text-sm mt-1">
               ZERO to HERO &mdash; Guide customer businesses from raw
               lead to autonomous profitability
             </p>
           </div>
           <NewProjectDialog onCreated={() => refetch()} />
-        </div>
+        </motion.div>
 
         {/* Filter Bar */}
         <Card className="bg-card border-border">
@@ -260,7 +265,7 @@ export default function AdminPipeline() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
     </AdminLayout>
   );
 }

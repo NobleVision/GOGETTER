@@ -1,4 +1,6 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import { motion, useReducedMotion } from "framer-motion";
+import { interiorPageMotion } from "@/lib/interiorMotion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -119,14 +121,17 @@ const LEARNING_RESOURCES = [
 ];
 
 export default function Resources() {
+  const shouldReduceMotion = useReducedMotion();
+  const pageMotion = interiorPageMotion(!!shouldReduceMotion);
+
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <motion.div className="space-y-6" {...pageMotion.container}>
         {/* Header */}
-        <div>
+        <motion.div {...pageMotion.header}>
           <h1 className="text-2xl font-bold text-white">Resources</h1>
-          <p className="text-muted-foreground">Tools and services to support your autonomous business operations</p>
-        </div>
+          <p className="text-slate-300">Tools and services to support your autonomous business operations</p>
+        </motion.div>
 
         {/* Entity Formation */}
         <div className="space-y-4">
@@ -301,7 +306,7 @@ export default function Resources() {
             })}
           </div>
         </div>
-      </div>
+      </motion.div>
     </DashboardLayout>
   );
 }
