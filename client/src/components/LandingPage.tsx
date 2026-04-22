@@ -708,20 +708,29 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
         <motion.button
           type="button"
           onClick={() => setIntroOpen(true)}
-          initial={shouldReduceMotion ? false : { opacity: 0, y: -8 }}
-          animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: -10, scale: 0.96 }}
+          animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
           transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : 0.35 }}
-          whileHover={shouldReduceMotion ? undefined : { scale: 1.03 }}
+          whileHover={shouldReduceMotion ? undefined : { scale: 1.04 }}
           whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
           aria-label="Watch the GoGetterOS intro video"
-          className="group absolute right-4 top-20 z-30 flex items-center gap-2 rounded-full border border-white/12 bg-slate-950/70 px-4 py-2 text-sm text-white shadow-[0_16px_50px_rgba(2,6,23,0.45)] backdrop-blur-xl transition-colors hover:border-emerald-400/40 hover:bg-slate-950/80 md:right-10 md:top-24"
+          className="group absolute right-4 top-20 z-30 aspect-[9/16] w-24 overflow-hidden rounded-2xl border border-emerald-500/25 bg-slate-950/70 shadow-[0_20px_60px_rgba(16,185,129,0.22),0_10px_40px_rgba(2,6,23,0.55)] backdrop-blur-xl transition-shadow hover:border-emerald-400/45 hover:shadow-[0_24px_70px_rgba(16,185,129,0.32),0_12px_50px_rgba(2,6,23,0.65)] md:right-10 md:top-24 md:w-32 lg:w-36"
         >
-          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-400 text-slate-950 shadow-inner shadow-white/20">
-            <Play className="h-3.5 w-3.5 fill-current" />
+          <img
+            src="/video-intros/GoGetterOS_Intro_poster.jpg"
+            alt="Intro video preview — GoGetterOS founder"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            loading="eager"
+            decoding="async"
+          />
+          <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/10 to-transparent" />
+          <span className="pointer-events-none absolute inset-0 flex items-center justify-center">
+            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-400 text-slate-950 shadow-[0_8px_24px_rgba(16,185,129,0.45)] ring-2 ring-white/30 transition-transform duration-300 group-hover:scale-110 md:h-12 md:w-12">
+              <Play className="h-4 w-4 translate-x-[1px] fill-current md:h-5 md:w-5" />
+            </span>
           </span>
-          <span className="font-medium tracking-tight">
-            Watch intro
-            <span className="ml-1.5 hidden text-xs text-slate-300 sm:inline">· 1 min</span>
+          <span className="pointer-events-none absolute inset-x-0 bottom-0 px-2 pb-2 text-[10px] font-medium uppercase tracking-[0.22em] text-white/90 md:text-[11px]">
+            Watch intro · 1 min
           </span>
         </motion.button>
 
