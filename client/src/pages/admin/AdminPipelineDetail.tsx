@@ -233,7 +233,7 @@ export default function AdminPipelineDetail() {
               </span>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Phase Stepper */}
         <Card className="bg-card border-border">
@@ -751,7 +751,7 @@ export default function AdminPipelineDetail() {
             )}
           </CardContent>
         </Card>
-      </div>
+      </motion.div>
     </AdminLayout>
   );
 }
