@@ -1,5 +1,7 @@
 import DashboardLayout from "@/components/DashboardLayout";
 import SubscriptionBanner from "@/components/SubscriptionBanner";
+import { motion, useReducedMotion } from "framer-motion";
+import { interiorPageMotion } from "@/lib/interiorMotion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -677,7 +679,7 @@ export default function Wizard() {
             </Button>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* AI Processing Overlay */}
       <AIProcessingOverlay 
@@ -701,6 +703,9 @@ export default function Wizard() {
           />
         </div>
       )}
+    </DashboardLayout>
+  );
+}
     </DashboardLayout>
   );
 }
