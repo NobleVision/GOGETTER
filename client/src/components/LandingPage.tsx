@@ -978,16 +978,17 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
       </section>
 
       <Dialog open={introOpen} onOpenChange={setIntroOpen}>
-        <DialogContent className="max-w-4xl border-white/12 bg-slate-950/95 p-0 shadow-[0_30px_120px_rgba(2,6,23,0.65)] backdrop-blur-xl">
+        <DialogContent className="w-[min(92vw,350px)] max-w-[350px] border-white/12 bg-slate-950/95 p-0 shadow-[0_30px_120px_rgba(2,6,23,0.65)] backdrop-blur-xl sm:rounded-2xl">
           <DialogTitle className="sr-only">GoGetterOS intro video</DialogTitle>
           {introOpen && (
             <video
               ref={introVideoRef}
               controls
+              autoPlay
               preload="auto"
               playsInline
-              poster="/logo-256x256.png"
-              className="aspect-video w-full rounded-lg bg-slate-950"
+              poster="/video-intros/GoGetterOS_Intro_poster.jpg"
+              className="aspect-[9/16] w-full rounded-2xl bg-slate-950 object-cover"
             >
               <source src="/video-intros/GoGetterOS_Intro.mp4" type="video/mp4" />
               Your browser does not support the video tag.
