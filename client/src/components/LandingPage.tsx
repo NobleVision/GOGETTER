@@ -1004,7 +1004,7 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
             animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
             exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.92, y: -10 }}
             transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-            className="pointer-events-auto fixed right-4 top-20 z-[60] w-[min(88vw,320px)] origin-top-right overflow-hidden rounded-2xl border border-white/12 bg-slate-950/95 shadow-[0_30px_120px_rgba(2,6,23,0.65)] backdrop-blur-xl md:right-8 md:top-24"
+            className="pointer-events-auto fixed right-4 top-20 z-[60] w-36 origin-top-right overflow-hidden rounded-2xl border border-white/12 bg-slate-950/95 shadow-[0_30px_120px_rgba(2,6,23,0.65)] backdrop-blur-xl sm:w-[320px] md:right-8 md:top-24"
           >
             <button
               type="button"
