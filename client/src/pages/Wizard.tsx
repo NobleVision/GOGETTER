@@ -275,19 +275,22 @@ export default function Wizard() {
     }));
   };
 
+  const shouldReduceMotion = useReducedMotion();
+  const pageMotion = interiorPageMotion(!!shouldReduceMotion);
+
   return (
     <DashboardLayout>
-      <div className="max-w-3xl mx-auto space-y-6">
+      <motion.div className="max-w-3xl mx-auto space-y-6" {...pageMotion.container}>
         {/* Subscription Usage Banner */}
         <SubscriptionBanner />
 
         {/* Header */}
-        <div className="text-center">
+        <motion.div className="text-center" {...pageMotion.header}>
           <h1 className="text-2xl font-bold text-white">Business Discovery Wizard</h1>
-          <p className="text-muted-foreground mt-2">
+          <p className="text-slate-300 mt-2">
             Let's find the perfect autonomous business opportunities for you
           </p>
-        </div>
+        </motion.div>
 
         {/* Preset Selection */}
         {presets.length > 0 && (
