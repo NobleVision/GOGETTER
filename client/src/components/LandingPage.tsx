@@ -1,9 +1,10 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { useLocation } from "wouter";
 import { motion, useInView, useReducedMotion, type Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getGoogleLoginUrl } from "@/const";
@@ -26,22 +27,68 @@ import {
   Gem,
   Globe,
   Layers3,
+  Linkedin,
   Loader2,
   Lock,
   Newspaper,
   Orbit,
+  Play,
   Rocket,
   ShieldCheck,
   Sparkles,
   Target,
   TrendingUp,
   Users,
+  Youtube,
   Zap,
 } from "lucide-react";
 
 interface LandingPageProps {
   errorMessage?: string | null;
 }
+
+function XLogo({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      focusable="false"
+      className={className}
+      fill="currentColor"
+    >
+      <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+    </svg>
+  );
+}
+
+type SocialLink = {
+  label: string;
+  href: string;
+  Icon: ComponentType<{ className?: string }>;
+};
+
+const SOCIAL_LINKS: SocialLink[] = [
+  { label: "X (formerly Twitter)", href: "https://x.com/gogetteros/", Icon: XLogo },
+  { label: "LinkedIn", href: "https://www.linkedin.com/in/gogetteros/", Icon: (p) => <Linkedin {...p} /> },
+  { label: "YouTube", href: "https://www.youtube.com/@GoGetterOS", Icon: (p) => <Youtube {...p} /> },
+];
+
+const COMMERCIAL_YOUTUBE_ID = "5b_3TDAXyUE";
+
+const COMMERCIAL_TIMESTAMPS: { time: string; label: string; seconds: number }[] = [
+  { time: "00:00", label: "The Empty Stand", seconds: 0 },
+  { time: "00:15", label: "Emma Runs to Grandpa in Tears", seconds: 15 },
+  { time: "00:30", label: "Grandpa Discovers GoGetterOS", seconds: 30 },
+  { time: "00:45", label: "One Call Changes Everything", seconds: 45 },
+  { time: "01:00", label: "Lines Around the Corner!", seconds: 60 },
+  { time: "01:15", label: "Be a Go-Getter", seconds: 75 },
+];
+
+const COMMERCIAL_POSTS = {
+  x: "https://x.com/gogetteros/status/2046823036217688313",
+  linkedin:
+    "https://www.linkedin.com/posts/gogetteros_grandpa-uses-ai-to-save-his-granddaughter-ugcPost-7452593262407782401-nvDB",
+};
 
 type TypewriterTextProps = {
   text: string;
@@ -445,12 +492,21 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
   const [authMode, setAuthMode] = useState<"signin" | "signup">("signin");
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [introOpen, setIntroOpen] = useState(false);
+  const introVideoRef = useRef<HTMLVideoElement | null>(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
+
+  useEffect(() => {
+    if (!introOpen && introVideoRef.current) {
+      introVideoRef.current.pause();
+      introVideoRef.current.currentTime = 0;
+    }
+  }, [introOpen]);
 
   const plansQuery = trpc.subscription.plans.useQuery();
   const landingContentQuery = trpc.content.landingPage.useQuery();
@@ -649,6 +705,26 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
       </div>
 
       <section className="relative border-b border-white/10 px-4 pb-20 pt-24 md:px-8">
+        <motion.button
+          type="button"
+          onClick={() => setIntroOpen(true)}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: -8 }}
+          animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0 }}
+          transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : 0.35 }}
+          whileHover={shouldReduceMotion ? undefined : { scale: 1.03 }}
+          whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
+          aria-label="Watch the GoGetterOS intro video"
+          className="group absolute right-4 top-20 z-30 flex items-center gap-2 rounded-full border border-white/12 bg-slate-950/70 px-4 py-2 text-sm text-white shadow-[0_16px_50px_rgba(2,6,23,0.45)] backdrop-blur-xl transition-colors hover:border-emerald-400/40 hover:bg-slate-950/80 md:right-10 md:top-24"
+        >
+          <span className="flex h-7 w-7 items-center justify-center rounded-full bg-gradient-to-br from-emerald-400 via-teal-400 to-cyan-400 text-slate-950 shadow-inner shadow-white/20">
+            <Play className="h-3.5 w-3.5 fill-current" />
+          </span>
+          <span className="font-medium tracking-tight">
+            Watch intro
+            <span className="ml-1.5 hidden text-xs text-slate-300 sm:inline">· 1 min</span>
+          </span>
+        </motion.button>
+
         <div className="mx-auto grid max-w-7xl gap-10 lg:grid-cols-[1.18fr_0.82fr] lg:items-center">
           <motion.div
             initial={shouldReduceMotion ? false : { opacity: 0, y: 26 }}
