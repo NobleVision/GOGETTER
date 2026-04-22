@@ -1,10 +1,9 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type ComponentType } from "react";
 import { useLocation } from "wouter";
-import { motion, useInView, useReducedMotion, type Variants } from "framer-motion";
+import { AnimatePresence, motion, useInView, useReducedMotion, type Variants } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { getGoogleLoginUrl } from "@/const";
@@ -39,6 +38,7 @@ import {
   Target,
   TrendingUp,
   Users,
+  X,
   Youtube,
   Zap,
 } from "lucide-react";
@@ -508,6 +508,15 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
     }
   }, [introOpen]);
 
+  useEffect(() => {
+    if (!introOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIntroOpen(false);
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [introOpen]);
+
   const plansQuery = trpc.subscription.plans.useQuery();
   const landingContentQuery = trpc.content.landingPage.useQuery();
 
@@ -709,11 +718,18 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
           type="button"
           onClick={() => setIntroOpen(true)}
           initial={shouldReduceMotion ? false : { opacity: 0, y: -10, scale: 0.96 }}
-          animate={shouldReduceMotion ? undefined : { opacity: 1, y: 0, scale: 1 }}
+          animate={
+            shouldReduceMotion
+              ? { opacity: introOpen ? 0 : 1 }
+              : { opacity: introOpen ? 0 : 1, y: 0, scale: introOpen ? 0.92 : 1 }
+          }
           transition={{ ...revealTransition, delay: shouldReduceMotion ? 0 : 0.35 }}
-          whileHover={shouldReduceMotion ? undefined : { scale: 1.04 }}
-          whileTap={shouldReduceMotion ? undefined : { scale: 0.97 }}
+          whileHover={shouldReduceMotion || introOpen ? undefined : { scale: 1.04 }}
+          whileTap={shouldReduceMotion || introOpen ? undefined : { scale: 0.97 }}
           aria-label="Watch the GoGetterOS intro video"
+          aria-hidden={introOpen || undefined}
+          tabIndex={introOpen ? -1 : 0}
+          style={{ pointerEvents: introOpen ? "none" : "auto" }}
           className="group absolute right-4 top-20 z-30 aspect-[9/16] w-24 overflow-hidden rounded-2xl border border-emerald-500/25 bg-slate-950/70 shadow-[0_20px_60px_rgba(16,185,129,0.22),0_10px_40px_rgba(2,6,23,0.55)] backdrop-blur-xl transition-shadow hover:border-emerald-400/45 hover:shadow-[0_24px_70px_rgba(16,185,129,0.32),0_12px_50px_rgba(2,6,23,0.65)] md:right-10 md:top-24 md:w-32 lg:w-36"
         >
           <img
@@ -977,10 +993,27 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
         </div>
       </section>
 
-      <Dialog open={introOpen} onOpenChange={setIntroOpen}>
-        <DialogContent className="w-[min(92vw,350px)] max-w-[350px] gap-0 overflow-hidden rounded-2xl border-white/12 bg-slate-950/95 p-0 shadow-[0_30px_120px_rgba(2,6,23,0.65)] backdrop-blur-xl">
-          <DialogTitle className="sr-only">GoGetterOS intro video</DialogTitle>
-          {introOpen && (
+      <AnimatePresence>
+        {introOpen && (
+          <motion.div
+            key="intro-pip"
+            role="dialog"
+            aria-modal="false"
+            aria-label="GoGetterOS intro video"
+            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.9, y: -12 }}
+            animate={shouldReduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
+            exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.92, y: -10 }}
+            transition={shouldReduceMotion ? { duration: 0 } : { duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            className="pointer-events-auto fixed right-4 top-20 z-[60] w-[min(88vw,320px)] origin-top-right overflow-hidden rounded-2xl border border-white/12 bg-slate-950/95 shadow-[0_30px_120px_rgba(2,6,23,0.65)] backdrop-blur-xl md:right-8 md:top-24"
+          >
+            <button
+              type="button"
+              onClick={() => setIntroOpen(false)}
+              aria-label="Close intro video"
+              className="absolute right-2 top-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border border-white/15 bg-slate-950/80 text-white shadow-lg shadow-black/30 backdrop-blur transition-colors hover:border-emerald-400/40 hover:bg-slate-950/90"
+            >
+              <X className="h-4 w-4" />
+            </button>
             <video
               ref={introVideoRef}
               controls
@@ -988,14 +1021,14 @@ export default function LandingPage({ errorMessage }: LandingPageProps) {
               preload="auto"
               playsInline
               poster="/video-intros/GoGetterOS_Intro_poster.jpg"
-              className="aspect-[9/16] w-full rounded-2xl bg-slate-950 object-cover"
+              className="block aspect-[9/16] w-full bg-slate-950 object-cover"
             >
               <source src="/video-intros/GoGetterOS_Intro.mp4" type="video/mp4" />
               Your browser does not support the video tag.
             </video>
-          )}
-        </DialogContent>
-      </Dialog>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <section className="relative border-b border-white/10 bg-[linear-gradient(180deg,rgba(2,6,23,0.62),rgba(2,6,23,0.92))] px-4 py-20 md:px-8">
         <motion.div
